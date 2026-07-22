@@ -1,0 +1,21 @@
+node_modules/
+src-tauri/target/
+dist/
+
+# Local environment files and credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Test and tool output
+coverage/
+.vite/
+
+.DS_Store
+*.log

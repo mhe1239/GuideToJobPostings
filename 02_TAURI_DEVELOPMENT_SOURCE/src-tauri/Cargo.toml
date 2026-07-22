@@ -1,0 +1,16 @@
+[package]
+name = "campus-notice-vault"
+version = "1.0.0"
+description = "대학 공고 FAQ와 질문 검색 프로토타입"
+authors = ["Kangnam Notice Guide"]
+edition = "2021"
+
+[lib]
+name = "campus_notice_vault_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "2.11.5", features = [] }

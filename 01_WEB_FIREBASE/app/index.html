@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#173a67" />
+    <meta name="description" content="가상 공고와 FAQ로 학생 문의 흐름을 검증하는 1-Day 프로토타입" />
+    <title>강남대 공고 길잡이 — 비교과 프로그램 모집</title>
+    <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./main.js" defer></script>
+    <script type="module" src="./firebase-config.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">본문으로 바로가기</a>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="#notice" aria-label="강남대학교 공고 길잡이 홈">
+          <svg class="brand-mark" aria-hidden="true" viewBox="0 0 44 44">
+            <path d="M8 9.5 22 4l14 5.5v10.8c0 9.1-5.9 16.2-14 19.7-8.1-3.5-14-10.6-14-19.7V9.5Z" />
+            <path d="M14.5 16.5c2.8 0 5.3.7 7.5 2.2 2.2-1.5 4.7-2.2 7.5-2.2v11.2c-2.8 0-5.3.7-7.5 2.2-2.2-1.5-4.7-2.2-7.5-2.2V16.5Z" />
+            <path d="M22 18.7v11.2" />
+          </svg>
+          <span class="brand-copy">
+            <strong>강남대학교</strong>
+            <span>공고 길잡이</span>
+          </span>
+        </a>
+        <div class="prototype-label" aria-label="프로토타입 상태">
+          <span aria-hidden="true"></span>
+          1-Day Prototype
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <div class="page-shell">
+        <nav class="breadcrumb" aria-label="현재 위치">
+          <span>대학생활</span>
+          <svg aria-hidden="true" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5" /></svg>
+          <span>비교과 프로그램</span>
+        </nav>
+
+        <section class="notice-hero" id="notice" aria-labelledby="notice-title" tabindex="-1">
+          <div class="hero-copy">
+            <div class="label-row">
+              <span class="status-badge"><span aria-hidden="true"></span> 모집 중</span>
+              <span class="virtual-badge">가상 공고</span>
+            </div>
+            <p class="section-label">비교과교육센터 · 공고 제2026-07호</p>
+            <h1 id="notice-title">2026학년도 비교과 프로그램 모집</h1>
+            <p class="hero-summary">
+              진로 탐색과 실무 역량 강화를 위한 여름학기 비교과 프로그램 참가자를 모집합니다.
+              아래 핵심 내용을 확인한 뒤 FAQ 또는 질문하기를 이용해 주세요.
+            </p>
+          </div>
+
+          <dl class="key-facts" aria-label="공고 핵심 정보">
+            <div>
+              <dt>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
+                신청 기간
+              </dt>
+              <dd>7월 20일(월)–7월 31일(금)</dd>
+            </div>
+            <div>
+              <dt>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4.5 21a7.5 7.5 0 0 1 15 0" /></svg>
+                신청 대상
+              </dt>
+              <dd>재학생 및 편입생 <span>· 휴학생 제외</span></dd>
+            </div>
+            <div>
+              <dt>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6V3Z" /><path d="M15 3v5h5M9 13h7M9 17h7" /></svg>
+                제출 서류
+              </dt>
+              <dd>온라인 신청서, 재학증명서</dd>
+            </div>
+          </dl>
+
+          <div class="source-line">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" /><path d="M12 11v6M12 7h.01" /></svg>
+            이 화면의 공고·연락처는 실제 개인정보가 아닌 프로토타입용 가상 데이터입니다.
+          </div>
+        </section>
+
+        <div class="content-grid">
+          <section class="faq-section" aria-labelledby="faq-title">
+            <div class="section-heading">
+              <div>
+                <p class="section-label">자주 찾는 내용</p>
+                <h2 id="faq-title">먼저 FAQ를 확인해 보세요</h2>
+              </div>
+              <span class="step-label">1단계</span>
+            </div>
+            <p class="section-description">질문을 선택하면 준비된 예시 답변과 공고문 근거가 표시됩니다.</p>
+            <div class="faq-list" id="faq-list" aria-live="polite"></div>
+
+            <aside class="flow-note" aria-label="이용 순서">
+              <div class="flow-note-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v14l-4-3-3 3-3-3-4 3V5a2 2 0 0 1 2-2Z" /><path d="M9 8h6M9 12h4" /></svg>
+              </div>
+              <div>
+                <strong>해결되지 않았나요?</strong>
+                <p>FAQ 확인 → 질문 입력 → 담당 부서 문의 순서로 이용해 주세요.</p>
+              </div>
+            </aside>
+          </section>
+
+          <aside class="assistant-card" aria-labelledby="assistant-title">
+            <div id="assistant-view">
+              <div class="assistant-heading">
+                <div class="assistant-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-5 4v-4a2 2 0 0 1-2-2V5Z" /><path d="M8 8h8M8 12h5" /></svg>
+                </div>
+                <div>
+                  <p class="section-label">공고 질문하기</p>
+                  <h2 id="assistant-title">궁금한 내용을 입력하세요</h2>
+                </div>
+                <span class="step-label">2단계</span>
+              </div>
+
+              <div class="example-notice" role="note">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" /><path d="M12 11v6M12 7h.01" /></svg>
+                <p><strong>가상 예시 답변</strong> 실제 AI를 호출하지 않고, 질문에 맞는 가상 데이터를 보여줍니다.</p>
+              </div>
+
+              <form id="question-form" novalidate>
+                <label for="question-input">질문 내용 <span aria-hidden="true">*</span></label>
+                <textarea
+                  id="question-input"
+                  name="question"
+                  rows="4"
+                  maxlength="200"
+                  placeholder="예: 휴학생도 신청 가능한가요?"
+                  aria-describedby="question-help question-error"
+                  required
+                ></textarea>
+                <div class="input-meta">
+                  <span id="question-help">공고 신청 자격, 기간, 서류, 문의처를 물어보세요.</span>
+                  <span><span id="question-count">0</span>/200</span>
+                </div>
+                <p class="field-error" id="question-error" role="alert" hidden></p>
+                <button class="button primary submit-button" type="submit">
+                  질문하기
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </button>
+              </form>
+
+              <div class="empty-result" id="empty-result">
+                <svg aria-hidden="true" viewBox="0 0 48 48"><path d="M12 9h24a4 4 0 0 1 4 4v17a4 4 0 0 1-4 4H22l-10 7v-7a4 4 0 0 1-4-4V13a4 4 0 0 1 4-4Z" /><path d="M17 18h14M17 25h9" /></svg>
+                <strong>질문에 대한 답변이 여기에 표시됩니다.</strong>
+                <span>FAQ를 선택하거나 질문을 입력해 주세요.</span>
+              </div>
+
+              <section class="answer-card" id="answer-card" aria-labelledby="answer-title" aria-live="polite" hidden>
+                <div class="answer-topline">
+                  <span class="example-badge">가상 예시 답변</span>
+                  <span id="answer-state">답변 찾음</span>
+                </div>
+                <p class="asked-question" id="asked-question"></p>
+                <h3 id="answer-title">예시 답변</h3>
+                <p class="answer-copy" id="answer-copy"></p>
+
+                <div class="evidence-card" id="evidence-card">
+                  <div class="evidence-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6V3Z" /><path d="M15 3v5h5M9 13h7M9 17h7" /></svg>
+                  </div>
+                  <div>
+                    <span>공고문 출처</span>
+                    <strong id="answer-source"></strong>
+                  </div>
+                </div>
+
+                <div class="answer-actions">
+                  <button class="button secondary" id="retry-button" type="button">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4v6h6M20 20v-6h-6" /><path d="M6.5 17.5A8 8 0 0 0 20 12M4 12A8 8 0 0 1 17.5 6.5" /></svg>
+                    다른 질문하기
+                  </button>
+                  <button class="button primary" id="department-button" type="button">
+                    담당 부서 보기
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                  </button>
+                </div>
+              </section>
+            </div>
+
+            <section class="department-view" id="department-view" aria-labelledby="department-title" hidden>
+              <button class="back-button" id="department-back-button" type="button">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6" /></svg>
+                공고로 돌아가기
+              </button>
+              <div class="department-illustration" aria-hidden="true">
+                <svg viewBox="0 0 64 64"><path d="M10 25h44v31H10V25Z" /><path d="m6 25 26-16 26 16H6ZM18 25v31M30 25v31M46 25v31M6 56h52" /><path d="M26 40h12" /></svg>
+              </div>
+              <p class="section-label">해결되지 않은 경우</p>
+              <h2 id="department-title">비교과교육센터로 문의해 주세요</h2>
+              <p class="department-description">FAQ와 예시 답변으로 해결되지 않은 문의를 담당합니다.</p>
+              <dl class="department-details">
+                <div>
+                  <dt>담당 부서</dt>
+                  <dd>비교과교육센터 <span>· 가상 부서</span></dd>
+                </div>
+                <div>
+                  <dt>연락처</dt>
+                  <dd>031-000-0000 <span>· 가상 번호</span></dd>
+                </div>
+                <div>
+                  <dt>운영시간</dt>
+                  <dd>평일 09:00–17:00 <span>· 12:00–13:00 제외</span></dd>
+                </div>
+              </dl>
+              <p class="contact-note">문의 시 “2026학년도 비교과 프로그램 모집 공고”를 확인했다고 말씀해 주세요.</p>
+            </section>
+          </aside>
+        </div>
+
+        <section class="feedback-section" aria-labelledby="feedback-title">
+          <div class="feedback-heading">
+            <div>
+              <p class="section-label">부서 피드백용</p>
+              <h2 id="feedback-title">이번 프로토타입에서 확인할 내용</h2>
+            </div>
+            <span class="internal-badge">내부 검증 메모</span>
+          </div>
+          <div class="feedback-grid">
+            <article>
+              <span class="feedback-number">01</span>
+              <h3>업무 흐름 가정</h3>
+              <p>학생은 FAQ를 먼저 확인하고, 해결되지 않으면 질문 검색을 사용한 뒤 담당 부서에 문의한다.</p>
+            </article>
+            <article>
+              <span class="feedback-number">02</span>
+              <h3>결정이 바뀌는 조건</h3>
+              <p>여러 부서가 함께 처리하는 문의가 많다면 관련 부서를 함께 안내하는 방식으로 변경한다.</p>
+            </article>
+            <article class="feedback-questions">
+              <span class="feedback-number">03</span>
+              <h3>담당자에게 확인할 질문</h3>
+              <ul>
+                <li>반복 문의는 FAQ와 공고문 검색만으로 해결 가능한 수준인가요?</li>
+                <li>FAQ에 반드시 포함할 질문과 공고 변경 시 관리 방식은 무엇인가요?</li>
+                <li>실제 업무에서 사용하기 어려운 가장 큰 이유는 무엇인가요?</li>
+              </ul>
+            </article>
+          </div>
+          <div class="feedback-footer">
+            <span>가상 입력: “휴학생도 신청 가능한가요?”</span>
+            <span>기록 담당자: 팀원 ○○</span>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>강남대학교 공고 길잡이</strong>
+        <span>학생 문의 경험 검증을 위한 가상 프로토타입</span>
+      </div>
+    </footer>
+  </body>
+</html>

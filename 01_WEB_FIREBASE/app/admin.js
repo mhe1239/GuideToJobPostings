@@ -8,6 +8,8 @@ const ROLE_LABELS = Object.freeze({
 
 const READER_ENDPOINT = "https://r.jina.ai/http://r.jina.ai/http://";
 const MAX_NOTICE_CHARS = 9000;
+const LEGACY_DEFAULT_NOTICE_URL =
+  "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9";
 
 const NOTICE_SECTIONS = Object.freeze([
   { key: "period", label: "신청 기간", keywords: ["접수", "기간", "마감", "일정", "발표"] },
@@ -140,6 +142,20 @@ function resetDraftForUrlChange() {
     checkbox.checked = false;
   });
   updateApprovalState();
+}
+
+function clearLegacyDefaultNoticeUrl() {
+  if (!adminPage.urlInput) return;
+  const value = adminPage.urlInput.value.trim();
+  const defaultValue = adminPage.urlInput.defaultValue.trim();
+
+  if (value === LEGACY_DEFAULT_NOTICE_URL || defaultValue === LEGACY_DEFAULT_NOTICE_URL) {
+    adminPage.urlInput.value = "";
+    adminPage.urlInput.defaultValue = "";
+    adminPage.urlInput.removeAttribute("value");
+    adminPage.urlInput.placeholder = "https://web.kangnam.ac.kr/...";
+    resetDraftForUrlChange();
+  }
 }
 
 function handleMemberSubmit(event) {
@@ -369,6 +385,7 @@ adminPage.logoutButton?.addEventListener("click", handleLogout);
 adminPage.memberForm?.addEventListener("submit", handleMemberSubmit);
 adminPage.form?.addEventListener("submit", handleDraftGeneration);
 adminPage.urlInput?.addEventListener("input", resetDraftForUrlChange);
+clearLegacyDefaultNoticeUrl();
 adminPage.checkboxes.forEach((checkbox) => checkbox.addEventListener("change", updateApprovalState));
 adminPage.approveButton?.addEventListener("click", handleDraftApproval);
 window.addEventListener("kangnam-firebase-ready", initAuth, { once: true });

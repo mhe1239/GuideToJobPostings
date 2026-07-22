@@ -13,7 +13,7 @@
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="./styles.css" />
     <script type="module" src="./firebase-config.js?v=20260722-notice-list"></script>
-    <script src="./main.js?v=20260722-manage-seeded" defer></script>
+    <script src="./main.js?v=20260722-answer-label" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">본문으로 바로가기</a>
@@ -86,7 +86,7 @@
 
           <div class="source-line">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" /><path d="M12 11v6M12 7h.01" /></svg>
-            <span id="source-line-text">공식 공고 내용을 확인해 작성한 프로토타입입니다. 답변은 자동 AI·OCR 추출 결과가 아닌 미리 준비된 예시입니다.</span>
+            <span id="source-line-text">공식 공고 내용을 확인해 작성한 답변입니다.</span>
           </div>
         </section>
 
@@ -99,7 +99,7 @@
               </div>
               <span class="step-label">1단계</span>
             </div>
-            <p class="section-description">질문을 선택하면 준비된 예시 답변과 공고문 근거가 표시됩니다.</p>
+            <p class="section-description">질문을 선택하면 준비된 답변과 공고문 근거가 표시됩니다.</p>
             <div class="faq-list" id="faq-list" aria-live="polite"></div>
 
             <aside class="flow-note" aria-label="이용 순서">
@@ -128,7 +128,7 @@
 
               <div class="example-notice" role="note">
                 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" /><path d="M12 11v6M12 7h.01" /></svg>
-                <p><strong>가상 예시 답변</strong> 실제 AI를 호출하지 않고, 질문에 맞는 가상 데이터를 보여줍니다.</p>
+                <p><strong>답변</strong> 질문에 맞는 공고 기반 답변을 보여줍니다.</p>
               </div>
 
               <form id="question-form" novalidate>
@@ -161,11 +161,11 @@
 
               <section class="answer-card" id="answer-card" aria-labelledby="answer-title" aria-live="polite" hidden>
                 <div class="answer-topline">
-                  <span class="example-badge">가상 예시 답변</span>
+                  <span class="example-badge">답변</span>
                   <span id="answer-state">답변 찾음</span>
                 </div>
                 <p class="asked-question" id="asked-question"></p>
-                <h3 id="answer-title">예시 답변</h3>
+                <h3 id="answer-title">답변</h3>
                 <p class="answer-copy" id="answer-copy"></p>
 
                 <div class="evidence-card" id="evidence-card">
@@ -212,7 +212,7 @@
               </div>
               <p class="section-label">해결되지 않은 경우</p>
               <h2 id="department-title">입학전형관리팀으로 문의해 주세요</h2>
-              <p class="department-description">FAQ와 예시 답변으로 해결되지 않은 문의를 담당합니다.</p>
+              <p class="department-description">FAQ와 답변으로 해결되지 않은 문의를 담당합니다.</p>
               <dl class="department-details">
                 <div>
                   <dt>담당 부서</dt>

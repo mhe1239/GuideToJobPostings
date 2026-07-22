@@ -59,14 +59,14 @@ assert.match(listDocument.querySelector(".notice-list-item").href, /notice\.html
 assert.match(document.querySelector("#notice-title").textContent, /늘품 12기 2학기 수습 임원 모집/, "공식 공고 제목이 표시되어야 합니다.");
 assert.equal(document.querySelector("#notice-list"), null, "상세 페이지에는 공고 선택 목록이 없어야 합니다.");
 assert.equal(document.querySelectorAll(".faq-item").length, 3, "P0 FAQ 3개가 표시되어야 합니다.");
-assert.match(document.querySelector(".example-notice").textContent, /실제 AI를 호출하지 않고/, "가상 예시 답변임을 입력 화면에 알려야 합니다.");
-assert.match(document.querySelector(".source-line").textContent, /자동 AI·OCR 추출 결과가 아닌/, "이미지 공고가 자동 추출된 결과가 아님을 알려야 합니다.");
+assert.match(document.querySelector(".example-notice").textContent, /공고 기반 답변/, "입력 화면에 공고 기반 답변임을 알려야 합니다.");
+assert.match(document.querySelector(".source-line").textContent, /공식 공고 내용을 확인해 작성한 답변/, "공식 공고 기반 답변임을 알려야 합니다.");
 
 click(window, '[data-faq-id="application-period"]');
 assert.equal(document.querySelector("#answer-card").hidden, false, "FAQ를 선택하면 결과가 나타나야 합니다.");
-assert.match(document.querySelector("#answer-copy").textContent, /8월 2일\(일\) 오후 5시까지/, "FAQ에 맞는 공식 공고 기반 예시 답변이 표시되어야 합니다.");
+assert.match(document.querySelector("#answer-copy").textContent, /8월 2일\(일\) 오후 5시까지/, "FAQ에 맞는 공식 공고 기반 답변이 표시되어야 합니다.");
 assert.match(document.querySelector("#answer-source").textContent, /공식 공고 카드뉴스.*1차 서류 접수/, "공고문 출처가 표시되어야 합니다.");
-assert.equal(document.querySelector(".example-badge").textContent, "가상 예시 답변", "결과 카드에도 가상 예시 답변 표시가 있어야 합니다.");
+assert.equal(document.querySelector(".example-badge").textContent, "답변", "결과 카드에 답변 표시가 있어야 합니다.");
 assert.equal(document.querySelector("#answer-source-link").href, officialNoticeUrl, "답변 아래 링크가 공식 공고 원문을 가리켜야 합니다.");
 assert.equal(document.querySelector("#answer-source-link").target, "_blank", "공식 공고는 새 창에서 열려야 합니다.");
 assert.match(document.querySelector("#answer-source-link").rel, /noopener/, "외부 링크는 열린 페이지와 앱 창을 분리해야 합니다.");

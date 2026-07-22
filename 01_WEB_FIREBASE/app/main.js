@@ -286,3 +286,74 @@ elements.departmentBackButton.addEventListener("click", returnToNotice);
 
 renderFaqs();
 updateQuestionCount();
+
+const adminReview = {
+  form: document.querySelector("#admin-ingest-form"),
+  urlInput: document.querySelector("#official-notice-url"),
+  generateButton: document.querySelector("#generate-draft-button"),
+  status: document.querySelector("#review-status"),
+  chip: document.querySelector("#draft-chip"),
+  empty: document.querySelector("#draft-empty"),
+  fields: document.querySelector("#draft-fields"),
+  summary: document.querySelector("#draft-summary"),
+  faq: document.querySelector("#draft-faq"),
+  evidence: document.querySelector("#draft-evidence"),
+  checkboxes: [...document.querySelectorAll(".approval-checkbox")],
+  approveButton: document.querySelector("#approve-draft-button"),
+  note: document.querySelector("#approval-note"),
+};
+
+const CODEX_DRAFT = Object.freeze({
+  summary:
+    "강남대학교 입학처 공식 홍보대사 늘품 12기 2학기 수습 임원 모집 공고입니다. 지원 대상은 재학생 및 편입생이며, 1차 서류 접수는 7월 20일부터 8월 2일 17시까지입니다.",
+  faq:
+    "Q. 편입생도 지원할 수 있나요?\nA. 가능합니다. 공고의 지원 자격에 재학생 및 편입생으로 안내되어 있습니다.\n\nQ. 어떤 분야를 모집하나요?\nA. 기획국, 대외홍보국, 콘텐츠디자인국을 모집합니다.\n\nQ. 신청 방법은 무엇인가요?\nA. 공식 공고에 안내된 QR 코드 또는 원문 링크의 신청 경로를 확인해야 합니다.",
+  evidence:
+    "근거 1. 모집 일정 > 1차 서류 접수\n근거 2. 지원 자격 > 재학생 및 편입생\n근거 3. 모집 분야 및 인원\n근거 4. 공고 등록 부서 및 문의처",
+});
+
+function setReviewStatus(text, state) {
+  adminReview.status.textContent = text;
+  adminReview.status.dataset.state = state;
+}
+
+function updateApprovalState() {
+  const ready = adminReview.fields && !adminReview.fields.hidden;
+  const checked = adminReview.checkboxes.every((checkbox) => checkbox.checked);
+  adminReview.approveButton.disabled = !(ready && checked);
+}
+
+function handleDraftGeneration(event) {
+  event.preventDefault();
+  setReviewStatus("Codex 분석 중", "working");
+  adminReview.chip.textContent = "생성 중";
+  adminReview.generateButton.disabled = true;
+  adminReview.note.textContent = "공식 링크를 기준으로 학생용 FAQ 초안을 구성하고 있습니다.";
+
+  window.setTimeout(() => {
+    adminReview.empty.hidden = true;
+    adminReview.fields.hidden = false;
+    adminReview.summary.value = CODEX_DRAFT.summary;
+    adminReview.faq.value = CODEX_DRAFT.faq;
+    adminReview.evidence.value = CODEX_DRAFT.evidence;
+    adminReview.chip.textContent = "검수 필요";
+    setReviewStatus("관리자 검수 대기", "review");
+    adminReview.generateButton.disabled = false;
+    adminReview.note.textContent = "초안을 수정한 뒤 검수 항목을 모두 체크해 주세요.";
+    updateApprovalState();
+  }, 700);
+}
+
+function handleDraftApproval() {
+  setReviewStatus("공개 승인 완료", "approved");
+  adminReview.chip.textContent = "승인됨";
+  adminReview.note.textContent = "승인된 초안은 학생용 FAQ와 답변 근거로 공개되는 상태입니다.";
+  adminReview.approveButton.disabled = true;
+  adminReview.approveButton.textContent = "승인 완료";
+}
+
+if (adminReview.form) {
+  adminReview.form.addEventListener("submit", handleDraftGeneration);
+  adminReview.checkboxes.forEach((checkbox) => checkbox.addEventListener("change", updateApprovalState));
+  adminReview.approveButton.addEventListener("click", handleDraftApproval);
+}

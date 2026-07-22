@@ -1246,6 +1246,65 @@ button:disabled {
   line-height: 1.6;
 }
 
+.admin-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.admin-menu-card {
+  min-width: 0;
+  min-height: 180px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 20px;
+  color: var(--ink);
+  text-align: left;
+  text-decoration: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
+}
+
+.admin-menu-card:hover,
+.admin-menu-card:focus-visible {
+  border-color: var(--primary-800);
+  box-shadow: 0 0 0 3px rgb(37 99 169 / 8%), var(--shadow-card);
+}
+
+.admin-menu-card span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: var(--primary-800);
+  background: var(--primary-100);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.admin-menu-card strong {
+  color: var(--primary-950);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.admin-menu-card small {
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.logout-menu-card {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+}
+
 .review-flow {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -2080,6 +2139,7 @@ button:disabled {
   .review-flow,
   .notice-list,
   .role-grid,
+  .admin-menu-grid,
   .admin-grid {
     grid-template-columns: 1fr;
   }

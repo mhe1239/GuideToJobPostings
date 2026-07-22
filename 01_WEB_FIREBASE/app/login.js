@@ -32,7 +32,7 @@ function initLoginAuth() {
   firebase.getRedirectResult?.()
     .then((result) => {
       if (result?.user) {
-        setLoginState(`${result.user.email} · ${resolveLoginRole(result.user.email)}`, "로그인되었습니다. 관리자 관리 페이지로 이동합니다.");
+        setLoginState(`${result.user.email} · ${resolveLoginRole(result.user.email)}`, "로그인되었습니다. 관리자 메뉴로 이동합니다.");
         goToAdminPage();
       }
     })
@@ -48,7 +48,7 @@ function initLoginAuth() {
     }
 
     loginElements.logoutButton.disabled = false;
-    setLoginState(`${user.email} · ${resolveLoginRole(user.email)}`, "로그인되었습니다. 관리자 관리 페이지로 이동합니다.");
+    setLoginState(`${user.email} · ${resolveLoginRole(user.email)}`, "로그인되었습니다. 관리자 메뉴로 이동합니다.");
     goToAdminPage();
   });
 }

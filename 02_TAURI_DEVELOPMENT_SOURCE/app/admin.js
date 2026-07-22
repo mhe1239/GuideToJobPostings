@@ -6,14 +6,16 @@ const ROLE_LABELS = Object.freeze({
   viewer: "보기만 가능",
 });
 
-const CODEX_DRAFT = Object.freeze({
-  summary:
-    "강남대학교 입학처 공식 홍보대사 늘품 12기 2학기 수습 임원 모집 공고입니다. 지원 대상은 재학생 및 편입생이며, 1차 서류 접수는 7월 20일부터 8월 2일 17시까지입니다.",
-  faq:
-    "Q. 편입생도 지원할 수 있나요?\nA. 가능합니다. 공고의 지원 자격에 재학생 및 편입생으로 안내되어 있습니다.\n\nQ. 어떤 분야를 모집하나요?\nA. 기획국, 대외홍보국, 콘텐츠디자인국을 모집합니다.\n\nQ. 신청 방법은 무엇인가요?\nA. 공식 공고에 안내된 QR 코드 또는 원문 링크의 신청 경로를 확인해야 합니다.",
-  evidence:
-    "근거 1. 모집 일정 > 1차 서류 접수\n근거 2. 지원 자격 > 재학생 및 편입생\n근거 3. 모집 분야 및 인원\n근거 4. 공고 등록 부서 및 문의처",
-});
+const READER_ENDPOINT = "https://r.jina.ai/http://r.jina.ai/http://";
+const MAX_NOTICE_CHARS = 9000;
+
+const NOTICE_SECTIONS = Object.freeze([
+  { key: "period", label: "신청 기간", keywords: ["접수", "기간", "마감", "일정", "발표"] },
+  { key: "eligibility", label: "지원 자격", keywords: ["지원자격", "지원 자격", "대상", "재학생", "편입생", "휴학생"] },
+  { key: "field", label: "모집 분야", keywords: ["모집 분야", "모집분야", "모집 인원", "모집인원", "분야"] },
+  { key: "method", label: "신청 방법", keywords: ["지원 방법", "신청 방법", "지원서", "신청서", "QR", "큐알"] },
+  { key: "contact", label: "문의처", keywords: ["문의", "담당", "등록자", "부서", "연락"] },
+]);
 
 const adminPage = {
   authBadge: document.querySelector("#admin-auth-badge") || document.querySelector("#review-status"),
@@ -25,6 +27,7 @@ const adminPage = {
   memberEmail: document.querySelector("#member-email"),
   memberRole: document.querySelector("#member-role"),
   form: document.querySelector("#admin-ingest-form"),
+  urlInput: document.querySelector("#official-notice-url"),
   generateButton: document.querySelector("#generate-draft-button"),
   chip: document.querySelector("#draft-chip"),
   empty: document.querySelector("#draft-empty"),
@@ -135,25 +138,185 @@ function handleMemberSubmit(event) {
   renderMembers();
 }
 
-function handleDraftGeneration(event) {
+function buildReaderUrl(url) {
+  return `${READER_ENDPOINT}${url}`;
+}
+
+function cleanReaderText(text) {
+  return text
+    .replace(/\r/g, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function removeMarkdownLinks(text) {
+  return text
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+}
+
+function getNoticeTitle(markdown, url) {
+  const title = markdown.match(/^Title:\s*(.+)$/m)?.[1]?.trim();
+  if (title) return title;
+
+  const heading = markdown.match(/^#{1,3}\s+(.+)$/m)?.[1]?.trim();
+  if (heading) return removeMarkdownLinks(heading);
+
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "공식 공고";
+  }
+}
+
+function toNoticeLines(markdown) {
+  const noisy = [
+    "사이트맵",
+    "전체메뉴",
+    "메뉴닫기",
+    "메뉴 열기",
+    "통합검색",
+    "개인정보처리방침",
+    "Copyright",
+    "관련기관",
+    "SNS",
+    "LOGIN",
+  ];
+
+  return cleanReaderText(markdown)
+    .split("\n")
+    .map((line) => removeMarkdownLinks(line).replace(/^[*#>\-\d. ]+/, "").trim())
+    .filter((line) => line.length >= 2)
+    .filter((line) => !noisy.some((word) => line.includes(word)))
+    .slice(0, 240);
+}
+
+function extractImageSources(markdown) {
+  const imageUrls = [];
+  const imagePattern = /!\[[^\]]*]\((https?:\/\/[^)\s]+)[^)]*\)/g;
+  const filePattern = /\[([^\]]+\.(?:png|jpe?g|webp|gif|pdf))]\((https?:\/\/[^)]+)\)/gi;
+  let match = imagePattern.exec(markdown);
+
+  while (match) {
+    imageUrls.push(match[1]);
+    match = imagePattern.exec(markdown);
+  }
+
+  match = filePattern.exec(markdown);
+  while (match) {
+    imageUrls.push(match[2]);
+    match = filePattern.exec(markdown);
+  }
+
+  return [...new Set(imageUrls)]
+    .filter((url) => !/blogger|youtube|flickr|logo|common\/.*images/i.test(url))
+    .slice(0, 4);
+}
+
+function findSection(lines, keywords) {
+  const index = lines.findIndex((line) => keywords.some((keyword) => line.toLocaleLowerCase("ko-KR").includes(keyword.toLocaleLowerCase("ko-KR"))));
+  if (index === -1) return "";
+
+  return lines
+    .slice(index, index + 5)
+    .join(" ")
+    .replace(/\s{2,}/g, " ")
+    .slice(0, 260);
+}
+
+function analyzeNotice(markdown, sourceUrl) {
+  const title = getNoticeTitle(markdown, sourceUrl);
+  const lines = toNoticeLines(markdown);
+  const sections = NOTICE_SECTIONS.map((section) => ({
+    ...section,
+    text: findSection(lines, section.keywords),
+  }));
+  const images = extractImageSources(markdown);
+  const bodyPreview = lines.join("\n").slice(0, MAX_NOTICE_CHARS);
+
+  return { title, lines, sections, images, bodyPreview, sourceUrl };
+}
+
+function fallbackText(label, text) {
+  return text || `${label}은 공식 공고 원문에서 관리자 확인이 필요합니다.`;
+}
+
+function createDraftFromNotice(notice) {
+  const period = notice.sections.find((section) => section.key === "period")?.text;
+  const eligibility = notice.sections.find((section) => section.key === "eligibility")?.text;
+  const field = notice.sections.find((section) => section.key === "field")?.text;
+  const method = notice.sections.find((section) => section.key === "method")?.text;
+  const contact = notice.sections.find((section) => section.key === "contact")?.text;
+  const imageNote = notice.images.length > 0
+    ? `이미지 공고 ${notice.images.length}개가 감지되어 Reader 추출 텍스트와 이미지 원문을 함께 검수해야 합니다.`
+    : "이미지 공고 후보는 감지되지 않았습니다.";
+
+  return {
+    summary:
+      `${notice.title} 공고입니다.\n` +
+      `- 핵심 일정: ${fallbackText("신청 기간", period)}\n` +
+      `- 대상/자격: ${fallbackText("지원 자격", eligibility)}\n` +
+      `- 신청/지원: ${fallbackText("신청 방법", method)}\n` +
+      `- 검수 메모: ${imageNote}`,
+    faq:
+      `Q. 신청 기간은 언제인가요?\nA. ${fallbackText("신청 기간", period)}\n\n` +
+      `Q. 누가 신청할 수 있나요?\nA. ${fallbackText("지원 자격", eligibility)}\n\n` +
+      `Q. 모집 분야 또는 인원은 어떻게 되나요?\nA. ${fallbackText("모집 분야", field)}\n\n` +
+      `Q. 신청 방법은 무엇인가요?\nA. ${fallbackText("신청 방법", method)}\n\n` +
+      `Q. 문의는 어디로 하나요?\nA. ${fallbackText("문의처", contact)}`,
+    evidence:
+      `출처 URL: ${notice.sourceUrl}\n` +
+      notice.sections
+        .map((section) => `근거. ${section.label}: ${fallbackText(section.label, section.text)}`)
+        .join("\n") +
+      (notice.images.length > 0 ? `\n이미지/첨부 후보:\n${notice.images.map((url) => `- ${url}`).join("\n")}` : "") +
+      `\n\n원문 추출 일부:\n${notice.bodyPreview.slice(0, 1200)}`,
+  };
+}
+
+async function fetchNoticeMarkdown(url) {
+  const response = await fetch(buildReaderUrl(url), {
+    headers: { Accept: "text/plain" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`공식 링크를 읽지 못했습니다. HTTP ${response.status}`);
+  }
+
+  return response.text();
+}
+
+async function handleDraftGeneration(event) {
   event.preventDefault();
   if (currentRole !== "owner") return;
 
   adminPage.chip.textContent = "생성 중";
   adminPage.generateButton.disabled = true;
-  adminPage.note.textContent = "Codex AI가 공식 링크를 기준으로 초안을 구성하고 있습니다.";
+  adminPage.note.textContent = "공식 링크의 텍스트와 이미지 공고 후보를 수집하고 있습니다.";
 
-  window.setTimeout(() => {
+  try {
+    const sourceUrl = adminPage.urlInput?.value.trim();
+    if (!sourceUrl) throw new Error("공식 공고 URL을 입력해 주세요.");
+
+    const markdown = await fetchNoticeMarkdown(sourceUrl);
+    const notice = analyzeNotice(markdown, sourceUrl);
+    const draft = createDraftFromNotice(notice);
+
     adminPage.empty.hidden = true;
     adminPage.fields.hidden = false;
-    adminPage.summary.value = CODEX_DRAFT.summary;
-    adminPage.faq.value = CODEX_DRAFT.faq;
-    adminPage.evidence.value = CODEX_DRAFT.evidence;
+    adminPage.summary.value = draft.summary;
+    adminPage.faq.value = draft.faq;
+    adminPage.evidence.value = draft.evidence;
     adminPage.chip.textContent = "검수 필요";
-    adminPage.generateButton.disabled = false;
-    adminPage.note.textContent = "초안을 검수한 뒤 모든 체크 항목을 완료해 주세요.";
+    adminPage.note.textContent = "링크 내용 기반 초안입니다. 이미지 공고가 포함된 경우 원문 이미지와 함께 검수해 주세요.";
     updateApprovalState();
-  }, 700);
+  } catch (error) {
+    adminPage.chip.textContent = "생성 실패";
+    adminPage.note.textContent = `${error.message} Firebase Functions 없이 Hosting만 쓰는 현재 배포에서는 일부 링크가 브라우저 보안 정책에 막힐 수 있습니다.`;
+  } finally {
+    adminPage.generateButton.disabled = false;
+  }
 }
 
 function handleDraftApproval() {

@@ -43,6 +43,7 @@ const adminPage = {
 let currentUser = null;
 let currentRole = "viewer";
 let managedMembers = loadManagedMembers();
+let generatedDraftUrl = "";
 
 function loadManagedMembers() {
   try {
@@ -122,6 +123,23 @@ function updateApprovalState() {
   const ready = adminPage.fields && !adminPage.fields.hidden;
   const checked = adminPage.checkboxes.every((checkbox) => checkbox.checked);
   adminPage.approveButton.disabled = !(currentRole === "owner" && ready && checked);
+}
+
+function resetDraftForUrlChange() {
+  if (!adminPage.urlInput || adminPage.urlInput.value.trim() === generatedDraftUrl) return;
+
+  generatedDraftUrl = "";
+  if (adminPage.fields) adminPage.fields.hidden = true;
+  if (adminPage.empty) adminPage.empty.hidden = false;
+  if (adminPage.summary) adminPage.summary.value = "";
+  if (adminPage.faq) adminPage.faq.value = "";
+  if (adminPage.evidence) adminPage.evidence.value = "";
+  if (adminPage.chip) adminPage.chip.textContent = "미생성";
+  if (adminPage.note) adminPage.note.textContent = "새 URL이 입력되었습니다. 초안을 다시 생성해 주세요.";
+  adminPage.checkboxes.forEach((checkbox) => {
+    checkbox.checked = false;
+  });
+  updateApprovalState();
 }
 
 function handleMemberSubmit(event) {
@@ -296,8 +314,8 @@ async function handleDraftGeneration(event) {
   adminPage.note.textContent = "공식 링크의 텍스트와 이미지 공고 후보를 수집하고 있습니다.";
 
   try {
-    const sourceUrl = adminPage.urlInput?.value.trim();
-    if (!sourceUrl) throw new Error("공식 공고 URL을 입력해 주세요.");
+    const sourceUrl = new URL(adminPage.urlInput?.value.trim()).toString();
+    adminPage.urlInput.value = sourceUrl;
 
     const markdown = await fetchNoticeMarkdown(sourceUrl);
     const notice = analyzeNotice(markdown, sourceUrl);
@@ -309,7 +327,8 @@ async function handleDraftGeneration(event) {
     adminPage.faq.value = draft.faq;
     adminPage.evidence.value = draft.evidence;
     adminPage.chip.textContent = "검수 필요";
-    adminPage.note.textContent = "링크 내용 기반 초안입니다. 이미지 공고가 포함된 경우 원문 이미지와 함께 검수해 주세요.";
+    generatedDraftUrl = sourceUrl;
+    adminPage.note.textContent = `${notice.title} 기준으로 생성했습니다. 이미지 공고가 포함된 경우 원문 이미지와 함께 검수해 주세요.`;
     updateApprovalState();
   } catch (error) {
     adminPage.chip.textContent = "생성 실패";
@@ -349,6 +368,7 @@ function initAuth() {
 adminPage.logoutButton?.addEventListener("click", handleLogout);
 adminPage.memberForm?.addEventListener("submit", handleMemberSubmit);
 adminPage.form?.addEventListener("submit", handleDraftGeneration);
+adminPage.urlInput?.addEventListener("input", resetDraftForUrlChange);
 adminPage.checkboxes.forEach((checkbox) => checkbox.addEventListener("change", updateApprovalState));
 adminPage.approveButton?.addEventListener("click", handleDraftApproval);
 window.addEventListener("kangnam-firebase-ready", initAuth, { once: true });

@@ -1,6 +1,7 @@
 "use strict";
 
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
+const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
 
 const DEFAULT_NOTICES = Object.freeze([
   {
@@ -51,9 +52,20 @@ function loadPublishedNotices() {
   }
 }
 
+function loadDeletedNoticeIds() {
+  try {
+    return new Set(JSON.parse(window.localStorage.getItem(DELETED_NOTICES_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
 function getNotices() {
+  const deletedIds = loadDeletedNoticeIds();
   const merged = [...loadPublishedNotices(), ...DEFAULT_NOTICES];
-  return merged.filter((notice, index, list) => list.findIndex((item) => item.id === notice.id) === index);
+  return merged
+    .filter((notice, index, list) => list.findIndex((item) => item.id === notice.id) === index)
+    .filter((notice) => !deletedIds.has(notice.id));
 }
 
 function createNoticeLink(notice) {

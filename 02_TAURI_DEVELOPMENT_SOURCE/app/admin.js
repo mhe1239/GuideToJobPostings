@@ -9,8 +9,85 @@ const ROLE_LABELS = Object.freeze({
 const READER_ENDPOINT = "https://r.jina.ai/http://r.jina.ai/http://";
 const MAX_NOTICE_CHARS = 9000;
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
+const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
 const LEGACY_DEFAULT_NOTICE_URL =
   "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9";
+
+const ADMIN_DEFAULT_NOTICES = Object.freeze([
+  {
+    id: "neulpum-2026",
+    title: "입학처 공식 홍보대사 늘품 12기 2학기 수습 위원 모집",
+    category: "비교과 프로그램",
+    department: "입학전형관리팀",
+    date: "2026.07.20",
+    status: "모집 중",
+    sourceUrl: LEGACY_DEFAULT_NOTICE_URL,
+    summary: "입학처 공식 홍보대사 늘품 수습 위원 모집 공고입니다. 공식 원문과 관리자 검수 내용을 함께 확인하세요.",
+    facts: {
+      period: "7월 20일 ~ 8월 2일 17:00",
+      eligibility: "강남대학교 재학생 및 편입생",
+      field: "기획국, 대외홍보국, 콘텐츠디자인국",
+    },
+    faqs: [
+      { id: "period", question: "신청 기간은 언제인가요?", answer: "7월 20일부터 8월 2일 17:00까지입니다.", source: "모집 일정" },
+      { id: "eligibility", question: "누가 신청할 수 있나요?", answer: "강남대학교 재학생 및 편입생이 지원할 수 있습니다.", source: "지원 자격" },
+    ],
+  },
+  {
+    id: "internet-counselor-2026",
+    title: "2026년도 제2회 인터넷중독전문상담사 자격검정 시행",
+    category: "대학생활",
+    department: "학생지원 관련 부서",
+    date: "2026.07.20",
+    status: "안내",
+    sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    summary: "인터넷중독전문상담사 자격검정 시행 안내 공고입니다. 세부 일정과 자격은 공식 공고 원문을 확인하세요.",
+    facts: {
+      period: "공식 공고 원문 확인",
+      eligibility: "자격검정 응시 요건 확인",
+      field: "인터넷중독전문상담사",
+    },
+    faqs: [
+      { id: "period", question: "신청 기간은 어디서 확인하나요?", answer: "정확한 신청 기간은 공식 공고 원문에서 확인해야 합니다.", source: "공식 공고 원문" },
+    ],
+  },
+  {
+    id: "jazz-concert-2026",
+    title: "7월 문화가 있는 날 재즈 콘서트 개최",
+    category: "대학생활",
+    department: "학생지원 관련 부서",
+    date: "2026.07.16",
+    status: "안내",
+    sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    summary: "문화 행사 참여 안내 공고입니다. 일정, 장소, 참여 방법은 공식 공고 원문 기준으로 확인하세요.",
+    facts: {
+      period: "7월 문화가 있는 날",
+      eligibility: "관심 있는 학생",
+      field: "재즈 콘서트",
+    },
+    faqs: [
+      { id: "schedule", question: "행사 일정은 언제인가요?", answer: "공식 공고 원문에서 정확한 일정을 확인하세요.", source: "행사 일정" },
+    ],
+  },
+  {
+    id: "student-support-program-2026",
+    title: "2026학년도 대학생활 지원 비교과 프로그램 참여 안내",
+    category: "비교과 프로그램",
+    department: "학생지원 관련 부서",
+    date: "2026.07.15",
+    status: "모집 중",
+    sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    summary: "대학생활 적응과 역량 강화를 돕는 비교과 프로그램 참여 안내 공고입니다.",
+    facts: {
+      period: "공식 공고 원문 확인",
+      eligibility: "강남대학교 재학생",
+      field: "대학생활 지원 비교과 프로그램",
+    },
+    faqs: [
+      { id: "method", question: "신청 방법은 무엇인가요?", answer: "공식 공고 원문에 안내된 신청 경로를 확인하세요.", source: "신청 방법" },
+    ],
+  },
+]);
 
 const NOTICE_SECTIONS = Object.freeze([
   { key: "period", label: "신청 기간", keywords: ["접수", "기간", "마감", "일정", "발표"] },
@@ -369,6 +446,30 @@ function loadPublishedNotices() {
   }
 }
 
+function loadDeletedNoticeIds() {
+  try {
+    return new Set(JSON.parse(window.localStorage.getItem(DELETED_NOTICES_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveDeletedNoticeIds(deletedIds) {
+  window.localStorage.setItem(DELETED_NOTICES_KEY, JSON.stringify([...deletedIds]));
+}
+
+function savePublishedNotices(notices) {
+  window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(notices));
+}
+
+function getManageableNotices() {
+  const deletedIds = loadDeletedNoticeIds();
+  const merged = [...loadPublishedNotices(), ...ADMIN_DEFAULT_NOTICES];
+  return merged
+    .filter((notice, index, list) => list.findIndex((item) => item.id === notice.id) === index)
+    .filter((notice) => !deletedIds.has(notice.id));
+}
+
 function buildPublishedNotice(baseNotice) {
   if (!baseNotice) return null;
   const summary = adminPage.summary.value.trim();
@@ -404,20 +505,29 @@ function savePublishedNotice() {
 
   const notices = loadPublishedNotices().filter((notice) => notice.id !== publishedNotice.id && notice.sourceUrl !== publishedNotice.sourceUrl);
   notices.unshift(publishedNotice);
-  window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(notices.slice(0, 20)));
+  savePublishedNotices(notices.slice(0, 20));
+  const deletedIds = loadDeletedNoticeIds();
+  deletedIds.delete(publishedNotice.id);
+  saveDeletedNoticeIds(deletedIds);
   selectedPublishedId = publishedNotice.id;
   renderPublishedNotices();
+  updateApprovalState();
 }
 
 function renderPublishedNotices() {
   if (!adminPage.publishedList) return;
-  const notices = loadPublishedNotices();
+  const notices = getManageableNotices();
 
   adminPage.publishedCountChip.textContent = `${notices.length}개`;
   if (notices.length === 0) {
     adminPage.publishedList.innerHTML = "<p class=\"member-empty\">아직 공개된 공고가 없습니다.</p>";
     selectedPublishedId = "";
+    updateApprovalState();
     return;
+  }
+
+  if (!notices.some((notice) => notice.id === selectedPublishedId)) {
+    selectedPublishedId = "";
   }
 
   adminPage.publishedList.replaceChildren(
@@ -430,12 +540,13 @@ function renderPublishedNotices() {
       button.dataset.noticeId = notice.id;
       if (notice.id === selectedPublishedId) button.setAttribute("aria-current", "true");
       title.textContent = notice.title;
-      meta.textContent = `${notice.department} · ${notice.date}`;
+      meta.textContent = `${notice.department} · ${notice.date}${notice.isPublished ? "" : " · 기본 공고"}`;
       button.append(title, meta);
       button.addEventListener("click", () => selectPublishedNotice(notice.id));
       return button;
     }),
   );
+  updateApprovalState();
 }
 
 function formatFaqDraft(faqs) {
@@ -443,7 +554,7 @@ function formatFaqDraft(faqs) {
 }
 
 function selectPublishedNotice(noticeId) {
-  const notice = loadPublishedNotices().find((item) => item.id === noticeId);
+  const notice = getManageableNotices().find((item) => item.id === noticeId);
   if (!notice || currentRole !== "owner") return;
 
   selectedPublishedId = notice.id;
@@ -461,6 +572,7 @@ function selectPublishedNotice(noticeId) {
     checkbox.checked = true;
   });
   renderPublishedNotices();
+  updateApprovalState();
 }
 
 function handlePublishedSave() {
@@ -468,17 +580,25 @@ function handlePublishedSave() {
   const updatedNotice = buildPublishedNotice(currentDraftNotice);
   if (!updatedNotice) return;
 
-  const notices = loadPublishedNotices().map((notice) => (notice.id === selectedPublishedId ? updatedNotice : notice));
-  window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(notices));
+  const notices = loadPublishedNotices().filter((notice) => notice.id !== selectedPublishedId);
+  notices.unshift(updatedNotice);
+  savePublishedNotices(notices);
+  const deletedIds = loadDeletedNoticeIds();
+  deletedIds.delete(updatedNotice.id);
+  saveDeletedNoticeIds(deletedIds);
   adminPage.note.textContent = "공개된 공고 수정 사항을 저장했습니다.";
   adminPage.chip.textContent = "수정 저장됨";
   renderPublishedNotices();
+  updateApprovalState();
 }
 
 function handlePublishedDelete() {
   if (currentRole !== "owner" || !selectedPublishedId) return;
   const notices = loadPublishedNotices().filter((notice) => notice.id !== selectedPublishedId);
-  window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(notices));
+  savePublishedNotices(notices);
+  const deletedIds = loadDeletedNoticeIds();
+  deletedIds.add(selectedPublishedId);
+  saveDeletedNoticeIds(deletedIds);
   selectedPublishedId = "";
   currentDraftNotice = null;
   generatedDraftUrl = "";
@@ -494,6 +614,7 @@ function handlePublishedDelete() {
     checkbox.checked = false;
   });
   renderPublishedNotices();
+  updateApprovalState();
 }
 
 async function fetchNoticeMarkdown(url) {

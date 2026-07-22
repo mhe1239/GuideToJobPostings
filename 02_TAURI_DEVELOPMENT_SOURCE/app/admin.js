@@ -207,10 +207,11 @@ function renderMembers() {
 }
 
 function updateApprovalState() {
-  if (!adminPage.approveButton) return;
   const ready = adminPage.fields && !adminPage.fields.hidden;
   const checked = adminPage.checkboxes.every((checkbox) => checkbox.checked);
-  adminPage.approveButton.disabled = !(currentRole === "owner" && ready && checked);
+  if (adminPage.approveButton) {
+    adminPage.approveButton.disabled = !(currentRole === "owner" && ready && checked);
+  }
 
   const canManagePublished = currentRole === "owner" && Boolean(selectedPublishedId);
   if (adminPage.savePublishedButton) adminPage.savePublishedButton.disabled = !canManagePublished;
@@ -594,6 +595,11 @@ function handlePublishedSave() {
 
 function handlePublishedDelete() {
   if (currentRole !== "owner" || !selectedPublishedId) return;
+  const notice = getManageableNotices().find((item) => item.id === selectedPublishedId);
+  const title = notice?.title || "선택한 공고";
+  const confirmed = window.confirm(`"${title}" 공고를 삭제할까요?\n삭제하면 학생 페이지 목록과 상세 페이지에서 보이지 않습니다.`);
+  if (!confirmed) return;
+
   const notices = loadPublishedNotices().filter((notice) => notice.id !== selectedPublishedId);
   savePublishedNotices(notices);
   const deletedIds = loadDeletedNoticeIds();

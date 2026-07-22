@@ -13,7 +13,7 @@
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="./styles.css" />
     <script type="module" src="./firebase-config.js?v=20260722-url-reset"></script>
-    <script src="./admin.js?v=20260722-url-reset" defer></script>
+    <script src="./admin.js?v=20260722-admin-nav" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -29,7 +29,12 @@
             <span>관리자 콘솔</span>
           </span>
         </a>
-        <a class="auth-nav" href="./publish.html"><span aria-hidden="true"></span>AI 공고 공개</a>
+        <nav class="admin-nav" aria-label="관리자 메뉴">
+          <a class="auth-nav" href="./admin.html" aria-current="page"><span aria-hidden="true"></span>관리자 관리</a>
+          <a class="auth-nav" href="./publish.html"><span aria-hidden="true"></span>AI 공고 생성 및 공개</a>
+          <a class="auth-nav" href="./manage.html"><span aria-hidden="true"></span>공개된 공고 관리</a>
+          <button class="auth-nav logout-nav-button" id="admin-logout-button" type="button" disabled><span aria-hidden="true"></span>로그아웃</button>
+        </nav>
       </div>
     </header>
 
@@ -51,7 +56,6 @@
           </div>
           <div class="auth-actions">
             <a class="button primary" href="./login.html">Google 계정으로 로그인</a>
-            <button class="button secondary" id="admin-logout-button" type="button" disabled>로그아웃</button>
           </div>
           <div class="auth-state" id="admin-auth-state">
             <strong>로그아웃 상태</strong>

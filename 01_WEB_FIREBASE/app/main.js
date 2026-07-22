@@ -283,12 +283,12 @@ function renderNotice() {
   elements.factEligibility.textContent = activeNotice.facts.eligibility;
   elements.factField.textContent = activeNotice.facts.field;
   elements.sourceLineText.textContent = activeNotice.isPublished
-    ? "관리자가 검수 후 공개한 예시 답변입니다. 세부 내용은 공식 공고 원문과 함께 확인해 주세요."
-    : "공식 공고 내용을 바탕으로 준비한 예시 답변입니다. 실제 AI 답변이 아닙니다.";
+    ? "관리자가 검수 후 공개한 공고 초안입니다. 세부 내용은 공식 공고 원문과 함께 확인해 주세요."
+    : "공식 공고 내용을 확인해 작성한 답변입니다.";
   elements.answerSourceLink.href = activeNotice.sourceUrl;
   elements.departmentSourceLink.href = activeNotice.sourceUrl;
-  elements.departmentTitle.textContent = `${activeNotice.department}에 문의해 주세요`;
-  elements.departmentDescription.textContent = "FAQ와 예시 답변으로 해결되지 않은 문의를 담당합니다.";
+  elements.departmentTitle.textContent = `${activeNotice.department}으로 문의해 주세요`;
+  elements.departmentDescription.textContent = "FAQ와 답변으로 해결되지 않은 문의를 담당합니다.";
   elements.contactNote.textContent = `문의 시 “${activeNotice.title}” 공고를 확인했다고 말씀해 주세요.`;
 }
 
@@ -299,7 +299,7 @@ function renderFaqs() {
     const button = createElement("button", "faq-item");
     button.type = "button";
     button.dataset.faqId = faq.id;
-    button.setAttribute("aria-label", `${faq.question} 예시 답변 보기`);
+    button.setAttribute("aria-label", `${faq.question} 답변 보기`);
     button.append(
       createElement("span", "", `0${index + 1}`),
       createElement("strong", "", faq.question),
@@ -359,7 +359,7 @@ function showAnswer(question, result) {
   elements.answerCard.classList.remove("no-result");
   elements.answerCard.setAttribute("tabindex", "-1");
   elements.askedQuestion.textContent = question;
-  elements.answerTitle.textContent = "예시 답변";
+  elements.answerTitle.textContent = "답변";
   elements.answerCopy.textContent = result.answer;
   elements.answerSource.textContent = `${activeNotice.sourcePrefix} > ${result.source}`;
   elements.answerSourceLink.href = activeNotice.sourceUrl;
@@ -419,7 +419,7 @@ function handleQuestionSubmit(event) {
       showNoResult(question);
     }
   } catch (error) {
-    console.error("예시 답변 생성 실패", error);
+    console.error("답변 생성 실패", error);
     showNoResult(question);
   }
 }

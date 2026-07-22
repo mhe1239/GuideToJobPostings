@@ -132,6 +132,11 @@ let generatedDraftUrl = "";
 let currentDraftNotice = null;
 let selectedPublishedId = "";
 
+function setAdminNote(message) {
+  if (adminPage.note) adminPage.note.textContent = message;
+  if (adminPage.publishedNote) adminPage.publishedNote.textContent = message;
+}
+
 function loadManagedMembers() {
   try {
     return JSON.parse(window.localStorage.getItem("kangnamManagedMembers") || "[]");
@@ -568,7 +573,7 @@ function selectPublishedNotice(noticeId) {
   adminPage.faq.value = formatFaqDraft(notice.faqs || []);
   adminPage.evidence.value = `출처 URL: ${notice.sourceUrl}\n근거. 신청 기간: ${notice.facts?.period || "공식 공고 원문 확인"}\n근거. 지원 자격: ${notice.facts?.eligibility || "공식 공고 원문 확인"}\n근거. 신청/지원: ${notice.facts?.field || "공식 공고 원문 확인"}`;
   adminPage.chip.textContent = "수정 중";
-  adminPage.note.textContent = "공개된 공고를 불러왔습니다. 수정 후 저장하거나 삭제할 수 있습니다.";
+  setAdminNote("공개된 공고를 불러왔습니다. 수정 후 저장하거나 삭제할 수 있습니다.");
   adminPage.checkboxes.forEach((checkbox) => {
     checkbox.checked = true;
   });
@@ -587,7 +592,7 @@ function handlePublishedSave() {
   const deletedIds = loadDeletedNoticeIds();
   deletedIds.delete(updatedNotice.id);
   saveDeletedNoticeIds(deletedIds);
-  adminPage.note.textContent = "공개된 공고 수정 사항을 저장했습니다.";
+  setAdminNote("공개된 공고 수정 사항을 저장했습니다.");
   adminPage.chip.textContent = "수정 저장됨";
   renderPublishedNotices();
   updateApprovalState();
@@ -615,7 +620,7 @@ function handlePublishedDelete() {
   adminPage.faq.value = "";
   adminPage.evidence.value = "";
   adminPage.chip.textContent = "미생성";
-  adminPage.note.textContent = "공개된 공고를 삭제했습니다.";
+  setAdminNote("공개된 공고를 삭제했습니다.");
   adminPage.checkboxes.forEach((checkbox) => {
     checkbox.checked = false;
   });

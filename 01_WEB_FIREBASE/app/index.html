@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#173a67" />
-    <meta name="description" content="가상 공고와 FAQ로 학생 문의 흐름을 검증하는 1-Day 프로토타입" />
-    <title>강남대 공고 길잡이 — 비교과 프로그램 모집</title>
+    <meta name="description" content="강남대학교 공식 이미지 공고와 FAQ로 학생 문의 흐름을 검증하는 1-Day 프로토타입" />
+    <title>강남대 공고 길잡이 — 늘품 수습 임원 모집</title>
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="./styles.css" />
     <script src="./main.js" defer></script>
-    <script type="module" src="./firebase-config.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">본문으로 바로가기</a>
@@ -47,13 +46,13 @@
           <div class="hero-copy">
             <div class="label-row">
               <span class="status-badge"><span aria-hidden="true"></span> 모집 중</span>
-              <span class="virtual-badge">가상 공고</span>
+              <span class="virtual-badge">공식 공고 기반</span>
             </div>
-            <p class="section-label">비교과교육센터 · 공고 제2026-07호</p>
-            <h1 id="notice-title">2026학년도 비교과 프로그램 모집</h1>
+            <p class="section-label">입학전형관리팀 · 교내 공고 · 2026.07.20</p>
+            <h1 id="notice-title">입학처 공식 홍보대사 늘품 12기 2학기 수습 임원 모집</h1>
             <p class="hero-summary">
-              진로 탐색과 실무 역량 강화를 위한 여름학기 비교과 프로그램 참가자를 모집합니다.
-              아래 핵심 내용을 확인한 뒤 FAQ 또는 질문하기를 이용해 주세요.
+              강남대학교 입학처 공식 홍보대사 늘품의 2026학년도 2학기 수습 임원을 모집합니다.
+              공식 카드뉴스 공고의 핵심 내용을 확인한 뒤 FAQ 또는 질문하기를 이용해 주세요.
             </p>
           </div>
 
@@ -61,29 +60,29 @@
             <div>
               <dt>
                 <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
-                신청 기간
+                서류 접수
               </dt>
-              <dd>7월 20일(월)–7월 31일(금)</dd>
+              <dd>7월 20일(월)–8월 2일(일) 17:00</dd>
             </div>
             <div>
               <dt>
                 <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4.5 21a7.5 7.5 0 0 1 15 0" /></svg>
-                신청 대상
+                지원 대상
               </dt>
-              <dd>재학생 및 편입생 <span>· 휴학생 제외</span></dd>
+              <dd>강남대학교 재학생 및 편입생</dd>
             </div>
             <div>
               <dt>
                 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6V3Z" /><path d="M15 3v5h5M9 13h7M9 17h7" /></svg>
-                제출 서류
+                모집 분야
               </dt>
-              <dd>온라인 신청서, 재학증명서</dd>
+              <dd>기획국·대외홍보국·콘텐츠디자인국</dd>
             </div>
           </dl>
 
           <div class="source-line">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" /><path d="M12 11v6M12 7h.01" /></svg>
-            이 화면의 공고·연락처는 실제 개인정보가 아닌 프로토타입용 가상 데이터입니다.
+            공식 공고의 카드뉴스 이미지를 확인해 작성한 프로토타입입니다. 답변은 자동 AI·OCR 추출 결과가 아닌 미리 준비된 예시입니다.
           </div>
         </section>
 
@@ -135,12 +134,12 @@
                   name="question"
                   rows="4"
                   maxlength="200"
-                  placeholder="예: 휴학생도 신청 가능한가요?"
+                  placeholder="예: 편입생도 지원 가능한가요?"
                   aria-describedby="question-help question-error"
                   required
                 ></textarea>
                 <div class="input-meta">
-                  <span id="question-help">공고 신청 자격, 기간, 서류, 문의처를 물어보세요.</span>
+                  <span id="question-help">지원 자격, 접수 기간, 모집 분야, 활동 조건을 물어보세요.</span>
                   <span><span id="question-count">0</span>/200</span>
                 </div>
                 <p class="field-error" id="question-error" role="alert" hidden></p>
@@ -172,6 +171,17 @@
                   <div>
                     <span>공고문 출처</span>
                     <strong id="answer-source"></strong>
+                    <a
+                      class="source-link"
+                      id="answer-source-link"
+                      href="https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&amp;encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      공식 공고 원문·이미지 보기
+                      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 5h5v5M10 14 19 5M19 14v5H5V5h5" /></svg>
+                    </a>
+                    <small>강남대학교 홈페이지에서 새 창으로 열립니다.</small>
                   </div>
                 </div>
 
@@ -197,23 +207,23 @@
                 <svg viewBox="0 0 64 64"><path d="M10 25h44v31H10V25Z" /><path d="m6 25 26-16 26 16H6ZM18 25v31M30 25v31M46 25v31M6 56h52" /><path d="M26 40h12" /></svg>
               </div>
               <p class="section-label">해결되지 않은 경우</p>
-              <h2 id="department-title">비교과교육센터로 문의해 주세요</h2>
+              <h2 id="department-title">입학전형관리팀으로 문의해 주세요</h2>
               <p class="department-description">FAQ와 예시 답변으로 해결되지 않은 문의를 담당합니다.</p>
               <dl class="department-details">
                 <div>
                   <dt>담당 부서</dt>
-                  <dd>비교과교육센터 <span>· 가상 부서</span></dd>
+                  <dd>입학전형관리팀</dd>
                 </div>
                 <div>
-                  <dt>연락처</dt>
-                  <dd>031-000-0000 <span>· 가상 번호</span></dd>
+                  <dt>연락 방법</dt>
+                  <dd><a class="department-source-link" href="https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&amp;encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9" target="_blank" rel="noopener noreferrer">공식 공고의 문의처 확인</a></dd>
                 </div>
                 <div>
                   <dt>운영시간</dt>
-                  <dd>평일 09:00–17:00 <span>· 12:00–13:00 제외</span></dd>
+                  <dd>공고에 별도 안내 없음</dd>
                 </div>
               </dl>
-              <p class="contact-note">문의 시 “2026학년도 비교과 프로그램 모집 공고”를 확인했다고 말씀해 주세요.</p>
+              <p class="contact-note">문의 시 “늘품 12기 2학기 수습 임원 모집 공고”를 확인했다고 말씀해 주세요.</p>
             </section>
           </aside>
         </div>
@@ -248,7 +258,7 @@
             </article>
           </div>
           <div class="feedback-footer">
-            <span>가상 입력: “휴학생도 신청 가능한가요?”</span>
+            <span>검증 입력: “편입생도 지원 가능한가요?”</span>
             <span>기록 담당자: 팀원 ○○</span>
           </div>
         </section>
@@ -258,7 +268,7 @@
     <footer class="site-footer">
       <div>
         <strong>강남대학교 공고 길잡이</strong>
-        <span>학생 문의 경험 검증을 위한 가상 프로토타입</span>
+        <span>공식 공고 기반 학생 문의 경험 검증 프로토타입</span>
       </div>
     </footer>
   </body>

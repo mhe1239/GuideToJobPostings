@@ -41,6 +41,11 @@ const adminPage = {
   checkboxes: [...document.querySelectorAll(".approval-checkbox")],
   approveButton: document.querySelector("#approve-draft-button"),
   note: document.querySelector("#approval-note"),
+  publishedList: document.querySelector("#published-list"),
+  publishedCountChip: document.querySelector("#published-count-chip"),
+  publishedNote: document.querySelector("#published-note"),
+  savePublishedButton: document.querySelector("#save-published-button"),
+  deletePublishedButton: document.querySelector("#delete-published-button"),
 };
 
 let currentUser = null;
@@ -48,6 +53,7 @@ let currentRole = "viewer";
 let managedMembers = loadManagedMembers();
 let generatedDraftUrl = "";
 let currentDraftNotice = null;
+let selectedPublishedId = "";
 
 function loadManagedMembers() {
   try {
@@ -92,6 +98,7 @@ function updateAccess() {
   });
   renderAuthState();
   renderMembers();
+  renderPublishedNotices();
   updateApprovalState();
 }
 
@@ -127,6 +134,10 @@ function updateApprovalState() {
   const ready = adminPage.fields && !adminPage.fields.hidden;
   const checked = adminPage.checkboxes.every((checkbox) => checkbox.checked);
   adminPage.approveButton.disabled = !(currentRole === "owner" && ready && checked);
+
+  const canManagePublished = currentRole === "owner" && Boolean(selectedPublishedId);
+  if (adminPage.savePublishedButton) adminPage.savePublishedButton.disabled = !canManagePublished;
+  if (adminPage.deletePublishedButton) adminPage.deletePublishedButton.disabled = !canManagePublished;
 }
 
 function resetDraftForUrlChange() {
@@ -358,20 +369,20 @@ function loadPublishedNotices() {
   }
 }
 
-function savePublishedNotice() {
-  if (!currentDraftNotice) return;
-
+function buildPublishedNotice(baseNotice) {
+  if (!baseNotice) return null;
   const summary = adminPage.summary.value.trim();
   const faq = adminPage.faq.value.trim();
-  const sourceUrl = currentDraftNotice.sourceUrl;
-  const title = currentDraftNotice.title;
-  const publishedNotice = {
-    id: createNoticeId(title, sourceUrl),
+  const sourceUrl = baseNotice.sourceUrl;
+  const title = baseNotice.title;
+
+  return {
+    id: baseNotice.id || createNoticeId(title, sourceUrl),
     title,
-    category: "대학생활",
-    department: extractFactFromSummary(adminPage.evidence.value, "문의처", currentDraftNotice.sections.find((section) => section.key === "contact")?.text || "담당 부서 확인 필요"),
-    date: new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, ".").replace(/\.$/, ""),
-    status: "공개됨",
+    category: baseNotice.category || "대학생활",
+    department: extractFactFromSummary(adminPage.evidence.value, "문의처", baseNotice.sections?.find((section) => section.key === "contact")?.text || baseNotice.department || "담당 부서 확인 필요"),
+    date: baseNotice.date || new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, ".").replace(/\.$/, ""),
+    status: baseNotice.status || "공개됨",
     sourcePrefix: "관리자 검수 공고",
     sourceUrl,
     summary: summary || `${title} 공고입니다. 공식 원문과 관리자 검수 내용을 함께 확인해 주세요.`,
@@ -382,11 +393,107 @@ function savePublishedNotice() {
     },
     faqs: parseFaqDraft(faq),
     isPublished: true,
-    publishedAt: Date.now(),
+    publishedAt: baseNotice.publishedAt || Date.now(),
+    updatedAt: Date.now(),
   };
-  const notices = loadPublishedNotices().filter((notice) => notice.id !== publishedNotice.id && notice.sourceUrl !== sourceUrl);
+}
+
+function savePublishedNotice() {
+  const publishedNotice = buildPublishedNotice(currentDraftNotice);
+  if (!publishedNotice) return;
+
+  const notices = loadPublishedNotices().filter((notice) => notice.id !== publishedNotice.id && notice.sourceUrl !== publishedNotice.sourceUrl);
   notices.unshift(publishedNotice);
   window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(notices.slice(0, 20)));
+  selectedPublishedId = publishedNotice.id;
+  renderPublishedNotices();
+}
+
+function renderPublishedNotices() {
+  if (!adminPage.publishedList) return;
+  const notices = loadPublishedNotices();
+
+  adminPage.publishedCountChip.textContent = `${notices.length}개`;
+  if (notices.length === 0) {
+    adminPage.publishedList.innerHTML = "<p class=\"member-empty\">아직 공개된 공고가 없습니다.</p>";
+    selectedPublishedId = "";
+    return;
+  }
+
+  adminPage.publishedList.replaceChildren(
+    ...notices.map((notice) => {
+      const button = document.createElement("button");
+      const title = document.createElement("strong");
+      const meta = document.createElement("span");
+      button.type = "button";
+      button.className = "published-item";
+      button.dataset.noticeId = notice.id;
+      if (notice.id === selectedPublishedId) button.setAttribute("aria-current", "true");
+      title.textContent = notice.title;
+      meta.textContent = `${notice.department} · ${notice.date}`;
+      button.append(title, meta);
+      button.addEventListener("click", () => selectPublishedNotice(notice.id));
+      return button;
+    }),
+  );
+}
+
+function formatFaqDraft(faqs) {
+  return faqs.map((faq) => `Q. ${faq.question}\nA. ${faq.answer}`).join("\n\n");
+}
+
+function selectPublishedNotice(noticeId) {
+  const notice = loadPublishedNotices().find((item) => item.id === noticeId);
+  if (!notice || currentRole !== "owner") return;
+
+  selectedPublishedId = notice.id;
+  currentDraftNotice = notice;
+  generatedDraftUrl = notice.sourceUrl;
+  adminPage.urlInput.value = notice.sourceUrl;
+  adminPage.empty.hidden = true;
+  adminPage.fields.hidden = false;
+  adminPage.summary.value = notice.summary;
+  adminPage.faq.value = formatFaqDraft(notice.faqs || []);
+  adminPage.evidence.value = `출처 URL: ${notice.sourceUrl}\n근거. 신청 기간: ${notice.facts?.period || "공식 공고 원문 확인"}\n근거. 지원 자격: ${notice.facts?.eligibility || "공식 공고 원문 확인"}\n근거. 신청/지원: ${notice.facts?.field || "공식 공고 원문 확인"}`;
+  adminPage.chip.textContent = "수정 중";
+  adminPage.note.textContent = "공개된 공고를 불러왔습니다. 수정 후 저장하거나 삭제할 수 있습니다.";
+  adminPage.checkboxes.forEach((checkbox) => {
+    checkbox.checked = true;
+  });
+  renderPublishedNotices();
+}
+
+function handlePublishedSave() {
+  if (currentRole !== "owner" || !selectedPublishedId || !currentDraftNotice) return;
+  const updatedNotice = buildPublishedNotice(currentDraftNotice);
+  if (!updatedNotice) return;
+
+  const notices = loadPublishedNotices().map((notice) => (notice.id === selectedPublishedId ? updatedNotice : notice));
+  window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(notices));
+  adminPage.note.textContent = "공개된 공고 수정 사항을 저장했습니다.";
+  adminPage.chip.textContent = "수정 저장됨";
+  renderPublishedNotices();
+}
+
+function handlePublishedDelete() {
+  if (currentRole !== "owner" || !selectedPublishedId) return;
+  const notices = loadPublishedNotices().filter((notice) => notice.id !== selectedPublishedId);
+  window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(notices));
+  selectedPublishedId = "";
+  currentDraftNotice = null;
+  generatedDraftUrl = "";
+  adminPage.urlInput.value = "";
+  adminPage.empty.hidden = false;
+  adminPage.fields.hidden = true;
+  adminPage.summary.value = "";
+  adminPage.faq.value = "";
+  adminPage.evidence.value = "";
+  adminPage.chip.textContent = "미생성";
+  adminPage.note.textContent = "공개된 공고를 삭제했습니다.";
+  adminPage.checkboxes.forEach((checkbox) => {
+    checkbox.checked = false;
+  });
+  renderPublishedNotices();
 }
 
 async function fetchNoticeMarkdown(url) {
@@ -467,6 +574,8 @@ adminPage.logoutButton?.addEventListener("click", handleLogout);
 adminPage.memberForm?.addEventListener("submit", handleMemberSubmit);
 adminPage.form?.addEventListener("submit", handleDraftGeneration);
 adminPage.urlInput?.addEventListener("input", resetDraftForUrlChange);
+adminPage.savePublishedButton?.addEventListener("click", handlePublishedSave);
+adminPage.deletePublishedButton?.addEventListener("click", handlePublishedDelete);
 clearLegacyDefaultNoticeUrl();
 adminPage.checkboxes.forEach((checkbox) => checkbox.addEventListener("change", updateApprovalState));
 adminPage.approveButton?.addEventListener("click", handleDraftApproval);

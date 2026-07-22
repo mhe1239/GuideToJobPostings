@@ -849,6 +849,17 @@ button:disabled {
   border-color: #8fa3bc;
 }
 
+.button.danger {
+  color: var(--danger-700);
+  background: var(--danger-100);
+  border-color: #f0b8b8;
+}
+
+.button.danger:hover {
+  background: #f8d4d4;
+  border-color: #dc8f8f;
+}
+
 .submit-button {
   width: 100%;
   margin-top: 16px;
@@ -1455,6 +1466,55 @@ button:disabled {
 
 .draft-fields textarea {
   resize: vertical;
+}
+
+.published-panel {
+  grid-column: 1 / -1;
+}
+
+.published-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.published-item {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  text-align: left;
+  color: var(--ink);
+  background: var(--warm);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.published-item[aria-current="true"],
+.published-item:hover,
+.published-item:focus-visible {
+  border-color: var(--primary-700);
+  box-shadow: 0 8px 20px rgb(23 58 103 / 10%);
+}
+
+.published-item strong {
+  color: var(--primary-950);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.published-item span {
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+
+.published-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .approval-checks {

@@ -27,6 +27,14 @@ const DEFAULT_NOTICES = Object.freeze([
     date: "2026.07.16",
     status: "안내",
   },
+  {
+    id: "student-support-program-2026",
+    title: "2026학년도 대학생활 지원 비교과 프로그램 참여 안내",
+    category: "비교과 프로그램",
+    department: "학생지원 관련 부서",
+    date: "2026.07.15",
+    status: "모집 중",
+  },
 ]);
 
 const listElements = {
@@ -53,11 +61,16 @@ function createNoticeLink(notice) {
   link.className = "notice-list-item";
   link.href = `./notice.html?notice=${encodeURIComponent(notice.id)}`;
   link.innerHTML = `
-    <span></span>
+    <div class="notice-card-top">
+      <span class="notice-card-category"></span>
+      <span class="notice-card-status"></span>
+    </div>
     <strong></strong>
     <small></small>
+    <span class="notice-card-action">상세 FAQ 보기</span>
   `;
-  link.querySelector("span").textContent = `${notice.category} · ${notice.status}`;
+  link.querySelector(".notice-card-category").textContent = notice.category;
+  link.querySelector(".notice-card-status").textContent = notice.status;
   link.querySelector("strong").textContent = notice.title;
   link.querySelector("small").textContent = `${notice.department} · ${notice.date}`;
   return link;

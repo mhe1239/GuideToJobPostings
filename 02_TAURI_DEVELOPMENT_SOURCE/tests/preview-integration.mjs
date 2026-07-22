@@ -54,7 +54,7 @@ const listWindow = bootList();
 const listDocument = listWindow.document;
 
 assert.equal(listDocument.querySelector("#notice"), null, "공고 선택 화면에는 상세 공고 본문이 없어야 합니다.");
-assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 3, "공고 선택 화면에는 여러 공고가 표시되어야 합니다.");
+assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 4, "공고 선택 화면에는 여러 공고가 4열 카드로 표시되어야 합니다.");
 assert.match(listDocument.querySelector(".notice-list-item").href, /notice\.html\?notice=/, "공고 선택 시 별도 상세 페이지로 이동해야 합니다.");
 assert.match(document.querySelector("#notice-title").textContent, /늘품 12기 2학기 수습 임원 모집/, "공식 공고 제목이 표시되어야 합니다.");
 assert.equal(document.querySelector("#notice-list"), null, "상세 페이지에는 공고 선택 목록이 없어야 합니다.");

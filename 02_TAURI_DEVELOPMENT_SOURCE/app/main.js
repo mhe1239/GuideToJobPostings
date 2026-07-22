@@ -81,6 +81,27 @@ const DEFAULT_NOTICES = Object.freeze([
       { id: "contact", question: "문의는 어디로 하나요?", answer: "공식 공고의 문의처 또는 주관 기관 안내를 확인해 주세요.", source: "문의처" },
     ],
   },
+  {
+    id: "student-support-program-2026",
+    title: "2026학년도 대학생활 지원 비교과 프로그램 참여 안내",
+    category: "비교과 프로그램",
+    department: "학생지원 관련 부서",
+    date: "2026.07.15",
+    status: "모집 중",
+    sourcePrefix: "공식 공고 원문",
+    sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    summary: "대학생활 적응과 역량 강화를 돕는 비교과 프로그램 참여 안내 공고입니다. 신청 기간과 참여 방법은 공식 공고 원문 기준으로 확인해야 합니다.",
+    facts: {
+      period: "공식 공고 원문 확인",
+      eligibility: "강남대학교 재학생",
+      field: "대학생활 지원 비교과 프로그램",
+    },
+    faqs: [
+      { id: "period", question: "신청 기간은 언제인가요?", answer: "정확한 신청 기간은 공식 공고 원문에서 확인해야 합니다.", source: "신청 기간" },
+      { id: "eligibility", question: "누가 참여할 수 있나요?", answer: "강남대학교 재학생 대상 프로그램으로 안내됩니다. 세부 제한은 공식 공고 원문을 확인해 주세요.", source: "참여 대상" },
+      { id: "method", question: "신청 방법은 무엇인가요?", answer: "공식 공고 원문에 안내된 신청 경로를 확인해 주세요.", source: "신청 방법" },
+    ],
+  },
 ]);
 
 let notices = getPublishedNotices();

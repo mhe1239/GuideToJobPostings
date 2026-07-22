@@ -111,10 +111,10 @@ button:disabled {
 .site-header {
   position: relative;
   z-index: 10;
-  color: #fff;
-  background: linear-gradient(100deg, var(--primary-950), var(--primary-900));
-  border-bottom: 1px solid rgb(255 255 255 / 14%);
-  box-shadow: 0 8px 24px rgb(20 44 71 / 16%);
+  color: var(--primary-950);
+  background: rgb(255 255 255 / 96%);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgb(20 44 71 / 2%);
 }
 
 .header-inner,
@@ -170,10 +170,6 @@ button:disabled {
   font-weight: 650;
 }
 
-.site-header .brand-copy span {
-  color: #c7d6e5;
-}
-
 .prototype-label,
 .auth-nav {
   min-height: 44px;
@@ -206,25 +202,6 @@ button:disabled {
   border-color: #b9cad9;
 }
 
-.site-header .prototype-label,
-.site-header .auth-nav {
-  color: #edf5fc;
-  background: rgb(255 255 255 / 9%);
-  border-color: rgb(255 255 255 / 25%);
-}
-
-.site-header .prototype-label span,
-.site-header .auth-nav span {
-  background: #8fc7ef;
-  box-shadow: 0 0 0 3px rgb(143 199 239 / 16%);
-}
-
-.site-header .auth-nav:hover {
-  color: #fff;
-  background: rgb(255 255 255 / 15%);
-  border-color: rgb(255 255 255 / 44%);
-}
-
 .admin-nav {
   display: flex;
   flex-wrap: wrap;
@@ -236,12 +213,6 @@ button:disabled {
   color: var(--primary-950);
   background: var(--primary-100);
   border-color: #9eb4c8;
-}
-
-.site-header .admin-nav .auth-nav[aria-current="page"] {
-  color: #fff;
-  background: rgb(255 255 255 / 18%);
-  border-color: rgb(255 255 255 / 48%);
 }
 
 .logout-nav-button {

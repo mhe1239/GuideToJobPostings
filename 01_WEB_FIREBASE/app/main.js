@@ -288,6 +288,18 @@ renderFaqs();
 updateQuestionCount();
 
 const adminReview = {
+  authForm: document.querySelector("#auth-form"),
+  authEmail: document.querySelector("#auth-email"),
+  authPassword: document.querySelector("#auth-password"),
+  googleLoginButton: document.querySelector("#google-login-button"),
+  logoutButton: document.querySelector("#logout-button"),
+  authState: document.querySelector("#auth-state"),
+  roleCards: [...document.querySelectorAll("[data-role-card]")],
+  restrictedPanels: [...document.querySelectorAll("[data-requires-role]")],
+  memberList: document.querySelector("#member-list"),
+  memberForm: document.querySelector("#member-form"),
+  memberEmail: document.querySelector("#member-email"),
+  memberRole: document.querySelector("#member-role"),
   form: document.querySelector("#admin-ingest-form"),
   urlInput: document.querySelector("#official-notice-url"),
   generateButton: document.querySelector("#generate-draft-button"),
@@ -302,6 +314,22 @@ const adminReview = {
   approveButton: document.querySelector("#approve-draft-button"),
   note: document.querySelector("#approval-note"),
 };
+
+const ROLE_LABELS = Object.freeze({
+  owner: "관리자 관리 가능",
+  editor: "수정 및 공개 가능",
+  viewer: "보기만 가능",
+});
+
+const ROLE_RANK = Object.freeze({
+  viewer: 0,
+  editor: 1,
+  owner: 2,
+});
+
+let currentUser = null;
+let currentRole = "viewer";
+let managedMembers = loadManagedMembers();
 
 const CODEX_DRAFT = Object.freeze({
   summary:
@@ -320,11 +348,15 @@ function setReviewStatus(text, state) {
 function updateApprovalState() {
   const ready = adminReview.fields && !adminReview.fields.hidden;
   const checked = adminReview.checkboxes.every((checkbox) => checkbox.checked);
-  adminReview.approveButton.disabled = !(ready && checked);
+  adminReview.approveButton.disabled = !(ready && checked && can("editor"));
 }
 
 function handleDraftGeneration(event) {
   event.preventDefault();
+  if (!can("editor")) {
+    adminReview.note.textContent = "수정 및 공개 권한이 있는 계정으로 로그인해야 초안을 생성할 수 있습니다.";
+    return;
+  }
   setReviewStatus("Codex 분석 중", "working");
   adminReview.chip.textContent = "생성 중";
   adminReview.generateButton.disabled = true;
@@ -345,6 +377,7 @@ function handleDraftGeneration(event) {
 }
 
 function handleDraftApproval() {
+  if (!can("editor")) return;
   setReviewStatus("공개 승인 완료", "approved");
   adminReview.chip.textContent = "승인됨";
   adminReview.note.textContent = "승인된 초안은 학생용 FAQ와 답변 근거로 공개되는 상태입니다.";
@@ -352,8 +385,194 @@ function handleDraftApproval() {
   adminReview.approveButton.textContent = "승인 완료";
 }
 
+function can(requiredRole) {
+  return ROLE_RANK[currentRole] >= ROLE_RANK[requiredRole];
+}
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function loadManagedMembers() {
+  try {
+    return JSON.parse(window.localStorage.getItem("kangnamManagedMembers") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveManagedMembers() {
+  window.localStorage.setItem("kangnamManagedMembers", JSON.stringify(managedMembers));
+}
+
+function resolveRole(email) {
+  const normalized = normalizeEmail(email);
+  const firebase = window.KANGNAM_FIREBASE;
+  const roleLists = firebase?.roleLists ?? { owners: [], editors: [] };
+  const managed = managedMembers.find((member) => normalizeEmail(member.email) === normalized);
+
+  if (managed) return managed.role;
+  if (roleLists.owners.includes(normalized)) return "owner";
+  if (roleLists.editors.includes(normalized)) return "editor";
+  return "viewer";
+}
+
+function renderMembers() {
+  if (!adminReview.memberList) return;
+
+  const firebase = window.KANGNAM_FIREBASE;
+  const seededOwners = firebase?.roleLists?.owners ?? [];
+  const seededEditors = firebase?.roleLists?.editors ?? [];
+  const seeded = [
+    ...seededOwners.map((email) => ({ email, role: "owner", source: "env" })),
+    ...seededEditors.map((email) => ({ email, role: "editor", source: "env" })),
+  ];
+  const members = [...seeded, ...managedMembers];
+
+  if (members.length === 0) {
+    adminReview.memberList.innerHTML = "<p class=\"member-empty\">등록된 관리자 계정이 없습니다.</p>";
+    return;
+  }
+
+  adminReview.memberList.replaceChildren(
+    ...members.map((member) => {
+      const row = document.createElement("div");
+      const email = document.createElement("strong");
+      const role = document.createElement("span");
+      const source = document.createElement("small");
+      email.textContent = member.email;
+      role.textContent = ROLE_LABELS[member.role] || ROLE_LABELS.viewer;
+      source.textContent = member.source === "env" ? "env 고정" : "브라우저 저장";
+      row.append(email, role, source);
+      return row;
+    }),
+  );
+}
+
+function renderAuthState() {
+  const title = adminReview.authState?.querySelector("strong");
+  const subtitle = adminReview.authState?.querySelector("span");
+
+  if (!title || !subtitle) return;
+
+  if (!currentUser) {
+    title.textContent = "로그아웃 상태";
+    subtitle.textContent = "학생 보기 권한으로 공개된 공고와 FAQ만 볼 수 있습니다.";
+  } else {
+    title.textContent = `${currentUser.email} · ${ROLE_LABELS[currentRole]}`;
+    subtitle.textContent = currentRole === "owner"
+      ? "관리자 관리, 초안 수정, 학생 공개를 모두 사용할 수 있습니다."
+      : currentRole === "editor"
+        ? "초안 수정과 학생 공개를 사용할 수 있습니다."
+        : "학생 보기 권한입니다. 관리자 작업은 잠겨 있습니다.";
+  }
+
+  if (adminReview.logoutButton) adminReview.logoutButton.disabled = !currentUser;
+}
+
+function updateRoleAccess() {
+  adminReview.roleCards.forEach((card) => {
+    card.classList.toggle("active", card.dataset.roleCard === currentRole);
+  });
+
+  adminReview.restrictedPanels.forEach((panel) => {
+    const required = panel.dataset.requiresRole;
+    const allowed = can(required);
+    panel.classList.toggle("locked", !allowed);
+    panel.querySelectorAll("input, select, textarea, button").forEach((control) => {
+      control.disabled = !allowed;
+    });
+  });
+
+  renderAuthState();
+  renderMembers();
+  updateApprovalState();
+}
+
+function setAuthMessage(message) {
+  const subtitle = adminReview.authState?.querySelector("span");
+  if (subtitle) subtitle.textContent = message;
+}
+
+async function handleEmailLogin(event) {
+  event.preventDefault();
+  const firebase = window.KANGNAM_FIREBASE;
+  const email = adminReview.authEmail.value.trim();
+  const password = adminReview.authPassword.value;
+
+  if (!firebase) {
+    setAuthMessage("Firebase 설정을 불러오지 못했습니다. 배포 환경에서 다시 시도해 주세요.");
+    return;
+  }
+
+  try {
+    await firebase.signInWithEmailAndPassword(firebase.auth, email, password);
+  } catch (error) {
+    if (error.code === "auth/user-not-found" || error.code === "auth/invalid-credential") {
+      setAuthMessage("로그인 정보가 맞지 않습니다. Firebase Authentication에 등록된 계정인지 확인해 주세요.");
+    } else {
+      setAuthMessage(error.message);
+    }
+  }
+}
+
+async function handleGoogleLogin() {
+  const firebase = window.KANGNAM_FIREBASE;
+  if (!firebase) {
+    setAuthMessage("Firebase 설정을 불러오지 못했습니다. 배포 환경에서 다시 시도해 주세요.");
+    return;
+  }
+
+  try {
+    await firebase.signInWithPopup();
+  } catch (error) {
+    setAuthMessage(error.message);
+  }
+}
+
+async function handleLogout() {
+  const firebase = window.KANGNAM_FIREBASE;
+  if (firebase) await firebase.signOut();
+}
+
+function handleMemberSubmit(event) {
+  event.preventDefault();
+  if (!can("owner")) return;
+
+  const email = normalizeEmail(adminReview.memberEmail.value);
+  const role = adminReview.memberRole.value;
+  if (!email) return;
+
+  managedMembers = managedMembers.filter((member) => normalizeEmail(member.email) !== email);
+  managedMembers.push({ email, role });
+  saveManagedMembers();
+  adminReview.memberEmail.value = "";
+  renderMembers();
+}
+
+function initAuth() {
+  const firebase = window.KANGNAM_FIREBASE;
+  if (!firebase) {
+    setAuthMessage("Firebase Auth 설정을 기다리는 중입니다.");
+    updateRoleAccess();
+    return;
+  }
+
+  firebase.onAuthStateChanged(firebase.auth, (user) => {
+    currentUser = user;
+    currentRole = user ? resolveRole(user.email) : "viewer";
+    updateRoleAccess();
+  });
+}
+
 if (adminReview.form) {
+  adminReview.authForm.addEventListener("submit", handleEmailLogin);
+  adminReview.googleLoginButton.addEventListener("click", handleGoogleLogin);
+  adminReview.logoutButton.addEventListener("click", handleLogout);
+  adminReview.memberForm.addEventListener("submit", handleMemberSubmit);
   adminReview.form.addEventListener("submit", handleDraftGeneration);
   adminReview.checkboxes.forEach((checkbox) => checkbox.addEventListener("change", updateApprovalState));
   adminReview.approveButton.addEventListener("click", handleDraftApproval);
+  window.addEventListener("kangnam-firebase-ready", initAuth, { once: true });
+  initAuth();
 }

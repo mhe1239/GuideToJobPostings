@@ -1003,6 +1003,113 @@ button:disabled {
   background: var(--success-100);
 }
 
+.auth-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1fr) minmax(260px, 0.75fr);
+  gap: 16px;
+  align-items: center;
+  margin-top: 22px;
+  padding: 18px;
+  background: var(--primary-50);
+  border: 1px solid #d4e0ed;
+  border-radius: 12px;
+}
+
+.auth-panel h3 {
+  margin: 0;
+  color: var(--primary-950);
+  font-size: 18px;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+}
+
+.auth-copy {
+  margin: 7px 0 0;
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.auth-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.auth-form .button {
+  min-height: 42px;
+}
+
+.auth-state {
+  min-height: 82px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.auth-state strong {
+  color: var(--primary-950);
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.auth-state span {
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.role-card {
+  min-width: 0;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.role-card.active {
+  background: var(--primary-50);
+  border-color: var(--primary-800);
+  box-shadow: 0 0 0 3px rgb(37 99 169 / 8%);
+}
+
+.role-card span {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  color: var(--primary-800);
+  background: var(--primary-100);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.role-card h3 {
+  margin: 10px 0 5px;
+  color: var(--primary-950);
+  font-size: 15px;
+}
+
+.role-card p {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .review-flow {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1034,7 +1141,7 @@ button:disabled {
 
 .admin-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(280px, 0.8fr);
+  grid-template-columns: minmax(260px, 0.85fr) minmax(260px, 0.95fr) minmax(0, 1.15fr) minmax(280px, 0.8fr);
   gap: 14px;
   margin-top: 14px;
 }
@@ -1055,6 +1162,74 @@ button:disabled {
   font-weight: 900;
 }
 
+.admin-panel.locked {
+  position: relative;
+  background: #f3f6fa;
+}
+
+.admin-panel.locked::after {
+  content: "현재 권한에서는 사용할 수 없습니다";
+  position: absolute;
+  inset: auto 12px 12px;
+  padding: 8px 10px;
+  color: var(--ink-faint);
+  background: rgb(255 255 255 / 88%);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.member-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.member-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.member-list strong {
+  min-width: 0;
+  color: var(--primary-950);
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.member-list span {
+  color: var(--primary-800);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.member-list small {
+  grid-column: 1 / -1;
+  color: var(--ink-faint);
+  font-size: 10px;
+}
+
+.member-empty,
+.permission-note {
+  margin: 12px 0 0;
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.member-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .url-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1063,6 +1238,9 @@ button:disabled {
 }
 
 #official-notice-url,
+.auth-form input,
+.member-form input,
+.member-form select,
 .draft-fields textarea {
   width: 100%;
   min-width: 0;
@@ -1074,6 +1252,10 @@ button:disabled {
   font: inherit;
   font-size: 13px;
   line-height: 1.55;
+}
+
+.member-form select {
+  min-height: 42px;
 }
 
 #official-notice-help,
@@ -1397,12 +1579,18 @@ button:disabled {
   }
 
   .review-flow,
+  .role-grid,
   .admin-grid {
     grid-template-columns: 1fr 1fr;
   }
 
+  .draft-panel,
   .approval-panel {
     grid-column: 1 / -1;
+  }
+
+  .auth-panel {
+    grid-template-columns: 1fr;
   }
 
   .assistant-card {
@@ -1549,12 +1737,18 @@ button:disabled {
   }
 
   .review-flow,
+  .role-grid,
   .admin-grid {
     grid-template-columns: 1fr;
   }
 
+  .draft-panel,
   .approval-panel {
     grid-column: auto;
+  }
+
+  .auth-form {
+    grid-template-columns: 1fr;
   }
 
   .feedback-questions {

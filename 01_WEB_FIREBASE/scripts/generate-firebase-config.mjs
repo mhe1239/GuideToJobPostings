@@ -52,10 +52,25 @@ const firebaseConfig = {
 
 const output = `import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+import {
+  createUserWithEmailAndPassword,
+  getAuth,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = ${JSON.stringify(firebaseConfig, null, 2)};
+const roleLists = ${JSON.stringify({
+  owners: (env.FIREBASE_OWNER_EMAILS || "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean),
+  editors: (env.FIREBASE_EDITOR_EMAILS || "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean),
+}, null, 2)};
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
 isSupported()
   .then((supported) => {
@@ -63,7 +78,20 @@ isSupported()
   })
   .catch(() => {});
 
-export { app };
+window.KANGNAM_FIREBASE = {
+  app,
+  auth,
+  roleLists,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup: () => signInWithPopup(auth, googleProvider),
+  signOut: () => signOut(auth)
+};
+
+window.dispatchEvent(new CustomEvent("kangnam-firebase-ready"));
+
+export { app, auth };
 `;
 
 mkdirSync(resolve(root, "app"), { recursive: true });

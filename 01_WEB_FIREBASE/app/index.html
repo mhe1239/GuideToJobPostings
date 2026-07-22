@@ -12,6 +12,7 @@
     <link rel="apple-touch-icon" href="./assets/icons/128x128.png" />
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./firebase-config.js"></script>
     <script src="./main.js" defer></script>
   </head>
   <body>
@@ -240,6 +241,43 @@
             <span class="review-status" id="review-status">초안 대기</span>
           </div>
 
+          <section class="auth-panel" aria-labelledby="auth-title">
+            <div>
+              <p class="section-label">Firebase Authentication</p>
+              <h3 id="auth-title">로그인 후 역할에 맞는 작업만 사용할 수 있습니다</h3>
+              <p class="auth-copy">역할은 관리자, 편집자, 학생 보기로 나뉘며 실제 운영에서는 서버 권한 규칙으로 한 번 더 보호해야 합니다.</p>
+            </div>
+            <form class="auth-form" id="auth-form">
+              <input id="auth-email" type="email" autocomplete="email" placeholder="관리자 이메일" aria-label="관리자 이메일" />
+              <input id="auth-password" type="password" autocomplete="current-password" placeholder="비밀번호" aria-label="비밀번호" />
+              <button class="button primary" type="submit">이메일 로그인</button>
+              <button class="button secondary" id="google-login-button" type="button">Google 로그인</button>
+              <button class="button secondary" id="logout-button" type="button" disabled>로그아웃</button>
+            </form>
+            <div class="auth-state" id="auth-state">
+              <strong>로그아웃 상태</strong>
+              <span>로그인하지 않으면 학생 보기 권한으로 동작합니다.</span>
+            </div>
+          </section>
+
+          <div class="role-grid" aria-label="권한 단계">
+            <article class="role-card" data-role-card="owner">
+              <span>1</span>
+              <h3>관리자 관리</h3>
+              <p>관리자 역할을 수정하고, 공고 초안을 수정 및 학생에게 공개할 수 있습니다.</p>
+            </article>
+            <article class="role-card" data-role-card="editor">
+              <span>2</span>
+              <h3>수정 및 공개</h3>
+              <p>Codex AI 초안을 수정하고 검수 후 학생 페이지에 공개할 수 있습니다.</p>
+            </article>
+            <article class="role-card" data-role-card="viewer">
+              <span>3</span>
+              <h3>보기만 가능</h3>
+              <p>학생 권한으로 공개된 공고와 FAQ, 출처만 볼 수 있습니다.</p>
+            </article>
+          </div>
+
           <div class="review-flow" aria-label="관리자 공개 절차">
             <div>
               <span>01</span>
@@ -260,7 +298,25 @@
           </div>
 
           <div class="admin-grid">
-            <form class="admin-panel ingest-panel" id="admin-ingest-form">
+            <section class="admin-panel member-panel" aria-labelledby="member-title" data-requires-role="owner">
+              <div class="panel-title-row">
+                <h3 id="member-title">관리자 관리</h3>
+                <span class="draft-chip">Owner 전용</span>
+              </div>
+              <div class="member-list" id="member-list"></div>
+              <form class="member-form" id="member-form">
+                <input id="member-email" type="email" placeholder="user@kangnam.ac.kr" aria-label="추가할 사용자 이메일" />
+                <select id="member-role" aria-label="사용자 역할">
+                  <option value="editor">수정 및 공개 가능</option>
+                  <option value="owner">관리자 관리 가능</option>
+                  <option value="viewer">보기만 가능</option>
+                </select>
+                <button class="button secondary" type="submit">역할 추가</button>
+              </form>
+              <p class="permission-note">이 MVP에서는 역할 변경을 브라우저에 저장합니다. 운영 전환 시 custom claims 또는 Firestore Rules로 이전해야 합니다.</p>
+            </section>
+
+            <form class="admin-panel ingest-panel" id="admin-ingest-form" data-requires-role="editor">
               <label for="official-notice-url">공식 공고 URL</label>
               <div class="url-row">
                 <input
@@ -292,7 +348,7 @@
               </dl>
             </form>
 
-            <section class="admin-panel draft-panel" aria-labelledby="draft-title">
+            <section class="admin-panel draft-panel" aria-labelledby="draft-title" data-requires-role="editor">
               <div class="panel-title-row">
                 <h3 id="draft-title">Codex AI 생성 초안</h3>
                 <span class="draft-chip" id="draft-chip">미생성</span>
@@ -317,7 +373,7 @@
               </div>
             </section>
 
-            <section class="admin-panel approval-panel" aria-labelledby="approval-title">
+            <section class="admin-panel approval-panel" aria-labelledby="approval-title" data-requires-role="editor">
               <h3 id="approval-title">관리자 검수 체크</h3>
               <div class="approval-checks">
                 <label><input type="checkbox" class="approval-checkbox" /> 공식 링크와 공고 제목이 일치함</label>

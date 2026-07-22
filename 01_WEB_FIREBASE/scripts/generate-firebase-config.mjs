@@ -53,11 +53,9 @@ const firebaseConfig = {
 const output = `import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
 import {
-  createUserWithEmailAndPassword,
   getAuth,
   GoogleAuthProvider,
   onAuthStateChanged,
-  signInWithEmailAndPassword,
   signInWithPopup,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -82,9 +80,7 @@ window.KANGNAM_FIREBASE = {
   app,
   auth,
   roleLists,
-  createUserWithEmailAndPassword,
   onAuthStateChanged,
-  signInWithEmailAndPassword,
   signInWithPopup: () => signInWithPopup(auth, googleProvider),
   signOut: () => signOut(auth)
 };

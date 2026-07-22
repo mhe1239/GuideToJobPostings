@@ -31,10 +31,10 @@
             <span>공고 길잡이</span>
           </span>
         </a>
-        <div class="prototype-label" aria-label="프로토타입 상태">
+        <a class="auth-nav" id="header-auth-link" href="./login.html">
           <span aria-hidden="true"></span>
-          1-Day Prototype
-        </div>
+          Google 로그인
+        </a>
       </div>
     </header>
 
@@ -247,13 +247,10 @@
               <h3 id="auth-title">로그인 후 역할에 맞는 작업만 사용할 수 있습니다</h3>
               <p class="auth-copy">역할은 관리자, 편집자, 학생 보기로 나뉘며 실제 운영에서는 서버 권한 규칙으로 한 번 더 보호해야 합니다.</p>
             </div>
-            <form class="auth-form" id="auth-form">
-              <input id="auth-email" type="email" autocomplete="email" placeholder="관리자 이메일" aria-label="관리자 이메일" />
-              <input id="auth-password" type="password" autocomplete="current-password" placeholder="비밀번호" aria-label="비밀번호" />
-              <button class="button primary" type="submit">이메일 로그인</button>
-              <button class="button secondary" id="google-login-button" type="button">Google 로그인</button>
+            <div class="auth-actions">
+              <a class="button primary" id="google-login-button" href="./login.html">Google 계정으로 로그인</a>
               <button class="button secondary" id="logout-button" type="button" disabled>로그아웃</button>
-            </form>
+            </div>
             <div class="auth-state" id="auth-state">
               <strong>로그아웃 상태</strong>
               <span>로그인하지 않으면 학생 보기 권한으로 동작합니다.</span>

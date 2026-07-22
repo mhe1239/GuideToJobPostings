@@ -169,7 +169,8 @@ button:disabled {
   font-weight: 600;
 }
 
-.prototype-label {
+.prototype-label,
+.auth-nav {
   min-height: 34px;
   display: inline-flex;
   align-items: center;
@@ -181,14 +182,21 @@ button:disabled {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
+  text-decoration: none;
 }
 
-.prototype-label span {
+.prototype-label span,
+.auth-nav span {
   width: 7px;
   height: 7px;
   background: #86d5b2;
   border-radius: 50%;
   box-shadow: 0 0 0 3px rgb(134 213 178 / 16%);
+}
+
+.auth-nav:hover {
+  color: #fff;
+  border-color: rgb(255 255 255 / 36%);
 }
 
 .page-shell {
@@ -1030,13 +1038,13 @@ button:disabled {
   line-height: 1.55;
 }
 
-.auth-form {
+.auth-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 
-.auth-form .button {
+.auth-actions .button {
   min-height: 42px;
 }
 
@@ -1238,7 +1246,6 @@ button:disabled {
 }
 
 #official-notice-url,
-.auth-form input,
 .member-form input,
 .member-form select,
 .draft-fields textarea {
@@ -1372,6 +1379,134 @@ button:disabled {
 
 .approve-button {
   width: 100%;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(135deg, rgb(16 40 70 / 96%), rgb(25 71 117 / 90%)),
+    var(--primary-950);
+}
+
+.login-shell {
+  width: min(100% - 32px, 480px);
+  padding-block: 36px;
+}
+
+.login-card {
+  padding: 34px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.login-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--primary-950);
+  text-decoration: none;
+}
+
+.login-brand .brand-mark {
+  color: var(--primary-900);
+}
+
+.login-brand strong,
+.login-brand small {
+  display: block;
+}
+
+.login-brand strong {
+  font-size: 17px;
+}
+
+.login-brand small {
+  margin-top: 2px;
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+
+.login-copy {
+  margin-top: 34px;
+}
+
+.login-copy h1 {
+  margin: 0;
+  color: var(--primary-950);
+  font-size: 32px;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+}
+
+.login-copy p:last-child {
+  margin: 12px 0 0;
+  color: var(--ink-faint);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.google-login-card-button {
+  width: 100%;
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 26px;
+  color: var(--primary-950);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 900;
+  transition: transform 180ms ease-out, border-color 180ms ease-out, box-shadow 180ms ease-out;
+}
+
+.google-login-card-button:hover {
+  border-color: var(--primary-800);
+  box-shadow: 0 10px 24px rgb(16 40 70 / 12%);
+  transform: translateY(-1px);
+}
+
+.google-login-card-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+.login-state {
+  min-height: 72px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  margin-top: 18px;
+  padding: 13px 14px;
+  background: var(--primary-50);
+  border: 1px solid #d4e0ed;
+  border-radius: 12px;
+}
+
+.login-state strong {
+  color: var(--primary-950);
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.login-state span {
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.login-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .answer-actions {
@@ -1636,7 +1771,8 @@ button:disabled {
     font-size: 11px;
   }
 
-  .prototype-label {
+  .prototype-label,
+  .auth-nav {
     padding-inline: 9px;
     font-size: 10px;
   }
@@ -1747,7 +1883,19 @@ button:disabled {
     grid-column: auto;
   }
 
-  .auth-form {
+  .auth-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .login-card {
+    padding: 26px 22px;
+  }
+
+  .login-copy h1 {
+    font-size: 27px;
+  }
+
+  .login-actions {
     grid-template-columns: 1fr;
   }
 
@@ -1787,11 +1935,13 @@ button:disabled {
     height: 36px;
   }
 
-  .prototype-label span {
+  .prototype-label span,
+  .auth-nav span {
     display: none;
   }
 
-  .prototype-label {
+  .prototype-label,
+  .auth-nav {
     max-width: 82px;
     justify-content: center;
     text-align: center;

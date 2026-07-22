@@ -288,9 +288,7 @@ renderFaqs();
 updateQuestionCount();
 
 const adminReview = {
-  authForm: document.querySelector("#auth-form"),
-  authEmail: document.querySelector("#auth-email"),
-  authPassword: document.querySelector("#auth-password"),
+  headerAuthLink: document.querySelector("#header-auth-link"),
   googleLoginButton: document.querySelector("#google-login-button"),
   logoutButton: document.querySelector("#logout-button"),
   authState: document.querySelector("#auth-state"),
@@ -458,6 +456,7 @@ function renderAuthState() {
   if (!currentUser) {
     title.textContent = "로그아웃 상태";
     subtitle.textContent = "학생 보기 권한으로 공개된 공고와 FAQ만 볼 수 있습니다.";
+    if (adminReview.headerAuthLink) adminReview.headerAuthLink.lastChild.textContent = "Google 로그인";
   } else {
     title.textContent = `${currentUser.email} · ${ROLE_LABELS[currentRole]}`;
     subtitle.textContent = currentRole === "owner"
@@ -465,6 +464,7 @@ function renderAuthState() {
       : currentRole === "editor"
         ? "초안 수정과 학생 공개를 사용할 수 있습니다."
         : "학생 보기 권한입니다. 관리자 작업은 잠겨 있습니다.";
+    if (adminReview.headerAuthLink) adminReview.headerAuthLink.lastChild.textContent = "내 계정";
   }
 
   if (adminReview.logoutButton) adminReview.logoutButton.disabled = !currentUser;
@@ -492,42 +492,6 @@ function updateRoleAccess() {
 function setAuthMessage(message) {
   const subtitle = adminReview.authState?.querySelector("span");
   if (subtitle) subtitle.textContent = message;
-}
-
-async function handleEmailLogin(event) {
-  event.preventDefault();
-  const firebase = window.KANGNAM_FIREBASE;
-  const email = adminReview.authEmail.value.trim();
-  const password = adminReview.authPassword.value;
-
-  if (!firebase) {
-    setAuthMessage("Firebase 설정을 불러오지 못했습니다. 배포 환경에서 다시 시도해 주세요.");
-    return;
-  }
-
-  try {
-    await firebase.signInWithEmailAndPassword(firebase.auth, email, password);
-  } catch (error) {
-    if (error.code === "auth/user-not-found" || error.code === "auth/invalid-credential") {
-      setAuthMessage("로그인 정보가 맞지 않습니다. Firebase Authentication에 등록된 계정인지 확인해 주세요.");
-    } else {
-      setAuthMessage(error.message);
-    }
-  }
-}
-
-async function handleGoogleLogin() {
-  const firebase = window.KANGNAM_FIREBASE;
-  if (!firebase) {
-    setAuthMessage("Firebase 설정을 불러오지 못했습니다. 배포 환경에서 다시 시도해 주세요.");
-    return;
-  }
-
-  try {
-    await firebase.signInWithPopup();
-  } catch (error) {
-    setAuthMessage(error.message);
-  }
 }
 
 async function handleLogout() {
@@ -566,8 +530,6 @@ function initAuth() {
 }
 
 if (adminReview.form) {
-  adminReview.authForm.addEventListener("submit", handleEmailLogin);
-  adminReview.googleLoginButton.addEventListener("click", handleGoogleLogin);
   adminReview.logoutButton.addEventListener("click", handleLogout);
   adminReview.memberForm.addEventListener("submit", handleMemberSubmit);
   adminReview.form.addEventListener("submit", handleDraftGeneration);

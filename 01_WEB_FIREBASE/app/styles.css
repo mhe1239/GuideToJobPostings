@@ -278,6 +278,32 @@ button:disabled {
   stroke-width: 1.6;
 }
 
+.notice-list-back {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  color: var(--primary-800);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 180ms ease-out, background-color 180ms ease-out, border-color 180ms ease-out;
+}
+
+.notice-list-back:hover {
+  color: var(--primary-950);
+  background: var(--primary-50);
+  border-color: #9eb4c8;
+}
+
+.notice-list-back svg {
+  width: 16px;
+  height: 16px;
+}
+
 .notice-hero {
   position: relative;
   overflow: hidden;
@@ -286,7 +312,6 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  border-top: 4px solid var(--primary-900);
 }
 
 .notice-hero::after {

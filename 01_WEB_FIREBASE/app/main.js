@@ -1,79 +1,92 @@
 "use strict";
 
-const SAMPLE_NOTICE = Object.freeze({
-  title: "입학처 공식 홍보대사 늘품 12기 2학기 수습 임원 모집",
-  department: "입학전형관리팀",
-  sourcePrefix: "공식 공고 카드뉴스",
-});
+const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 
-const FAQS = Object.freeze([
+const DEFAULT_NOTICES = Object.freeze([
   {
-    id: "application-period",
-    question: "서류 접수 기간은 언제인가요?",
-    answer: "1차 서류 접수는 7월 20일(월)부터 8월 2일(일) 오후 5시까지입니다.",
-    source: "모집 일정 > 1차 서류 접수",
+    id: "neulpum-2026",
+    title: "입학처 공식 홍보대사 늘품 12기 2학기 수습 임원 모집",
+    category: "비교과 프로그램",
+    department: "입학전형관리팀",
+    date: "2026.07.20",
+    status: "모집 중",
+    sourcePrefix: "공식 공고 카드뉴스",
+    sourceUrl: "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9",
+    summary: "강남대학교 입학처 공식 홍보대사 늘품의 2026학년도 2학기 수습 임원을 모집합니다. 공식 카드뉴스 공고의 핵심 내용을 확인한 뒤 FAQ 또는 질문하기를 이용해 주세요.",
+    facts: {
+      period: "7월 20일(월)–8월 2일(일) 17:00",
+      eligibility: "강남대학교 재학생 및 편입생",
+      field: "기획국·대외홍보국·콘텐츠디자인국",
+    },
+    faqs: [
+      {
+        id: "application-period",
+        question: "서류 접수 기간은 언제인가요?",
+        answer: "1차 서류 접수는 7월 20일(월)부터 8월 2일(일) 오후 5시까지입니다.",
+        source: "모집 일정 > 1차 서류 접수",
+      },
+      {
+        id: "eligibility",
+        question: "지원 자격은 무엇인가요?",
+        answer: "강남대학교 재학생 및 편입생이 지원할 수 있습니다. 2026년 8월부터 한 학기 이상 연속 활동이 가능해야 합니다.",
+        source: "지원 자격",
+      },
+      {
+        id: "recruitment-fields",
+        question: "어떤 분야를 모집하나요?",
+        answer: "기획국 1명, 대외홍보국 2명, 콘텐츠디자인국 2명을 모집합니다. 콘텐츠디자인국은 영상 편집 가능자를 우대합니다.",
+        source: "모집 분야 및 인원",
+      },
+    ],
   },
   {
-    id: "eligibility",
-    question: "지원 자격은 무엇인가요?",
-    answer: "강남대학교 재학생 및 편입생이 지원할 수 있습니다. 2026년 8월부터 한 학기 이상 연속 활동이 가능해야 합니다.",
-    source: "지원 자격",
+    id: "internet-counselor-2026",
+    title: "[한국지능정보사회진흥원] 2026년도 제12회 인터넷중독전문상담사 자격검정 시행",
+    category: "대학생활",
+    department: "학생지원 관련 부서",
+    date: "2026.07.20",
+    status: "안내",
+    sourcePrefix: "공식 공고 원문",
+    sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    summary: "외부 기관 자격검정 시행 안내 공고입니다. 신청 기간, 응시 자격, 접수 방법은 공식 공고 원문에서 확인해야 합니다.",
+    facts: {
+      period: "공식 공고 원문 확인",
+      eligibility: "자격검정 응시 희망자",
+      field: "인터넷중독전문상담사",
+    },
+    faqs: [
+      { id: "period", question: "신청 기간은 어디서 확인하나요?", answer: "정확한 신청 기간은 공식 공고 원문에서 확인해야 합니다.", source: "공식 공고 원문" },
+      { id: "eligibility", question: "누가 신청할 수 있나요?", answer: "응시 자격은 자격검정 시행 안내의 지원 자격 항목을 확인해 주세요.", source: "응시 자격" },
+      { id: "contact", question: "문의는 어디로 하나요?", answer: "공식 공고에 안내된 담당 기관 또는 담당 부서로 문의해 주세요.", source: "문의처" },
+    ],
   },
   {
-    id: "recruitment-fields",
-    question: "어떤 분야를 모집하나요?",
-    answer: "기획국 1명, 대외홍보국 2명, 콘텐츠디자인국 2명을 모집합니다. 콘텐츠디자인국은 영상 편집 가능자를 우대합니다.",
-    source: "모집 분야 및 인원",
+    id: "jazz-concert-2026",
+    title: "[수원시립미술관] 7월 문화가 있는 날 재즈 콘서트 개최",
+    category: "대학생활",
+    department: "학생지원 관련 부서",
+    date: "2026.07.16",
+    status: "안내",
+    sourcePrefix: "공식 공고 원문",
+    sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    summary: "외부 문화 행사 참여 안내 공고입니다. 일정, 장소, 참여 방법은 공식 공고 원문을 기준으로 확인해야 합니다.",
+    facts: {
+      period: "7월 문화가 있는 날",
+      eligibility: "관심 있는 학생",
+      field: "재즈 콘서트",
+    },
+    faqs: [
+      { id: "schedule", question: "행사 일정은 언제인가요?", answer: "공고 제목상 7월 문화가 있는 날 행사이며, 정확한 시간은 공식 공고 원문에서 확인해야 합니다.", source: "행사 일정" },
+      { id: "method", question: "참여 방법은 무엇인가요?", answer: "참여 또는 예매 방법은 공식 공고 원문에 안내된 절차를 확인해 주세요.", source: "참여 방법" },
+      { id: "contact", question: "문의는 어디로 하나요?", answer: "공식 공고의 문의처 또는 주관 기관 안내를 확인해 주세요.", source: "문의처" },
+    ],
   },
 ]);
 
-const ANSWER_RULES = Object.freeze([
-  {
-    keywords: ["휴학생", "휴학"],
-    answer: "공고에는 지원 자격이 재학생 및 편입생으로 안내되어 있습니다. 휴학생 지원 가능 여부는 공식 공고의 문의처를 통해 추가로 확인해 주세요.",
-    source: "지원 자격",
-  },
-  {
-    keywords: ["편입생", "편입"],
-    answer: "편입생은 지원할 수 있습니다. 공고의 다른 활동 조건도 함께 확인해 주세요.",
-    source: "지원 자격",
-  },
-  {
-    keywords: ["신청기간", "신청일", "기간", "언제", "마감"],
-    answer: FAQS[0].answer,
-    source: FAQS[0].source,
-  },
-  {
-    keywords: ["지원자격", "자격", "대상", "재학생", "연속활동"],
-    answer: FAQS[1].answer,
-    source: FAQS[1].source,
-  },
-  {
-    keywords: ["모집분야", "분야", "기획국", "홍보국", "콘텐츠", "디자인", "인원"],
-    answer: FAQS[2].answer,
-    source: FAQS[2].source,
-  },
-  {
-    keywords: ["회의", "정기회의", "활동시간", "월요일"],
-    answer: "학기 중 정기회의는 매주 월요일 17시 40분, 방학 중 정기회의는 격주 월요일 12시입니다. 정기회의 참석이 가능해야 합니다.",
-    source: "지원 자격 > 정기회의 참석 조건",
-  },
-  {
-    keywords: ["학생회", "중복활동", "겸직"],
-    answer: "학생회 활동과 병행할 수 없습니다.",
-    source: "지원 자격 > 활동 제한",
-  },
-  {
-    keywords: ["지원방법", "신청방법", "어떻게", "qr", "큐알"],
-    answer: "카드뉴스 하단 QR 코드로 신청서를 작성해 제출합니다. 정확한 신청 경로는 공식 공고 원문 링크에서 확인해 주세요.",
-    source: "지원 방법",
-  },
-  {
-    keywords: ["문의처", "문의", "연락처", "전화", "담당부서"],
-    answer: "담당 부서는 입학전형관리팀입니다. 개인정보 보호를 위해 연락처는 앱에 복사하지 않았으니 공식 공고의 문의처를 확인해 주세요.",
-    source: "공고 등록 부서 및 문의처",
-  },
-]);
+let notices = getPublishedNotices();
+let activeNotice = getInitialNotice();
+let FAQS = activeNotice.faqs;
+let ANSWER_RULES = buildAnswerRules(activeNotice);
 
 const elements = {
   faqList: document.querySelector("#faq-list"),
@@ -96,6 +109,21 @@ const elements = {
   departmentBackButton: document.querySelector("#department-back-button"),
   departmentTitle: document.querySelector("#department-title"),
   notice: document.querySelector("#notice"),
+  noticeList: document.querySelector("#notice-list"),
+  noticeCountLabel: document.querySelector("#notice-count-label"),
+  breadcrumbCategory: document.querySelector("#breadcrumb-category"),
+  noticeMeta: document.querySelector("#notice-meta"),
+  noticeTitle: document.querySelector("#notice-title"),
+  heroSummary: document.querySelector(".hero-summary"),
+  statusBadge: document.querySelector(".status-badge"),
+  factPeriod: document.querySelector("#fact-period"),
+  factEligibility: document.querySelector("#fact-eligibility"),
+  factField: document.querySelector("#fact-field"),
+  sourceLineText: document.querySelector("#source-line-text"),
+  answerSourceLink: document.querySelector("#answer-source-link"),
+  departmentSourceLink: document.querySelector(".department-source-link"),
+  departmentDescription: document.querySelector(".department-description"),
+  contactNote: document.querySelector(".contact-note"),
 };
 
 function createElement(tagName, className, text) {
@@ -114,6 +142,124 @@ function createArrowIcon() {
   path.setAttribute("d", "M5 12h14M13 6l6 6-6 6");
   svg.append(path);
   return svg;
+}
+
+function getPublishedNotices() {
+  let stored = [];
+  try {
+    stored = JSON.parse(window.localStorage.getItem(PUBLISHED_NOTICES_KEY) || "[]");
+  } catch {
+    stored = [];
+  }
+
+  const merged = [...stored, ...DEFAULT_NOTICES];
+  return merged.filter((notice, index, list) => list.findIndex((item) => item.id === notice.id) === index);
+}
+
+function getInitialNotice() {
+  const selectedId = new URLSearchParams(window.location.search).get("notice");
+  return notices.find((notice) => notice.id === selectedId) || notices[0];
+}
+
+function buildAnswerRules(notice) {
+  const faqRules = notice.faqs.map((faq) => ({
+    keywords: faq.question.split(/[\s?.,·~()[\]{}'"“”‘’_-]+/).filter((word) => word.length >= 2),
+    answer: faq.answer,
+    source: faq.source,
+  }));
+
+  return [
+    {
+      keywords: ["편입생", "편입"],
+      answer: notice.facts.eligibility.includes("편입생")
+        ? "편입생은 지원할 수 있습니다. 공고의 다른 활동 조건도 함께 확인해 주세요."
+        : notice.facts.eligibility,
+      source: "지원 자격",
+    },
+    {
+      keywords: ["휴학생", "휴학"],
+      answer: "휴학생 지원 가능 여부는 공식 공고의 지원 자격과 문의처를 통해 추가로 확인해 주세요.",
+      source: "지원 자격",
+    },
+    ...faqRules,
+    {
+      keywords: ["신청기간", "신청일", "기간", "언제", "마감", "일정"],
+      answer: notice.facts.period,
+      source: "핵심 정보 > 신청 기간",
+    },
+    {
+      keywords: ["지원자격", "자격", "대상", "재학생", "편입생", "휴학생"],
+      answer: notice.facts.eligibility,
+      source: "핵심 정보 > 지원 대상",
+    },
+    {
+      keywords: ["모집분야", "분야", "인원", "프로그램", "행사"],
+      answer: notice.facts.field,
+      source: "핵심 정보 > 모집 분야",
+    },
+    {
+      keywords: ["문의처", "문의", "연락처", "전화", "담당부서"],
+      answer: `담당 부서는 ${notice.department}입니다. 정확한 연락처는 공식 공고 원문에서 확인해 주세요.`,
+      source: "공고 등록 부서 및 문의처",
+    },
+  ];
+}
+
+function renderNoticeList() {
+  if (!elements.noticeList) return;
+
+  elements.noticeCountLabel.textContent = `${notices.length}개`;
+  elements.noticeList.replaceChildren(
+    ...notices.map((notice) => {
+      const link = document.createElement("a");
+      link.className = "notice-list-item";
+      link.href = `./index.html?notice=${encodeURIComponent(notice.id)}`;
+      if (notice.id === activeNotice.id) link.setAttribute("aria-current", "true");
+      link.innerHTML = `
+        <span>${notice.category}</span>
+        <strong></strong>
+        <small>${notice.department} · ${notice.date}</small>
+      `;
+      link.querySelector("strong").textContent = notice.title;
+      return link;
+    }),
+  );
+}
+
+function selectNotice(noticeId) {
+  const nextNotice = notices.find((notice) => notice.id === noticeId);
+  if (!nextNotice) return;
+
+  activeNotice = nextNotice;
+  FAQS = activeNotice.faqs;
+  ANSWER_RULES = buildAnswerRules(activeNotice);
+  window.history.replaceState({}, "", `./index.html?notice=${encodeURIComponent(activeNotice.id)}`);
+  renderNotice();
+  renderNoticeList();
+  renderFaqs();
+  resetQuestion();
+  elements.notice.focus({ preventScroll: true });
+  elements.notice.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderNotice() {
+  document.title = `강남대 공고 길잡이 — ${activeNotice.title}`;
+  elements.breadcrumbCategory.textContent = activeNotice.category;
+  elements.noticeMeta.textContent = `${activeNotice.department} · ${activeNotice.category} · ${activeNotice.date}`;
+  elements.noticeTitle.textContent = activeNotice.title;
+  elements.heroSummary.textContent = activeNotice.summary;
+  elements.statusBadge.lastChild.textContent = ` ${activeNotice.status}`;
+  elements.factPeriod.textContent = activeNotice.facts.period;
+  elements.factEligibility.textContent = activeNotice.facts.eligibility;
+  elements.factField.textContent = activeNotice.facts.field;
+  elements.sourceLineText.textContent = activeNotice.isPublished
+    ? "관리자가 검수 후 공개한 공고 초안입니다. 세부 내용은 공식 공고 원문과 함께 확인해 주세요."
+    : "공식 공고 내용을 확인해 작성한 프로토타입입니다. 답변은 자동 AI·OCR 추출 결과가 아닌 미리 준비된 예시입니다.";
+  elements.answerSourceLink.href = activeNotice.sourceUrl;
+  elements.departmentSourceLink.href = activeNotice.sourceUrl;
+  elements.departmentTitle.textContent = `${activeNotice.department}으로 문의해 주세요`;
+  elements.departmentDescription.textContent = "FAQ와 예시 답변으로 해결되지 않은 문의를 담당합니다.";
+  elements.contactNote.textContent = `문의 시 “${activeNotice.title}” 공고를 확인했다고 말씀해 주세요.`;
 }
 
 function renderFaqs() {
@@ -185,7 +331,8 @@ function showAnswer(question, result) {
   elements.askedQuestion.textContent = question;
   elements.answerTitle.textContent = "예시 답변";
   elements.answerCopy.textContent = result.answer;
-  elements.answerSource.textContent = `${SAMPLE_NOTICE.sourcePrefix} > ${result.source}`;
+  elements.answerSource.textContent = `${activeNotice.sourcePrefix} > ${result.source}`;
+  elements.answerSourceLink.href = activeNotice.sourceUrl;
   elements.answerState.textContent = "답변 찾음";
   elements.evidenceCard.hidden = false;
   focusResultOnSmallScreen();
@@ -284,6 +431,8 @@ elements.retryButton.addEventListener("click", resetQuestion);
 elements.departmentButton.addEventListener("click", showDepartment);
 elements.departmentBackButton.addEventListener("click", returnToNotice);
 
+renderNotice();
+renderNoticeList();
 renderFaqs();
 updateQuestionCount();
 

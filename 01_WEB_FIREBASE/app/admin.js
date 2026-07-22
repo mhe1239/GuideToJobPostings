@@ -8,6 +8,7 @@ const ROLE_LABELS = Object.freeze({
 
 const READER_ENDPOINT = "https://r.jina.ai/http://r.jina.ai/http://";
 const MAX_NOTICE_CHARS = 9000;
+const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const LEGACY_DEFAULT_NOTICE_URL =
   "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9";
 
@@ -46,6 +47,7 @@ let currentUser = null;
 let currentRole = "viewer";
 let managedMembers = loadManagedMembers();
 let generatedDraftUrl = "";
+let currentDraftNotice = null;
 
 function loadManagedMembers() {
   try {
@@ -287,6 +289,7 @@ function createDraftFromNotice(notice) {
     : "이미지 공고 후보는 감지되지 않았습니다.";
 
   return {
+    notice,
     summary:
       `${notice.title} 공고입니다.\n` +
       `- 핵심 일정: ${fallbackText("신청 기간", period)}\n` +
@@ -307,6 +310,83 @@ function createDraftFromNotice(notice) {
       (notice.images.length > 0 ? `\n이미지/첨부 후보:\n${notice.images.map((url) => `- ${url}`).join("\n")}` : "") +
       `\n\n원문 추출 일부:\n${notice.bodyPreview.slice(0, 1200)}`,
   };
+}
+
+function createNoticeId(title, sourceUrl) {
+  const slug = `${title}-${sourceUrl}`
+    .toLocaleLowerCase("ko-KR")
+    .replace(/https?:\/\//g, "")
+    .replace(/[^a-z0-9가-힣]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 70);
+  return `published-${slug || Date.now()}`;
+}
+
+function parseFaqDraft(text) {
+  const blocks = text.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+  const faqs = blocks.map((block, index) => {
+    const question = block.match(/^Q\.\s*(.+)$/m)?.[1]?.trim() || `질문 ${index + 1}`;
+    const answer = block.match(/^A\.\s*([\s\S]+)$/m)?.[1]?.trim() || "관리자 검수 후 답변을 입력해 주세요.";
+    return {
+      id: `published-faq-${index + 1}`,
+      question,
+      answer,
+      source: "관리자 검수 초안",
+    };
+  });
+
+  return faqs.length > 0 ? faqs : [
+    {
+      id: "published-faq-1",
+      question: "공고 내용을 어디서 확인하나요?",
+      answer: "공식 공고 원문과 관리자 검수 초안을 함께 확인해 주세요.",
+      source: "관리자 검수 초안",
+    },
+  ];
+}
+
+function extractFactFromSummary(summary, label, fallback) {
+  const match = summary.match(new RegExp(`- ${label}:\\s*(.+)`));
+  return match?.[1]?.trim() || fallback;
+}
+
+function loadPublishedNotices() {
+  try {
+    return JSON.parse(window.localStorage.getItem(PUBLISHED_NOTICES_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function savePublishedNotice() {
+  if (!currentDraftNotice) return;
+
+  const summary = adminPage.summary.value.trim();
+  const faq = adminPage.faq.value.trim();
+  const sourceUrl = currentDraftNotice.sourceUrl;
+  const title = currentDraftNotice.title;
+  const publishedNotice = {
+    id: createNoticeId(title, sourceUrl),
+    title,
+    category: "대학생활",
+    department: extractFactFromSummary(adminPage.evidence.value, "문의처", currentDraftNotice.sections.find((section) => section.key === "contact")?.text || "담당 부서 확인 필요"),
+    date: new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, ".").replace(/\.$/, ""),
+    status: "공개됨",
+    sourcePrefix: "관리자 검수 공고",
+    sourceUrl,
+    summary: summary || `${title} 공고입니다. 공식 원문과 관리자 검수 내용을 함께 확인해 주세요.`,
+    facts: {
+      period: extractFactFromSummary(summary, "핵심 일정", "공식 공고 원문 확인"),
+      eligibility: extractFactFromSummary(summary, "대상/자격", "공식 공고 원문 확인"),
+      field: extractFactFromSummary(summary, "신청/지원", "공식 공고 원문 확인"),
+    },
+    faqs: parseFaqDraft(faq),
+    isPublished: true,
+    publishedAt: Date.now(),
+  };
+  const notices = loadPublishedNotices().filter((notice) => notice.id !== publishedNotice.id && notice.sourceUrl !== sourceUrl);
+  notices.unshift(publishedNotice);
+  window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(notices.slice(0, 20)));
 }
 
 async function fetchNoticeMarkdown(url) {
@@ -336,6 +416,7 @@ async function handleDraftGeneration(event) {
     const markdown = await fetchNoticeMarkdown(sourceUrl);
     const notice = analyzeNotice(markdown, sourceUrl);
     const draft = createDraftFromNotice(notice);
+    currentDraftNotice = notice;
 
     adminPage.empty.hidden = true;
     adminPage.fields.hidden = false;
@@ -356,8 +437,9 @@ async function handleDraftGeneration(event) {
 
 function handleDraftApproval() {
   if (currentRole !== "owner") return;
+  savePublishedNotice();
   adminPage.chip.textContent = "공개됨";
-  adminPage.note.textContent = "승인된 초안이 학생 페이지에 공개되는 상태입니다.";
+  adminPage.note.textContent = "승인된 초안이 학생 페이지 목록에 공개되었습니다. 학생 페이지에서 선택해 확인할 수 있습니다.";
   adminPage.approveButton.disabled = true;
   adminPage.approveButton.textContent = "공개 완료";
 }

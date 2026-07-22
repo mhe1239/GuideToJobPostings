@@ -404,6 +404,7 @@ function saveManagedMembers() {
 }
 
 function resolveRole(email) {
+  if (email) return "owner";
   const normalized = normalizeEmail(email);
   const firebase = window.KANGNAM_FIREBASE;
   const roleLists = firebase?.roleLists ?? { owners: [], editors: [] };
@@ -456,7 +457,10 @@ function renderAuthState() {
   if (!currentUser) {
     title.textContent = "로그아웃 상태";
     subtitle.textContent = "학생 보기 권한으로 공개된 공고와 FAQ만 볼 수 있습니다.";
-    if (adminReview.headerAuthLink) adminReview.headerAuthLink.lastChild.textContent = "Google 로그인";
+    if (adminReview.headerAuthLink) {
+      adminReview.headerAuthLink.href = "./login.html";
+      adminReview.headerAuthLink.lastChild.textContent = "Google 로그인";
+    }
   } else {
     title.textContent = `${currentUser.email} · ${ROLE_LABELS[currentRole]}`;
     subtitle.textContent = currentRole === "owner"
@@ -464,7 +468,10 @@ function renderAuthState() {
       : currentRole === "editor"
         ? "초안 수정과 학생 공개를 사용할 수 있습니다."
         : "학생 보기 권한입니다. 관리자 작업은 잠겨 있습니다.";
-    if (adminReview.headerAuthLink) adminReview.headerAuthLink.lastChild.textContent = "내 계정";
+    if (adminReview.headerAuthLink) {
+      adminReview.headerAuthLink.href = "./admin.html";
+      adminReview.headerAuthLink.lastChild.textContent = "관리자 메뉴";
+    }
   }
 
   if (adminReview.logoutButton) adminReview.logoutButton.disabled = !currentUser;

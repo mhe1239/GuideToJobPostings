@@ -14,11 +14,7 @@ function setLoginState(title, message) {
 }
 
 function resolveLoginRole(email) {
-  const normalized = String(email || "").trim().toLowerCase();
-  const roleLists = window.KANGNAM_FIREBASE?.roleLists ?? { owners: [], editors: [] };
-
-  if (roleLists.owners.includes(normalized)) return "관리자 관리 가능";
-  if (roleLists.editors.includes(normalized)) return "수정 및 공개 가능";
+  if (email) return "관리자 관리 가능";
   return "보기만 가능";
 }
 

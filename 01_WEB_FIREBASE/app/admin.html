@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#173a67" />
+    <meta name="description" content="강남대 공고 길잡이 관리자 관리" />
+    <title>강남대 공고 길잡이 · 관리자 관리</title>
+    <link rel="icon" href="./assets/icons/icon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="./assets/icons/32x32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./assets/icons/128x128.png" />
+    <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./firebase-config.js"></script>
+    <script src="./admin.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="./index.html" aria-label="강남대 공고 길잡이 홈">
+          <svg class="brand-mark" aria-hidden="true" viewBox="0 0 44 44">
+            <path d="M8 9.5 22 4l14 5.5v10.8c0 9.1-5.9 16.2-14 19.7-8.1-3.5-14-10.6-14-19.7V9.5Z" />
+            <path d="M14.5 16.5c2.8 0 5.3.7 7.5 2.2 2.2-1.5 4.7-2.2 7.5-2.2v11.2c-2.8 0-5.3.7-7.5 2.2-2.2-1.5-4.7-2.2-7.5-2.2V16.5Z" />
+            <path d="M22 18.7v11.2" />
+          </svg>
+          <span class="brand-copy">
+            <strong>강남대 공고 길잡이</strong>
+            <span>관리자 콘솔</span>
+          </span>
+        </a>
+        <a class="auth-nav" href="./publish.html"><span aria-hidden="true"></span>AI 공고 공개</a>
+      </div>
+    </header>
+
+    <main class="page-shell admin-page-shell">
+      <section class="admin-section" aria-labelledby="admin-title">
+        <div class="admin-heading">
+          <div>
+            <p class="section-label">관리자 관리</p>
+            <h1 id="admin-title">관리자 권한을 확인하고 역할을 관리합니다</h1>
+          </div>
+          <span class="review-status" id="admin-auth-badge">보기만 가능</span>
+        </div>
+
+        <section class="auth-panel">
+          <div>
+            <p class="section-label">로그인 상태</p>
+            <h3>Google 로그인 후 관리자 기능 사용</h3>
+            <p class="auth-copy">기본 상태는 학생 보기입니다. 로그인하면 MVP에서는 관리자 관리와 공개 권한을 모두 사용할 수 있습니다.</p>
+          </div>
+          <div class="auth-actions">
+            <a class="button primary" href="./login.html">Google 계정으로 로그인</a>
+            <button class="button secondary" id="admin-logout-button" type="button" disabled>로그아웃</button>
+          </div>
+          <div class="auth-state" id="admin-auth-state">
+            <strong>로그아웃 상태</strong>
+            <span>학생 보기 권한입니다.</span>
+          </div>
+        </section>
+
+        <div class="admin-grid admin-grid-single">
+          <section class="admin-panel member-panel" data-requires-admin>
+            <div class="panel-title-row">
+              <h2>관리자 목록</h2>
+              <span class="draft-chip">관리자 전용</span>
+            </div>
+            <div class="member-list" id="member-list"></div>
+            <form class="member-form" id="member-form">
+              <input id="member-email" type="email" placeholder="user@kangnam.ac.kr" aria-label="추가할 사용자 이메일" />
+              <select id="member-role" aria-label="사용자 역할">
+                <option value="owner">관리자 관리, 수정 및 공개 가능</option>
+                <option value="editor">수정 및 공개 가능</option>
+                <option value="viewer">보기만 가능</option>
+              </select>
+              <button class="button secondary" type="submit">역할 추가</button>
+            </form>
+            <p class="permission-note">현재 MVP에서는 로그인한 Google 계정을 관리자 권한으로 처리합니다. 실제 운영 시 서버 권한 규칙으로 이전해야 합니다.</p>
+          </section>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

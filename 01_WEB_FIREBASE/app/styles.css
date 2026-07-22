@@ -972,6 +972,7 @@ button:disabled {
   gap: 20px;
 }
 
+.admin-heading h1,
 .admin-heading h2 {
   margin: 0;
   color: var(--primary-950);
@@ -1154,6 +1155,18 @@ button:disabled {
   margin-top: 14px;
 }
 
+.admin-page-shell {
+  min-height: calc(100vh - 76px);
+}
+
+.admin-grid-single {
+  grid-template-columns: minmax(0, 640px);
+}
+
+.publish-grid {
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.2fr) minmax(280px, 0.9fr);
+}
+
 .admin-panel {
   min-width: 0;
   padding: 18px;
@@ -1162,6 +1175,7 @@ button:disabled {
   border-radius: 12px;
 }
 
+.admin-panel h2,
 .admin-panel h3,
 .admin-panel label {
   margin: 0;

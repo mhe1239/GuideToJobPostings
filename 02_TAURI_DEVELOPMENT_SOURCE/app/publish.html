@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#173a67" />
+    <meta name="description" content="강남대 공고 길잡이 AI 공고 생성 및 공개" />
+    <title>강남대 공고 길잡이 · AI 공고 공개</title>
+    <link rel="icon" href="./assets/icons/icon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="./assets/icons/32x32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./assets/icons/128x128.png" />
+    <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./firebase-config.js"></script>
+    <script src="./admin.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="./index.html" aria-label="강남대 공고 길잡이 홈">
+          <svg class="brand-mark" aria-hidden="true" viewBox="0 0 44 44">
+            <path d="M8 9.5 22 4l14 5.5v10.8c0 9.1-5.9 16.2-14 19.7-8.1-3.5-14-10.6-14-19.7V9.5Z" />
+            <path d="M14.5 16.5c2.8 0 5.3.7 7.5 2.2 2.2-1.5 4.7-2.2 7.5-2.2v11.2c-2.8 0-5.3.7-7.5 2.2-2.2-1.5-4.7-2.2-7.5-2.2V16.5Z" />
+            <path d="M22 18.7v11.2" />
+          </svg>
+          <span class="brand-copy">
+            <strong>강남대 공고 길잡이</strong>
+            <span>AI 공고 공개</span>
+          </span>
+        </a>
+        <a class="auth-nav" href="./admin.html"><span aria-hidden="true"></span>관리자 관리</a>
+      </div>
+    </header>
+
+    <main class="page-shell admin-page-shell">
+      <section class="admin-section" id="admin-review" aria-labelledby="publish-title">
+        <div class="admin-heading">
+          <div>
+            <p class="section-label">AI 공고 생성 및 공개</p>
+            <h1 id="publish-title">Codex AI 초안을 검수하고 학생 페이지에 공개합니다</h1>
+          </div>
+          <span class="review-status" id="review-status">보기만 가능</span>
+        </div>
+
+        <section class="auth-panel">
+          <div>
+            <p class="section-label">권한 상태</p>
+            <h3>로그인한 관리자는 수정 및 공개 가능</h3>
+            <p class="auth-copy">기본 상태는 학생 보기입니다. Google 로그인 후 공고 링크 등록, 초안 수정, 공개 승인을 사용할 수 있습니다.</p>
+          </div>
+          <div class="auth-actions">
+            <a class="button primary" href="./login.html">Google 계정으로 로그인</a>
+            <button class="button secondary" id="admin-logout-button" type="button" disabled>로그아웃</button>
+          </div>
+          <div class="auth-state" id="admin-auth-state">
+            <strong>로그아웃 상태</strong>
+            <span>학생 보기 권한입니다.</span>
+          </div>
+        </section>
+
+        <div class="review-flow" aria-label="관리자 공개 절차">
+          <div><span>01</span><strong>공식 공고 링크 등록</strong></div>
+          <div><span>02</span><strong>Codex AI 초안 생성</strong></div>
+          <div><span>03</span><strong>관리자 검수</strong></div>
+          <div><span>04</span><strong>학생 페이지 공개</strong></div>
+        </div>
+
+        <div class="admin-grid publish-grid" data-requires-admin>
+          <form class="admin-panel ingest-panel" id="admin-ingest-form">
+            <label for="official-notice-url">공식 공고 URL</label>
+            <div class="url-row">
+              <input
+                id="official-notice-url"
+                type="url"
+                value="https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9"
+                aria-describedby="official-notice-help"
+              />
+              <button class="button primary" id="generate-draft-button" type="submit">Codex 초안 생성</button>
+            </div>
+            <p id="official-notice-help">공식 링크만 입력하고, 공개 전에는 관리자 승인 상태로 보관합니다.</p>
+          </form>
+
+          <section class="admin-panel draft-panel">
+            <div class="panel-title-row">
+              <h2>Codex AI 생성 초안</h2>
+              <span class="draft-chip" id="draft-chip">미생성</span>
+            </div>
+            <div class="draft-empty" id="draft-empty">
+              <strong>아직 생성된 초안이 없습니다.</strong>
+              <span>공식 공고 URL을 등록하면 검수 가능한 초안이 표시됩니다.</span>
+            </div>
+            <div class="draft-fields" id="draft-fields" hidden>
+              <label>공고 요약<textarea id="draft-summary" rows="4"></textarea></label>
+              <label>FAQ 초안<textarea id="draft-faq" rows="5"></textarea></label>
+              <label>답변 근거<textarea id="draft-evidence" rows="4"></textarea></label>
+            </div>
+          </section>
+
+          <section class="admin-panel approval-panel">
+            <h2>관리자 검수 체크</h2>
+            <div class="approval-checks">
+              <label><input type="checkbox" class="approval-checkbox" /> 공식 링크와 공고 제목이 일치함</label>
+              <label><input type="checkbox" class="approval-checkbox" /> 신청 기간과 지원 자격을 확인함</label>
+              <label><input type="checkbox" class="approval-checkbox" /> FAQ 답변 근거가 공고 안에 있음</label>
+            </div>
+            <button class="button primary approve-button" id="approve-draft-button" type="button" disabled>승인하고 학생 페이지에 공개</button>
+            <p class="approval-note" id="approval-note">관리자 로그인 후 초안을 생성하고 검수 항목을 모두 체크하면 승인할 수 있습니다.</p>
+          </section>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

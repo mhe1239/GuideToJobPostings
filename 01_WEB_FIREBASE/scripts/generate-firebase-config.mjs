@@ -55,8 +55,10 @@ import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10
 import {
   getAuth,
   GoogleAuthProvider,
+  getRedirectResult,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
@@ -80,8 +82,10 @@ window.KANGNAM_FIREBASE = {
   app,
   auth,
   roleLists,
+  getRedirectResult: () => getRedirectResult(auth),
   onAuthStateChanged,
   signInWithPopup: () => signInWithPopup(auth, googleProvider),
+  signInWithRedirect: () => signInWithRedirect(auth, googleProvider),
   signOut: () => signOut(auth)
 };
 

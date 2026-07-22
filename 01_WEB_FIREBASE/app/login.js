@@ -18,12 +18,27 @@ function resolveLoginRole(email) {
   return "보기만 가능";
 }
 
+function goToAdminPage() {
+  window.location.assign("./admin.html");
+}
+
 function initLoginAuth() {
   const firebase = window.KANGNAM_FIREBASE;
   if (!firebase) {
     setLoginState("Firebase Auth 대기 중", "인증 설정을 불러오는 중입니다.");
     return;
   }
+
+  firebase.getRedirectResult?.()
+    .then((result) => {
+      if (result?.user) {
+        setLoginState(`${result.user.email} · ${resolveLoginRole(result.user.email)}`, "로그인되었습니다. 관리자 관리 페이지로 이동합니다.");
+        goToAdminPage();
+      }
+    })
+    .catch((error) => {
+      setLoginState("로그인 실패", error.message);
+    });
 
   firebase.onAuthStateChanged(firebase.auth, (user) => {
     if (!user) {
@@ -33,7 +48,8 @@ function initLoginAuth() {
     }
 
     loginElements.logoutButton.disabled = false;
-    setLoginState(`${user.email} · ${resolveLoginRole(user.email)}`, "로그인되었습니다. 메인 페이지에서 권한별 관리자 기능을 사용할 수 있습니다.");
+    setLoginState(`${user.email} · ${resolveLoginRole(user.email)}`, "로그인되었습니다. 관리자 관리 페이지로 이동합니다.");
+    goToAdminPage();
   });
 }
 
@@ -48,6 +64,12 @@ async function handleGoogleLogin() {
     setLoginState("Google 로그인 중", "Google 계정 선택 창을 확인해 주세요.");
     await firebase.signInWithPopup();
   } catch (error) {
+    if (firebase.signInWithRedirect) {
+      setLoginState("Google 로그인으로 이동", "팝업 로그인이 막혀 전체 화면 로그인으로 전환합니다.");
+      await firebase.signInWithRedirect();
+      return;
+    }
+
     setLoginState("로그인 실패", error.message);
   }
 }

@@ -5,8 +5,8 @@
   "description": "대학 공고 FAQ와 질문 검색 경험을 검증하는 Tauri v2 프로토타입",
   "scripts": {
     "preview": "vite app --host 127.0.0.1",
-    "dev": "npx tauri dev",
-    "build": "npx tauri build",
+    "dev": "node scripts/run-tauri.mjs dev",
+    "build": "node scripts/run-tauri.mjs build",
     "test:preview": "node tests/preview-integration.mjs"
   },
   "devDependencies": {

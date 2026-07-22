@@ -905,6 +905,49 @@ button:disabled {
   line-height: 1.45;
 }
 
+.source-link {
+  width: fit-content;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  color: var(--primary-800);
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.source-link:hover {
+  color: var(--primary-950);
+}
+
+.source-link svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.evidence-card small {
+  display: block;
+  margin-top: -3px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.department-source-link {
+  color: var(--primary-800);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .answer-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;

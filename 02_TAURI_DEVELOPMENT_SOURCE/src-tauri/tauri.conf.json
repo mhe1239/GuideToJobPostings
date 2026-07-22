@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "강남대 공고 길잡이 — 비교과 프로그램 모집",
+        "title": "강남대 공고 길잡이 — 늘품 수습 임원 모집",
         "width": 1440,
         "height": 900,
         "minWidth": 760,
@@ -39,6 +39,6 @@
     },
     "category": "Productivity",
     "shortDescription": "대학 공고 FAQ와 질문 검색 프로토타입",
-    "longDescription": "학생이 가상 공고의 FAQ를 확인하고 질문에 대한 예시 답변과 출처, 담당 부서를 확인하는 프로토타입입니다."
+    "longDescription": "학생이 공식 이미지 공고 기반 FAQ를 확인하고 질문에 대한 예시 답변과 출처, 담당 부서를 확인하는 프로토타입입니다."
   }
 }

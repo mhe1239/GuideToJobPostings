@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#173a67" />
+    <meta name="description" content="강남대학교 공식 공고와 FAQ로 학생 문의 흐름을 검증하는 1-Day 프로토타입" />
+    <title>강남대 공고 길잡이 — 공고 상세</title>
+    <link rel="icon" href="./assets/icons/icon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="./assets/icons/32x32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./assets/icons/128x128.png" />
+    <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./firebase-config.js?v=20260722-notice-list"></script>
+    <script src="./main.js?v=20260722-notice-list" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">본문으로 바로가기</a>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="./index.html" aria-label="강남대학교 공고 길잡이 홈">
+          <svg class="brand-mark" aria-hidden="true" viewBox="0 0 44 44">
+            <path d="M8 9.5 22 4l14 5.5v10.8c0 9.1-5.9 16.2-14 19.7-8.1-3.5-14-10.6-14-19.7V9.5Z" />
+            <path d="M14.5 16.5c2.8 0 5.3.7 7.5 2.2 2.2-1.5 4.7-2.2 7.5-2.2v11.2c-2.8 0-5.3.7-7.5 2.2-2.2-1.5-4.7-2.2-7.5-2.2V16.5Z" />
+            <path d="M22 18.7v11.2" />
+          </svg>
+          <span class="brand-copy">
+            <strong>강남대학교</strong>
+            <span>공고 길잡이</span>
+          </span>
+        </a>
+        <a class="auth-nav" id="header-auth-link" href="./login.html">
+          <span aria-hidden="true"></span>
+          Google 로그인
+        </a>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <div class="page-shell">
+        <nav class="breadcrumb" aria-label="현재 위치">
+          <span>대학생활</span>
+          <svg aria-hidden="true" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5" /></svg>
+          <span id="breadcrumb-category">비교과 프로그램</span>
+        </nav>
+
+        <section class="notice-hero" id="notice" aria-labelledby="notice-title" tabindex="-1">
+          <div class="hero-copy">
+            <div class="label-row">
+              <span class="status-badge"><span aria-hidden="true"></span> 모집 중</span>
+              <span class="virtual-badge">공식 공고 기반</span>
+            </div>
+            <p class="section-label" id="notice-meta">입학전형관리팀 · 교내 공고 · 2026.07.20</p>
+            <h1 id="notice-title">입학처 공식 홍보대사 늘품 12기 2학기 수습 임원 모집</h1>
+            <p class="hero-summary">
+              강남대학교 입학처 공식 홍보대사 늘품의 2026학년도 2학기 수습 임원을 모집합니다.
+              공식 카드뉴스 공고의 핵심 내용을 확인한 뒤 FAQ 또는 질문하기를 이용해 주세요.
+            </p>
+          </div>
+
+          <dl class="key-facts" aria-label="공고 핵심 정보">
+            <div>
+              <dt>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
+                서류 접수
+              </dt>
+              <dd id="fact-period">7월 20일(월)–8월 2일(일) 17:00</dd>
+            </div>
+            <div>
+              <dt>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4.5 21a7.5 7.5 0 0 1 15 0" /></svg>
+                지원 대상
+              </dt>
+              <dd id="fact-eligibility">강남대학교 재학생 및 편입생</dd>
+            </div>
+            <div>
+              <dt>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6V3Z" /><path d="M15 3v5h5M9 13h7M9 17h7" /></svg>
+                모집 분야
+              </dt>
+              <dd id="fact-field">기획국·대외홍보국·콘텐츠디자인국</dd>
+            </div>
+          </dl>
+
+          <div class="source-line">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" /><path d="M12 11v6M12 7h.01" /></svg>
+            <span id="source-line-text">공식 공고 내용을 확인해 작성한 프로토타입입니다. 답변은 자동 AI·OCR 추출 결과가 아닌 미리 준비된 예시입니다.</span>
+          </div>
+        </section>
+
+        <div class="content-grid">
+          <section class="faq-section" aria-labelledby="faq-title">
+            <div class="section-heading">
+              <div>
+                <p class="section-label">자주 찾는 내용</p>
+                <h2 id="faq-title">먼저 FAQ를 확인해 보세요</h2>
+              </div>
+              <span class="step-label">1단계</span>
+            </div>
+            <p class="section-description">질문을 선택하면 준비된 예시 답변과 공고문 근거가 표시됩니다.</p>
+            <div class="faq-list" id="faq-list" aria-live="polite"></div>
+
+            <aside class="flow-note" aria-label="이용 순서">
+              <div class="flow-note-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v14l-4-3-3 3-3-3-4 3V5a2 2 0 0 1 2-2Z" /><path d="M9 8h6M9 12h4" /></svg>
+              </div>
+              <div>
+                <strong>해결되지 않았나요?</strong>
+                <p>FAQ 확인 → 질문 입력 → 담당 부서 문의 순서로 이용해 주세요.</p>
+              </div>
+            </aside>
+          </section>
+
+          <aside class="assistant-card" aria-labelledby="assistant-title">
+            <div id="assistant-view">
+              <div class="assistant-heading">
+                <div class="assistant-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-5 4v-4a2 2 0 0 1-2-2V5Z" /><path d="M8 8h8M8 12h5" /></svg>
+                </div>
+                <div>
+                  <p class="section-label">공고 질문하기</p>
+                  <h2 id="assistant-title">궁금한 내용을 입력하세요</h2>
+                </div>
+                <span class="step-label">2단계</span>
+              </div>
+
+              <div class="example-notice" role="note">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" /><path d="M12 11v6M12 7h.01" /></svg>
+                <p><strong>가상 예시 답변</strong> 실제 AI를 호출하지 않고, 질문에 맞는 가상 데이터를 보여줍니다.</p>
+              </div>
+
+              <form id="question-form" novalidate>
+                <label for="question-input">질문 내용 <span aria-hidden="true">*</span></label>
+                <textarea
+                  id="question-input"
+                  name="question"
+                  rows="4"
+                  maxlength="200"
+                  placeholder="예: 편입생도 지원 가능한가요?"
+                  aria-describedby="question-help question-error"
+                  required
+                ></textarea>
+                <div class="input-meta">
+                  <span id="question-help">지원 자격, 접수 기간, 모집 분야, 활동 조건을 물어보세요.</span>
+                  <span><span id="question-count">0</span>/200</span>
+                </div>
+                <p class="field-error" id="question-error" role="alert" hidden></p>
+                <button class="button primary submit-button" type="submit">
+                  질문하기
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </button>
+              </form>
+
+              <div class="empty-result" id="empty-result">
+                <svg aria-hidden="true" viewBox="0 0 48 48"><path d="M12 9h24a4 4 0 0 1 4 4v17a4 4 0 0 1-4 4H22l-10 7v-7a4 4 0 0 1-4-4V13a4 4 0 0 1 4-4Z" /><path d="M17 18h14M17 25h9" /></svg>
+                <strong>질문에 대한 답변이 여기에 표시됩니다.</strong>
+                <span>FAQ를 선택하거나 질문을 입력해 주세요.</span>
+              </div>
+
+              <section class="answer-card" id="answer-card" aria-labelledby="answer-title" aria-live="polite" hidden>
+                <div class="answer-topline">
+                  <span class="example-badge">가상 예시 답변</span>
+                  <span id="answer-state">답변 찾음</span>
+                </div>
+                <p class="asked-question" id="asked-question"></p>
+                <h3 id="answer-title">예시 답변</h3>
+                <p class="answer-copy" id="answer-copy"></p>
+
+                <div class="evidence-card" id="evidence-card">
+                  <div class="evidence-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6V3Z" /><path d="M15 3v5h5M9 13h7M9 17h7" /></svg>
+                  </div>
+                  <div>
+                    <span>공고문 출처</span>
+                    <strong id="answer-source"></strong>
+                    <a
+                      class="source-link"
+                      id="answer-source-link"
+                      href="https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&amp;encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      공식 공고 원문 링크 열기
+                      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 5h5v5M10 14 19 5M19 14v5H5V5h5" /></svg>
+                    </a>
+                    <small>강남대학교 홈페이지에서 새 창으로 열립니다.</small>
+                  </div>
+                </div>
+
+                <div class="answer-actions">
+                  <button class="button secondary" id="retry-button" type="button">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4v6h6M20 20v-6h-6" /><path d="M6.5 17.5A8 8 0 0 0 20 12M4 12A8 8 0 0 1 17.5 6.5" /></svg>
+                    다른 질문하기
+                  </button>
+                  <button class="button primary" id="department-button" type="button">
+                    담당 부서 보기
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                  </button>
+                </div>
+              </section>
+            </div>
+
+            <section class="department-view" id="department-view" aria-labelledby="department-title" hidden>
+              <button class="back-button" id="department-back-button" type="button">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6" /></svg>
+                공고로 돌아가기
+              </button>
+              <div class="department-illustration" aria-hidden="true">
+                <svg viewBox="0 0 64 64"><path d="M10 25h44v31H10V25Z" /><path d="m6 25 26-16 26 16H6ZM18 25v31M30 25v31M46 25v31M6 56h52" /><path d="M26 40h12" /></svg>
+              </div>
+              <p class="section-label">해결되지 않은 경우</p>
+              <h2 id="department-title">입학전형관리팀으로 문의해 주세요</h2>
+              <p class="department-description">FAQ와 예시 답변으로 해결되지 않은 문의를 담당합니다.</p>
+              <dl class="department-details">
+                <div>
+                  <dt>담당 부서</dt>
+                  <dd>입학전형관리팀</dd>
+                </div>
+                <div>
+                  <dt>연락 방법</dt>
+                  <dd><a class="department-source-link" href="https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&amp;encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9" target="_blank" rel="noopener noreferrer">공식 공고의 문의처 확인</a></dd>
+                </div>
+                <div>
+                  <dt>운영시간</dt>
+                  <dd>공고에 별도 안내 없음</dd>
+                </div>
+              </dl>
+              <p class="contact-note">문의 시 “늘품 12기 2학기 수습 임원 모집 공고”를 확인했다고 말씀해 주세요.</p>
+            </section>
+          </aside>
+        </div>
+
+        <section class="admin-section" id="admin-review" aria-labelledby="admin-title" hidden>
+          <div class="admin-heading">
+            <div>
+              <p class="section-label">관리자 검수 워크벤치</p>
+              <h2 id="admin-title">Codex AI 초안을 확인하고 승인한 뒤 공개합니다</h2>
+            </div>
+            <span class="review-status" id="review-status">초안 대기</span>
+          </div>
+
+          <section class="auth-panel" aria-labelledby="auth-title">
+            <div>
+              <p class="section-label">Firebase Authentication</p>
+              <h3 id="auth-title">로그인 후 역할에 맞는 작업만 사용할 수 있습니다</h3>
+              <p class="auth-copy">역할은 관리자, 편집자, 학생 보기로 나뉘며 실제 운영에서는 서버 권한 규칙으로 한 번 더 보호해야 합니다.</p>
+            </div>
+            <div class="auth-actions">
+              <a class="button primary" id="google-login-button" href="./login.html">Google 계정으로 로그인</a>
+              <button class="button secondary" id="logout-button" type="button" disabled>로그아웃</button>
+            </div>
+            <div class="auth-state" id="auth-state">
+              <strong>로그아웃 상태</strong>
+              <span>로그인하지 않으면 학생 보기 권한으로 동작합니다.</span>
+            </div>
+          </section>
+
+          <div class="role-grid" aria-label="권한 단계">
+            <article class="role-card" data-role-card="owner">
+              <span>1</span>
+              <h3>관리자 관리</h3>
+              <p>관리자 역할을 수정하고, 공고 초안을 수정 및 학생에게 공개할 수 있습니다.</p>
+            </article>
+            <article class="role-card" data-role-card="editor">
+              <span>2</span>
+              <h3>수정 및 공개</h3>
+              <p>Codex AI 초안을 수정하고 검수 후 학생 페이지에 공개할 수 있습니다.</p>
+            </article>
+            <article class="role-card" data-role-card="viewer">
+              <span>3</span>
+              <h3>보기만 가능</h3>
+              <p>학생 권한으로 공개된 공고와 FAQ, 출처만 볼 수 있습니다.</p>
+            </article>
+          </div>
+
+          <div class="review-flow" aria-label="관리자 공개 절차">
+            <div>
+              <span>01</span>
+              <strong>공식 공고 링크 등록</strong>
+            </div>
+            <div>
+              <span>02</span>
+              <strong>Codex AI 초안 생성</strong>
+            </div>
+            <div>
+              <span>03</span>
+              <strong>관리자 검수</strong>
+            </div>
+            <div>
+              <span>04</span>
+              <strong>학생 페이지 공개</strong>
+            </div>
+          </div>
+
+          <div class="admin-grid">
+            <section class="admin-panel member-panel" aria-labelledby="member-title" data-requires-role="owner">
+              <div class="panel-title-row">
+                <h3 id="member-title">관리자 관리</h3>
+                <span class="draft-chip">Owner 전용</span>
+              </div>
+              <div class="member-list" id="member-list"></div>
+              <form class="member-form" id="member-form">
+                <input id="member-email" type="email" placeholder="user@kangnam.ac.kr" aria-label="추가할 사용자 이메일" />
+                <select id="member-role" aria-label="사용자 역할">
+                  <option value="editor">수정 및 공개 가능</option>
+                  <option value="owner">관리자 관리 가능</option>
+                  <option value="viewer">보기만 가능</option>
+                </select>
+                <button class="button secondary" type="submit">역할 추가</button>
+              </form>
+              <p class="permission-note">이 MVP에서는 역할 변경을 브라우저에 저장합니다. 운영 전환 시 custom claims 또는 Firestore Rules로 이전해야 합니다.</p>
+            </section>
+
+            <form class="admin-panel ingest-panel" id="admin-ingest-form" data-requires-role="editor">
+              <label for="official-notice-url">공식 공고 URL</label>
+              <div class="url-row">
+                <input
+                  id="official-notice-url"
+                  type="url"
+                  value="https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9"
+                  aria-describedby="official-notice-help"
+                />
+                <button class="button primary" id="generate-draft-button" type="submit">
+                  Codex 초안 생성
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </button>
+              </div>
+              <p id="official-notice-help">공식 링크만 입력하고, 공개 전에는 관리자 승인 상태로 보관합니다.</p>
+
+              <dl class="extract-meta">
+                <div>
+                  <dt>분석 대상</dt>
+                  <dd>공고 본문, 첨부 카드뉴스, 문의처</dd>
+                </div>
+                <div>
+                  <dt>AI 역할</dt>
+                  <dd>요약, FAQ 후보, 근거 항목 초안 작성</dd>
+                </div>
+                <div>
+                  <dt>공개 조건</dt>
+                  <dd>관리자 검수 체크 완료</dd>
+                </div>
+              </dl>
+            </form>
+
+            <section class="admin-panel draft-panel" aria-labelledby="draft-title" data-requires-role="editor">
+              <div class="panel-title-row">
+                <h3 id="draft-title">Codex AI 생성 초안</h3>
+                <span class="draft-chip" id="draft-chip">미생성</span>
+              </div>
+              <div class="draft-empty" id="draft-empty">
+                <strong>아직 생성된 초안이 없습니다.</strong>
+                <span>공식 공고 URL을 등록하면 검수 가능한 초안이 표시됩니다.</span>
+              </div>
+              <div class="draft-fields" id="draft-fields" hidden>
+                <label>
+                  공고 요약
+                  <textarea id="draft-summary" rows="4"></textarea>
+                </label>
+                <label>
+                  FAQ 초안
+                  <textarea id="draft-faq" rows="5"></textarea>
+                </label>
+                <label>
+                  답변 근거
+                  <textarea id="draft-evidence" rows="4"></textarea>
+                </label>
+              </div>
+            </section>
+
+            <section class="admin-panel approval-panel" aria-labelledby="approval-title" data-requires-role="editor">
+              <h3 id="approval-title">관리자 검수 체크</h3>
+              <div class="approval-checks">
+                <label><input type="checkbox" class="approval-checkbox" /> 공식 링크와 공고 제목이 일치함</label>
+                <label><input type="checkbox" class="approval-checkbox" /> 신청 기간과 지원 자격을 확인함</label>
+                <label><input type="checkbox" class="approval-checkbox" /> FAQ 답변 근거가 공고 안에 있음</label>
+              </div>
+              <button class="button primary approve-button" id="approve-draft-button" type="button" disabled>
+                승인하고 학생 페이지에 공개
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>
+              </button>
+              <p class="approval-note" id="approval-note">초안 생성 후 모든 검수 항목을 체크하면 승인할 수 있습니다.</p>
+            </section>
+          </div>
+        </section>
+
+        <section class="feedback-section" aria-labelledby="feedback-title">
+          <div class="feedback-heading">
+            <div>
+              <p class="section-label">부서 피드백용</p>
+              <h2 id="feedback-title">이번 프로토타입에서 확인할 내용</h2>
+            </div>
+            <span class="internal-badge">내부 검증 메모</span>
+          </div>
+          <div class="feedback-grid">
+            <article>
+              <span class="feedback-number">01</span>
+              <h3>업무 흐름 가정</h3>
+              <p>학생은 FAQ를 먼저 확인하고, 해결되지 않으면 질문 검색을 사용한 뒤 담당 부서에 문의한다.</p>
+            </article>
+            <article>
+              <span class="feedback-number">02</span>
+              <h3>결정이 바뀌는 조건</h3>
+              <p>여러 부서가 함께 처리하는 문의가 많다면 관련 부서를 함께 안내하는 방식으로 변경한다.</p>
+            </article>
+            <article class="feedback-questions">
+              <span class="feedback-number">03</span>
+              <h3>담당자에게 확인할 질문</h3>
+              <ul>
+                <li>반복 문의는 FAQ와 공고문 검색만으로 해결 가능한 수준인가요?</li>
+                <li>FAQ에 반드시 포함할 질문과 공고 변경 시 관리 방식은 무엇인가요?</li>
+                <li>실제 업무에서 사용하기 어려운 가장 큰 이유는 무엇인가요?</li>
+              </ul>
+            </article>
+          </div>
+          <div class="feedback-footer">
+            <span>검증 입력: “편입생도 지원 가능한가요?”</span>
+            <span>기록 담당자: 팀원 ○○</span>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>강남대학교 공고 길잡이</strong>
+        <span>공식 공고 기반 학생 문의 경험 검증 프로토타입</span>
+      </div>
+    </footer>
+  </body>
+</html>

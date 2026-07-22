@@ -213,7 +213,7 @@ function renderNoticeList() {
     ...notices.map((notice) => {
       const link = document.createElement("a");
       link.className = "notice-list-item";
-      link.href = `./index.html?notice=${encodeURIComponent(notice.id)}`;
+      link.href = `./notice.html?notice=${encodeURIComponent(notice.id)}`;
       if (notice.id === activeNotice.id) link.setAttribute("aria-current", "true");
       link.innerHTML = `
         <span>${notice.category}</span>
@@ -233,7 +233,7 @@ function selectNotice(noticeId) {
   activeNotice = nextNotice;
   FAQS = activeNotice.faqs;
   ANSWER_RULES = buildAnswerRules(activeNotice);
-  window.history.replaceState({}, "", `./index.html?notice=${encodeURIComponent(activeNotice.id)}`);
+  window.history.replaceState({}, "", `./notice.html?notice=${encodeURIComponent(activeNotice.id)}`);
   renderNotice();
   renderNoticeList();
   renderFaqs();

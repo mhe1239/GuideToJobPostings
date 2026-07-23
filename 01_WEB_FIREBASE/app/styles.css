@@ -2128,11 +2128,18 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 .member-list > div {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 8px;
+  align-items: center;
+  gap: 8px;
   padding: 10px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
+}
+
+.member-details {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
 }
 
 .member-list strong {
@@ -2149,9 +2156,22 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 }
 
 .member-list small {
-  grid-column: 1 / -1;
   color: var(--ink-faint);
   font-size: 10px;
+}
+
+.member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.member-action-button {
+  min-height: 34px;
+  padding: 8px 10px;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .member-empty,
@@ -3287,6 +3307,18 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   .admin-menu-grid,
   .admin-grid {
     grid-template-columns: 1fr;
+  }
+
+  .member-list > div {
+    grid-template-columns: 1fr;
+  }
+
+  .member-actions {
+    justify-content: stretch;
+  }
+
+  .member-action-button {
+    flex: 1 1 120px;
   }
 
   .draft-panel,

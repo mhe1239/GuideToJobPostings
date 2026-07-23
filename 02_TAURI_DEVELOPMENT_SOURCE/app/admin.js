@@ -283,6 +283,67 @@ function saveManagedMembers() {
   window.localStorage.setItem("kangnamManagedMembers", JSON.stringify(managedMembers));
 }
 
+function normalizeMemberEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function getBootstrapAdminEmail() {
+  return normalizeMemberEmail(window.localStorage.getItem("kangnamAdminBootstrapEmail"));
+}
+
+function setBootstrapAdminEmail(email) {
+  const normalizedEmail = normalizeMemberEmail(email);
+  if (normalizedEmail) {
+    window.localStorage.setItem("kangnamAdminBootstrapEmail", normalizedEmail);
+  }
+}
+
+function getManagedMember(email) {
+  const normalizedEmail = normalizeMemberEmail(email);
+  return managedMembers.find((member) => normalizeMemberEmail(member.email) === normalizedEmail);
+}
+
+function getRenderableMembers() {
+  const bootstrapEmail = getBootstrapAdminEmail();
+  const records = new Map();
+  const currentUserEmail = normalizeMemberEmail(currentUser?.email);
+
+  managedMembers.forEach((member) => {
+    const email = normalizeMemberEmail(member.email);
+    if (!email) return;
+    records.set(email, {
+      ...member,
+      email,
+      role: member.role || "viewer",
+      source: member.source || "브라우저 저장",
+    });
+  });
+
+  if (bootstrapEmail && !records.has(bootstrapEmail)) {
+    records.set(bootstrapEmail, { email: bootstrapEmail, role: "owner", source: "초기 관리자" });
+  }
+
+  if (currentUserEmail) {
+    const existing = records.get(currentUserEmail);
+    records.set(currentUserEmail, {
+      email: currentUserEmail,
+      role: existing?.role || currentRole,
+      source: existing?.source || "Google 로그인",
+    });
+  }
+
+  return [...records.values()].map((member) => ({
+    ...member,
+    role: member.email === bootstrapEmail ? "owner" : member.role,
+    isBootstrap: member.email === bootstrapEmail,
+    isCurrentUser: currentUserEmail === member.email,
+  }));
+}
+
+function countOwners(members = getRenderableMembers()) {
+  return members.filter((member) => member.role === "owner").length;
+}
+
 function roleRank(role) {
   return { viewer: 0, editor: 1, owner: 2 }[role] || 0;
 }
@@ -526,10 +587,9 @@ function resetDraftSelectionState(message) {
 
 function renderMembers() {
   if (!adminPage.memberList) return;
-  const members = [
-    ...(currentUser ? [{ email: currentUser.email, role: "owner", source: "Google 로그인" }] : []),
-    ...managedMembers,
-  ];
+  const members = getRenderableMembers();
+  const ownerCount = countOwners(members);
+  const currentUserIsBootstrap = normalizeMemberEmail(currentUser?.email) === getBootstrapAdminEmail();
 
   if (members.length === 0) {
     adminPage.memberList.innerHTML = "<p class=\"member-empty\">로그인한 관리자 계정이 없습니다.</p>";
@@ -539,13 +599,42 @@ function renderMembers() {
   adminPage.memberList.replaceChildren(
     ...members.map((member) => {
       const row = document.createElement("div");
+      const details = document.createElement("div");
       const email = document.createElement("strong");
       const role = document.createElement("span");
       const source = document.createElement("small");
+      const actions = document.createElement("div");
       email.textContent = member.email;
       role.textContent = ROLE_LABELS[member.role] || ROLE_LABELS.viewer;
-      source.textContent = member.source || "브라우저 저장";
-      row.append(email, role, source);
+      source.textContent = member.isBootstrap ? "초기 관리자" : member.source || "브라우저 저장";
+      details.className = "member-details";
+      details.append(email, role, source);
+      actions.className = "member-actions";
+
+      if (canManageMembers()) {
+        const canTransferBootstrap = currentUserIsBootstrap && !member.isCurrentUser;
+        if (canTransferBootstrap) {
+          const transferButton = document.createElement("button");
+          transferButton.className = "button secondary member-action-button";
+          transferButton.type = "button";
+          transferButton.textContent = "초기 관리자 위임";
+          transferButton.setAttribute("aria-label", `${member.email}에게 초기 관리자 권한 위임`);
+          transferButton.addEventListener("click", () => handleBootstrapTransfer(member.email));
+          actions.append(transferButton);
+        }
+
+        const deleteButton = document.createElement("button");
+        const deleteWouldRemoveLastOwner = member.role === "owner" && ownerCount <= 1;
+        deleteButton.className = "button danger member-action-button";
+        deleteButton.type = "button";
+        deleteButton.textContent = "삭제";
+        deleteButton.disabled = member.isCurrentUser || deleteWouldRemoveLastOwner || member.isBootstrap;
+        deleteButton.setAttribute("aria-label", `${member.email} 관리자 삭제`);
+        deleteButton.addEventListener("click", () => handleMemberDelete(member.email));
+        actions.append(deleteButton);
+      }
+
+      row.append(details, actions);
       return row;
     }),
   );
@@ -595,14 +684,49 @@ function handleMemberSubmit(event) {
   event.preventDefault();
   if (!canManageMembers()) return;
 
-  const email = adminPage.memberEmail.value.trim().toLowerCase();
+  const email = normalizeMemberEmail(adminPage.memberEmail.value);
   if (!email) return;
 
-  managedMembers = managedMembers.filter((member) => member.email !== email);
+  managedMembers = managedMembers.filter((member) => normalizeMemberEmail(member.email) !== email);
   managedMembers.push({ email, role: adminPage.memberRole.value });
   saveManagedMembers();
   adminPage.memberEmail.value = "";
   renderMembers();
+}
+
+function handleMemberDelete(email) {
+  if (!canManageMembers()) return;
+  const normalizedEmail = normalizeMemberEmail(email);
+  const member = getRenderableMembers().find((item) => item.email === normalizedEmail);
+  if (!member || member.isCurrentUser || member.isBootstrap) return;
+  if (member.role === "owner" && countOwners() <= 1) {
+    window.alert("관리자 관리 권한을 가진 계정은 최소 1개 이상 필요합니다.");
+    return;
+  }
+
+  const confirmed = window.confirm(`${normalizedEmail} 관리자 권한을 삭제할까요?`);
+  if (!confirmed) return;
+
+  managedMembers = managedMembers.filter((item) => normalizeMemberEmail(item.email) !== normalizedEmail);
+  saveManagedMembers();
+  renderMembers();
+}
+
+function handleBootstrapTransfer(email) {
+  if (!canManageMembers()) return;
+  const targetEmail = normalizeMemberEmail(email);
+  if (!targetEmail || targetEmail === normalizeMemberEmail(currentUser?.email)) return;
+  const targetMember = getManagedMember(targetEmail) || {};
+
+  const confirmed = window.confirm(`${targetEmail} 계정에 초기 관리자 권한을 넘길까요?\n위임 후 해당 계정은 관리자 관리 권한을 갖습니다.`);
+  if (!confirmed) return;
+
+  managedMembers = managedMembers.filter((member) => normalizeMemberEmail(member.email) !== targetEmail);
+  managedMembers.push({ ...targetMember, email: targetEmail, role: "owner", source: "초기 관리자 위임" });
+  setBootstrapAdminEmail(targetEmail);
+  saveManagedMembers();
+  currentRole = getManagedMember(normalizeMemberEmail(currentUser?.email))?.role || "viewer";
+  updateAccess();
 }
 
 function buildReaderUrl(url) {

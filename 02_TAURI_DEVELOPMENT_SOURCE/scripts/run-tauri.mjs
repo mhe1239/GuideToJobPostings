@@ -40,7 +40,7 @@ if (!existsSync(executable)) {
 
 const command = process.platform === "win32" ? (process.env.ComSpec || "cmd.exe") : executable;
 const args = process.platform === "win32"
-  ? ["/d", "/s", "/c", `"${executable}" ${mode}`]
+  ? ["/d", "/c", executable, mode]
   : [mode];
 
 const child = spawn(command, args, {

@@ -29,10 +29,9 @@ function resolveAdminRole(user) {
     .map((member) => ({ ...member, email: normalizeAdminEmail(member.email) }))
     .filter((member) => member.email);
   const matched = members.find((member) => member.email === email);
-  if (matched && ADMIN_ROLE_RANK[matched.role] !== undefined) return matched.role;
-
   const bootstrapEmail = normalizeAdminEmail(window.localStorage.getItem(ADMIN_BOOTSTRAP_KEY));
   if (bootstrapEmail && bootstrapEmail === email) return "owner";
+  if (matched && ADMIN_ROLE_RANK[matched.role] !== undefined) return matched.role;
 
   if (!bootstrapEmail && members.length === 0) {
     window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, email);

@@ -21,7 +21,13 @@ const ADMIN_DEFAULT_NOTICES = Object.freeze([
     department: "입학전형관리팀",
     date: "2026.07.20",
     status: "모집 중",
+    sourceTitle: "입학처 공식 홍보대사 늘품 12기 2학기 수습 위원 모집 공고",
     sourceUrl: LEGACY_DEFAULT_NOTICE_URL,
+    publishedAt: "2026.07.20",
+    sourceType: "image",
+    dataMethod: "실제 공고 기반 재구성",
+    reviewed: true,
+    reviewedAt: "2026.07.23",
     summary: "입학처 공식 홍보대사 늘품 수습 위원 모집 공고입니다. 공식 원문과 관리자 검수 내용을 함께 확인하세요.",
     facts: {
       period: "7월 20일 ~ 8월 2일 17:00",
@@ -40,7 +46,13 @@ const ADMIN_DEFAULT_NOTICES = Object.freeze([
     department: "학생지원 관련 부서",
     date: "2026.07.20",
     status: "안내",
+    sourceTitle: "2026년도 제2회 인터넷중독전문상담사 자격검정 시행 공고",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    publishedAt: "2026.07.20",
+    sourceType: "html",
+    dataMethod: "실제 공고 기반 재구성",
+    reviewed: true,
+    reviewedAt: "2026.07.23",
     summary: "인터넷중독전문상담사 자격검정 시행 안내 공고입니다. 세부 일정과 자격은 공식 공고 원문을 확인하세요.",
     facts: {
       period: "공식 공고 원문 확인",
@@ -58,7 +70,13 @@ const ADMIN_DEFAULT_NOTICES = Object.freeze([
     department: "학생지원 관련 부서",
     date: "2026.07.16",
     status: "안내",
+    sourceTitle: "7월 문화가 있는 날 재즈 콘서트 개최 공고",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    publishedAt: "2026.07.16",
+    sourceType: "html",
+    dataMethod: "실제 공고 기반 재구성",
+    reviewed: true,
+    reviewedAt: "2026.07.23",
     summary: "문화 행사 참여 안내 공고입니다. 일정, 장소, 참여 방법은 공식 공고 원문 기준으로 확인하세요.",
     facts: {
       period: "7월 문화가 있는 날",
@@ -76,7 +94,13 @@ const ADMIN_DEFAULT_NOTICES = Object.freeze([
     department: "학생지원 관련 부서",
     date: "2026.07.15",
     status: "모집 중",
+    sourceTitle: "2026학년도 대학생활 지원 비교과 프로그램 참여 안내 공고",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    publishedAt: "2026.07.15",
+    sourceType: "html",
+    dataMethod: "실제 공고 기반 재구성",
+    reviewed: true,
+    reviewedAt: "2026.07.23",
     summary: "대학생활 적응과 역량 강화를 돕는 비교과 프로그램 참여 안내 공고입니다.",
     facts: {
       period: "공식 공고 원문 확인",
@@ -482,16 +506,23 @@ function buildPublishedNotice(baseNotice) {
   const faq = adminPage.faq.value.trim();
   const sourceUrl = baseNotice.sourceUrl;
   const title = baseNotice.title;
+  const today = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, ".").replace(/\.$/, "");
 
   return {
     id: baseNotice.id || createNoticeId(title, sourceUrl),
     title,
     category: baseNotice.category || "대학생활",
     department: extractFactFromSummary(adminPage.evidence.value, "문의처", baseNotice.sections?.find((section) => section.key === "contact")?.text || baseNotice.department || "담당 부서 확인 필요"),
-    date: baseNotice.date || new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, ".").replace(/\.$/, ""),
+    date: baseNotice.date || today,
     status: baseNotice.status || "공개됨",
     sourcePrefix: "관리자 검수 공고",
+    sourceTitle: baseNotice.sourceTitle || title,
     sourceUrl,
+    publishedAt: baseNotice.publishedAt || baseNotice.date || today,
+    sourceType: baseNotice.sourceType || (baseNotice.images?.length > 0 ? "image" : "html"),
+    dataMethod: "AI 초안",
+    reviewed: true,
+    reviewedAt: today,
     summary: summary || `${title} 공고입니다. 공식 원문과 관리자 검수 내용을 함께 확인해 주세요.`,
     facts: {
       period: extractFactFromSummary(summary, "핵심 일정", "공식 공고 원문 확인"),
@@ -500,7 +531,6 @@ function buildPublishedNotice(baseNotice) {
     },
     faqs: parseFaqDraft(faq),
     isPublished: true,
-    publishedAt: baseNotice.publishedAt || Date.now(),
     updatedAt: Date.now(),
   };
 }

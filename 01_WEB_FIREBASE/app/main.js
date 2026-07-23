@@ -11,8 +11,14 @@ const DEFAULT_NOTICES = Object.freeze([
     department: "입학전형관리팀",
     date: "2026.07.20",
     status: "모집 중",
+    sourceTitle: "입학처 공식 홍보대사 늘품 12기 2학기 수습 위원 모집 공고",
     sourcePrefix: "공식 공고 카드뉴스",
     sourceUrl: "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9",
+    publishedAt: "2026.07.20",
+    sourceType: "image",
+    dataMethod: "실제 공고 기반 재구성",
+    reviewed: true,
+    reviewedAt: "2026.07.23",
     summary: "강남대학교 입학처 공식 홍보대사 늘품의 2026학년도 2학기 수습 임원을 모집합니다. 공식 카드뉴스 공고의 핵심 내용을 확인한 뒤 FAQ 또는 질문하기를 이용해 주세요.",
     facts: {
       period: "7월 20일(월)–8월 2일(일) 17:00",
@@ -47,8 +53,14 @@ const DEFAULT_NOTICES = Object.freeze([
     department: "학생지원 관련 부서",
     date: "2026.07.20",
     status: "안내",
+    sourceTitle: "2026년도 제12회 인터넷중독전문상담사 자격검정 시행 공고",
     sourcePrefix: "공식 공고 원문",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    publishedAt: "2026.07.20",
+    sourceType: "html",
+    dataMethod: "실제 공고 기반 재구성",
+    reviewed: true,
+    reviewedAt: "2026.07.23",
     summary: "외부 기관 자격검정 시행 안내 공고입니다. 신청 기간, 응시 자격, 접수 방법은 공식 공고 원문에서 확인해야 합니다.",
     facts: {
       period: "공식 공고 원문 확인",
@@ -68,8 +80,14 @@ const DEFAULT_NOTICES = Object.freeze([
     department: "학생지원 관련 부서",
     date: "2026.07.16",
     status: "안내",
+    sourceTitle: "7월 문화가 있는 날 재즈 콘서트 개최 공고",
     sourcePrefix: "공식 공고 원문",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    publishedAt: "2026.07.16",
+    sourceType: "html",
+    dataMethod: "실제 공고 기반 재구성",
+    reviewed: true,
+    reviewedAt: "2026.07.23",
     summary: "외부 문화 행사 참여 안내 공고입니다. 일정, 장소, 참여 방법은 공식 공고 원문을 기준으로 확인해야 합니다.",
     facts: {
       period: "7월 문화가 있는 날",
@@ -89,8 +107,14 @@ const DEFAULT_NOTICES = Object.freeze([
     department: "학생지원 관련 부서",
     date: "2026.07.15",
     status: "모집 중",
+    sourceTitle: "2026학년도 대학생활 지원 비교과 프로그램 참여 안내 공고",
     sourcePrefix: "공식 공고 원문",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
+    publishedAt: "2026.07.15",
+    sourceType: "html",
+    dataMethod: "실제 공고 기반 재구성",
+    reviewed: true,
+    reviewedAt: "2026.07.23",
     summary: "대학생활 적응과 역량 강화를 돕는 비교과 프로그램 참여 안내 공고입니다. 신청 기간과 참여 방법은 공식 공고 원문 기준으로 확인해야 합니다.",
     facts: {
       period: "공식 공고 원문 확인",
@@ -104,6 +128,13 @@ const DEFAULT_NOTICES = Object.freeze([
     ],
   },
 ]);
+
+const SOURCE_TYPE_LABELS = Object.freeze({
+  image: "이미지",
+  pdf: "PDF",
+  html: "HTML",
+  mock: "가상 샘플",
+});
 
 let notices = getPublishedNotices();
 let activeNotice = getInitialNotice();
@@ -142,6 +173,15 @@ const elements = {
   factEligibility: document.querySelector("#fact-eligibility"),
   factField: document.querySelector("#fact-field"),
   sourceLineText: document.querySelector("#source-line-text"),
+  sourceTitle: document.querySelector("#source-title"),
+  sourceDepartment: document.querySelector("#source-department"),
+  sourcePublishedAt: document.querySelector("#source-published-at"),
+  sourceType: document.querySelector("#source-type"),
+  dataMethod: document.querySelector("#data-method"),
+  reviewStatusText: document.querySelector("#review-status-text"),
+  reviewedAt: document.querySelector("#reviewed-at"),
+  mockSourceNote: document.querySelector("#mock-source-note"),
+  sourceOriginalLink: document.querySelector("#source-original-link"),
   answerSourceLink: document.querySelector("#answer-source-link"),
   departmentSourceLink: document.querySelector(".department-source-link"),
   departmentDescription: document.querySelector(".department-description"),
@@ -189,6 +229,33 @@ function getPublishedNotices() {
 function getInitialNotice() {
   const selectedId = new URLSearchParams(window.location.search).get("notice");
   return notices.find((notice) => notice.id === selectedId) || notices[0];
+}
+
+function formatNoticeDate(value, fallback = "확인 필요") {
+  if (!value) return fallback;
+  if (typeof value === "number") {
+    return new Date(value).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, ".").replace(/\.$/, "");
+  }
+  return value;
+}
+
+function getSourceTypeLabel(sourceType) {
+  return SOURCE_TYPE_LABELS[sourceType] || "확인 필요";
+}
+
+function hasSourceUrl(notice) {
+  return Boolean(notice.sourceUrl && String(notice.sourceUrl).trim());
+}
+
+function setSourceLink(link, url) {
+  if (!link) return;
+  const visible = Boolean(url && String(url).trim());
+  link.hidden = !visible;
+  if (visible) {
+    link.href = url;
+  } else {
+    link.removeAttribute("href");
+  }
 }
 
 function buildAnswerRules(notice) {
@@ -273,9 +340,14 @@ function selectNotice(noticeId) {
 }
 
 function renderNotice() {
+  const sourceUrl = hasSourceUrl(activeNotice) ? activeNotice.sourceUrl : "";
+  const sourceType = activeNotice.sourceType || (sourceUrl ? "html" : "mock");
+  const dataMethod = activeNotice.dataMethod || (sourceType === "mock" ? "가상 샘플" : "실제 공고 기반 재구성");
+  const reviewed = activeNotice.reviewed === true;
+
   document.title = `강남대 공고 길잡이 — ${activeNotice.title}`;
   elements.breadcrumbCategory.textContent = activeNotice.category;
-  elements.noticeMeta.textContent = `${activeNotice.department} · ${activeNotice.category} · ${activeNotice.date}`;
+  elements.noticeMeta.textContent = `${activeNotice.department} · ${activeNotice.category} · ${formatNoticeDate(activeNotice.publishedAt || activeNotice.date)}`;
   elements.noticeTitle.textContent = activeNotice.title;
   elements.heroSummary.textContent = activeNotice.summary;
   elements.statusBadge.lastChild.textContent = ` ${activeNotice.status}`;
@@ -285,8 +357,17 @@ function renderNotice() {
   elements.sourceLineText.textContent = activeNotice.isPublished
     ? "관리자가 검수 후 공개한 공고 초안입니다. 세부 내용은 공식 공고 원문과 함께 확인해 주세요."
     : "공식 공고 내용을 확인해 작성한 답변입니다.";
-  elements.answerSourceLink.href = activeNotice.sourceUrl;
-  elements.departmentSourceLink.href = activeNotice.sourceUrl;
+  elements.sourceTitle.textContent = activeNotice.sourceTitle || activeNotice.title;
+  elements.sourceDepartment.textContent = activeNotice.department || "확인 필요";
+  elements.sourcePublishedAt.textContent = formatNoticeDate(activeNotice.publishedAt || activeNotice.date);
+  elements.sourceType.textContent = getSourceTypeLabel(sourceType);
+  elements.dataMethod.textContent = dataMethod;
+  elements.reviewStatusText.textContent = reviewed ? "검수 완료" : "검수 전";
+  elements.reviewedAt.textContent = reviewed ? formatNoticeDate(activeNotice.reviewedAt) : "검수 전";
+  elements.mockSourceNote.hidden = dataMethod !== "가상 샘플" && sourceType !== "mock";
+  setSourceLink(elements.sourceOriginalLink, sourceUrl);
+  setSourceLink(elements.answerSourceLink, sourceUrl);
+  setSourceLink(elements.departmentSourceLink, sourceUrl);
   elements.departmentTitle.textContent = `${activeNotice.department}으로 문의해 주세요`;
   elements.departmentDescription.textContent = "FAQ와 답변으로 해결되지 않은 문의를 담당합니다.";
   elements.contactNote.textContent = `문의 시 “${activeNotice.title}” 공고를 확인했다고 말씀해 주세요.`;
@@ -362,7 +443,7 @@ function showAnswer(question, result) {
   elements.answerTitle.textContent = "답변";
   elements.answerCopy.textContent = result.answer;
   elements.answerSource.textContent = `${activeNotice.sourcePrefix} > ${result.source}`;
-  elements.answerSourceLink.href = activeNotice.sourceUrl;
+  setSourceLink(elements.answerSourceLink, hasSourceUrl(activeNotice) ? activeNotice.sourceUrl : "");
   elements.answerState.textContent = "답변 찾음";
   elements.evidenceCard.hidden = false;
   focusResultOnSmallScreen();

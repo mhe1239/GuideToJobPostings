@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { Window } from "happy-dom";
 
@@ -386,6 +386,31 @@ assert.match(document.querySelector("#answer-source-link").rel, /noopener/, "외
 assert.equal(typeof window.KANGNAM_ANSWER_SERVICE.generateAnswer, "function", "답변 생성 서비스는 generateAnswer 인터페이스를 제공해야 합니다.");
 const mockServiceResult = await window.KANGNAM_ANSWER_SERVICE.generateAnswer("편입생도 지원 가능한가요?", window.KANGNAM_ANSWER_SERVICE ? { ...window.KANGNAM_ANSWER_SERVICE, faqs: [] } : {});
 assert.equal(typeof mockServiceResult.status, "string", "mockAnswerService는 결과 상태를 반환해야 합니다.");
+let capturedAnswerRequest = null;
+const originalFetch = window.fetch;
+window.fetch = async (url, options) => {
+  capturedAnswerRequest = { url: String(url), body: JSON.parse(options.body) };
+  return {
+    ok: true,
+    json: async () => ({ status: "success", answer: "Gemini 함수 답변", source: "공식 공고 원문 및 이미지" }),
+  };
+};
+const geminiServiceResult = await window.KANGNAM_ANSWER_SERVICE.generateAnswer("이미지에 나온 모집 분야가 뭐야?", {
+  sourceUrl: officialNoticeUrl,
+  sourceImageUrl: "https://web.kangnam.ac.kr/example/notice-card.png",
+  imageUrls: ["https://web.kangnam.ac.kr/example/notice-card.png"],
+  title: "이미지 공고",
+  department: "입학전형관리팀",
+  summary: "이미지 공고 요약",
+  facts: { field: "이미지 확인 필요" },
+});
+assert.equal(capturedAnswerRequest.url, "/api/askNotice", "공식 공고 질문은 서버리스 Gemini 함수로 전달해야 합니다.");
+assert.equal(capturedAnswerRequest.body.sourceUrl, officialNoticeUrl, "Gemini 함수 요청에는 공식 공고 원문 URL이 포함되어야 합니다.");
+assert.deepEqual(capturedAnswerRequest.body.imageUrls, ["https://web.kangnam.ac.kr/example/notice-card.png"], "Gemini 함수 요청에는 저장된 원문 이미지 URL이 포함되어야 합니다.");
+assert.equal(geminiServiceResult.answer, "Gemini 함수 답변", "Gemini 함수가 성공하면 함수 답변을 표시해야 합니다.");
+window.fetch = async () => {
+  throw new Error("local preview has no answer function");
+};
 
 click(window, "#retry-button");
 assert.equal(document.querySelector("#question-input").value, "", "다른 질문하기는 입력을 초기화해야 합니다.");
@@ -416,11 +441,12 @@ await submitAndWait(window);
 assert.equal(document.querySelector("#answer-copy").textContent, "검색 결과가 없습니다. 담당 부서에 문의해주세요.", "준비되지 않은 질문은 실패 상태를 보여야 합니다.");
 assert.equal(document.querySelector("#evidence-card").hidden, true, "검색 실패 시 근거를 임의로 표시하지 않아야 합니다.");
 assert.ok(document.querySelector("#department-button"), "검색 실패 후에도 담당 부서로 이동할 수 있어야 합니다.");
+window.fetch = originalFetch;
 
-assert.doesNotMatch(script, /fetch\s*\(/, "브라우저에서 외부 AI API를 호출하지 않아야 합니다.");
-assert.doesNotMatch(answerServiceScript, /fetch\s*\(/, "답변 서비스도 브라우저에서 외부 AI API를 직접 호출하지 않아야 합니다.");
+assert.doesNotMatch(script, /generativelanguage\.googleapis|GEMINI_API_KEY/, "상세 화면 스크립트에 Gemini API 키나 직접 호출 URL이 없어야 합니다.");
+assert.doesNotMatch(answerServiceScript, /generativelanguage\.googleapis|GEMINI_API_KEY/, "답변 서비스는 Gemini API를 직접 호출하지 않아야 합니다.");
+assert.match(answerServiceScript, /\/api\/askNotice/, "답변 서비스는 서버리스 답변 함수만 호출해야 합니다.");
 assert.match(answerServiceScript, /generateAnswer\(question, notice\)/, "실제 AI 교체 지점은 generateAnswer(question, notice) 인터페이스여야 합니다.");
-assert.match(answerServiceScript, /서버 또는 서버리스 함수/, "실제 AI 연결은 서버 또는 서버리스 함수로 교체하도록 주석으로 안내해야 합니다.");
 assert.doesNotMatch(html + listHtml + script + listScript, /031-\d{3,4}-\d{4}/, "앱 데이터에 실제 또는 가상 전화번호를 복사하지 않아야 합니다.");
 assert.doesNotMatch(html + listHtml + script + listScript, /(sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{20,}|AKIA[0-9A-Z]{16})/, "대표적인 API 키 패턴이 없어야 합니다.");
 assert.match(document.querySelector("#feedback-title").textContent, /확인할 내용/, "부서 피드백 메모가 화면에 표시되어야 합니다.");

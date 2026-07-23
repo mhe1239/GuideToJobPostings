@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/generate-firebase-config.mjs",
-    "deploy": "npm run build && firebase deploy --only hosting --project guide-to-job-postings"
+    "lint": "npm --prefix functions run lint",
+    "deploy": "npm run build && firebase deploy --only hosting,functions --project guide-to-job-postings"
   }
 }

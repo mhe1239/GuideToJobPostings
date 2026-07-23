@@ -2,6 +2,7 @@
 
 (function registerAnswerService(global) {
   const EMPTY_RESULT = Object.freeze({ status: "empty", answer: "", source: "" });
+  const ANSWER_ENDPOINT = "/api/askNotice";
 
   function getFact(notice, key) {
     return notice.facts?.[key] || "확인 필요";
@@ -72,7 +73,25 @@
     ];
   }
 
-  async function generateAnswer(question, notice) {
+  function getSourceImageUrls(notice) {
+    return [...new Set([
+      ...(Array.isArray(notice.imageUrls) ? notice.imageUrls : []),
+      ...(Array.isArray(notice.images) ? notice.images : []),
+      notice.sourceImageUrl || "",
+      notice.imageUrl || "",
+    ].filter(Boolean))];
+  }
+
+  function hasOfficialSourceUrl(notice) {
+    try {
+      const url = new URL(notice?.sourceUrl || "");
+      return url.protocol === "https:" && url.hostname === "web.kangnam.ac.kr";
+    } catch {
+      return false;
+    }
+  }
+
+  async function generateRuleAnswer(question, notice) {
     const normalized = normalizeQuestion(question);
     const answer = buildAnswerRules(notice).find((rule) =>
       rule.keywords.some((keyword) => normalized.includes(normalizeQuestion(keyword))),
@@ -82,10 +101,46 @@
     return { status: "success", answer: answer.answer, source: answer.source };
   }
 
-  // 실제 Gemini/OpenAI 등은 브라우저에서 직접 호출하지 말고 서버 또는 서버리스 함수에서 처리한 뒤
-  // 이 generateAnswer(question, notice) 구현만 서버 API 호출로 교체하세요.
+  async function generateGeminiAnswer(question, notice) {
+    const response = await fetch(ANSWER_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question,
+        sourceUrl: notice.sourceUrl,
+        imageUrls: getSourceImageUrls(notice),
+        notice: {
+          title: notice.title,
+          department: notice.department,
+          summary: notice.summary,
+          facts: notice.facts,
+        },
+      }),
+    });
+
+    const result = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(result?.message || "Gemini 답변을 생성하지 못했습니다.");
+    }
+
+    return result;
+  }
+
+  async function generateAnswer(question, notice) {
+    if (hasOfficialSourceUrl(notice)) {
+      try {
+        const result = await generateGeminiAnswer(question, notice);
+        if (result?.status === "success" && result.answer) return result;
+      } catch (error) {
+        console.warn("Gemini answer failed, falling back to saved notice rules.", error);
+      }
+    }
+
+    return generateRuleAnswer(question, notice);
+  }
+
   global.KANGNAM_ANSWER_SERVICE = Object.freeze({
     generateAnswer,
-    mockAnswerService: Object.freeze({ generateAnswer }),
+    mockAnswerService: Object.freeze({ generateAnswer: generateRuleAnswer }),
   });
 })(window);

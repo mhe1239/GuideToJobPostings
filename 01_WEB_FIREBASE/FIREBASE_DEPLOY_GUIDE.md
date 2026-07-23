@@ -2,7 +2,7 @@
 
 이 폴더는 `강남대 공고 길잡이` 공식 공고 기반 버전의 Firebase Hosting 배포용 파일입니다.
 
-화면과 미리 준비한 예시 답변은 `app/` 폴더에 있습니다. 실제 AI·OCR, 로그인, 데이터베이스 또는 개인정보를 사용하지 않으며, 사용자가 선택한 경우에만 강남대학교 공식 공고 링크를 엽니다.
+화면은 `app/` 폴더에 있고, 상세 공고 질문 답변은 `functions/`의 서버리스 함수가 Gemini API를 호출해 생성합니다. Gemini API 키는 클라이언트에 포함하지 않고 Firebase Functions 환경 변수로만 사용합니다.
 
 ## 준비
 
@@ -29,6 +29,8 @@ firebase use --add
 
 ## 7일 검증 링크 배포
 
+Gemini 답변 기능을 배포하려면 `.env.local` 또는 Firebase Functions 환경에 `GEMINI_API_KEY`를 설정해야 합니다. 선택적으로 `GEMINI_MODEL`을 지정할 수 있으며, 기본값은 `gemini-2.0-flash`입니다.
+
 ```bash
 firebase hosting:channel:deploy fixed-review --expires 7d
 ```
@@ -48,7 +50,7 @@ firebase hosting:channel:delete fixed-review
 검증 완료 후에만 실행합니다.
 
 ```bash
-firebase deploy --only hosting
+npm run deploy
 ```
 
 ## 주의사항
@@ -56,6 +58,6 @@ firebase deploy --only hosting
 - `firebase init hosting`을 다시 실행할 필요가 없습니다.
 - `app/index.html`을 덮어쓰면 안 됩니다.
 - Public directory는 이미 `app`으로 설정되어 있습니다.
-- Firebase SDK, Authentication, Firestore, Storage, Functions는 필요하지 않습니다.
-- 결제 계정을 연결하거나 Blaze 플랜으로 변경할 필요가 없습니다.
+- Firebase SDK, Authentication, Functions를 사용합니다.
+- Functions 배포 및 외부 Gemini API 호출에는 Firebase 프로젝트 설정과 요금제 조건을 확인해야 합니다.
 - DMG는 Mac 설치용이며 이 웹 배포 ZIP에는 포함하지 않았습니다.

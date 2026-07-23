@@ -160,6 +160,13 @@ const SOURCE_TYPE_LABELS = Object.freeze({
   mock: "가상 샘플",
 });
 
+const APPROVAL_STATUS_LABELS = Object.freeze({
+  draft: "초안",
+  review: "검수 필요",
+  published: "공개",
+  declined: "보류",
+});
+
 const adminPage = {
   authBadge: document.querySelector("#admin-auth-badge") || document.querySelector("#review-status"),
   authState: document.querySelector("#admin-auth-state"),
@@ -186,7 +193,10 @@ const adminPage = {
   faq: document.querySelector("#draft-faq"),
   evidence: document.querySelector("#draft-evidence"),
   checkboxes: [...document.querySelectorAll(".approval-checkbox")],
+  approvalStatusChip: document.querySelector("#approval-status-chip"),
+  editButton: document.querySelector("#edit-draft-button"),
   approveButton: document.querySelector("#approve-draft-button"),
+  declineButton: document.querySelector("#decline-draft-button"),
   note: document.querySelector("#approval-note"),
   publishedList: document.querySelector("#published-list"),
   publishedCountChip: document.querySelector("#published-count-chip"),
@@ -203,10 +213,24 @@ let currentDraftNotice = null;
 let selectedPublishedId = "";
 let selectedMockNoticeId = "";
 let noticeInputMode = "url";
+let currentApprovalStatus = "draft";
 
 function setAdminNote(message) {
   if (adminPage.note) adminPage.note.textContent = message;
   if (adminPage.publishedNote) adminPage.publishedNote.textContent = message;
+}
+
+function setApprovalStatus(status) {
+  currentApprovalStatus = status;
+  const label = APPROVAL_STATUS_LABELS[status] || status;
+  if (adminPage.chip) {
+    adminPage.chip.textContent = label;
+    adminPage.chip.dataset.status = status;
+  }
+  if (adminPage.approvalStatusChip) {
+    adminPage.approvalStatusChip.textContent = label;
+    adminPage.approvalStatusChip.dataset.status = status;
+  }
 }
 
 function loadManagedMembers() {
@@ -333,7 +357,7 @@ function resetDraftSelectionState(message) {
   if (adminPage.summary) adminPage.summary.value = "";
   if (adminPage.faq) adminPage.faq.value = "";
   if (adminPage.evidence) adminPage.evidence.value = "";
-  if (adminPage.chip) adminPage.chip.textContent = "미생성";
+  setApprovalStatus("draft");
   if (adminPage.note) adminPage.note.textContent = message;
   adminPage.checkboxes.forEach((checkbox) => {
     checkbox.checked = false;
@@ -370,8 +394,14 @@ function renderMembers() {
 function updateApprovalState() {
   const ready = adminPage.fields && !adminPage.fields.hidden;
   const checked = adminPage.checkboxes.every((checkbox) => checkbox.checked);
+  if (adminPage.editButton) {
+    adminPage.editButton.disabled = !(currentRole === "owner" && ready);
+  }
   if (adminPage.approveButton) {
     adminPage.approveButton.disabled = !(currentRole === "owner" && ready && checked);
+  }
+  if (adminPage.declineButton) {
+    adminPage.declineButton.disabled = !(currentRole === "owner" && ready);
   }
 
   const canManagePublished = currentRole === "owner" && Boolean(selectedPublishedId);
@@ -644,10 +674,10 @@ function getManageableNotices() {
   const merged = [...loadPublishedNotices(), ...ADMIN_DEFAULT_NOTICES];
   return merged
     .filter((notice, index, list) => list.findIndex((item) => item.id === notice.id) === index)
-    .filter((notice) => !deletedIds.has(notice.id));
+    .filter((notice) => notice.approvalStatus || !deletedIds.has(notice.id));
 }
 
-function buildPublishedNotice(baseNotice) {
+function buildModeratedNotice(baseNotice, approvalStatus) {
   if (!baseNotice) return null;
   const summary = adminPage.summary.value.trim();
   const faq = adminPage.faq.value.trim();
@@ -661,7 +691,8 @@ function buildPublishedNotice(baseNotice) {
     category: baseNotice.category || "대학생활",
     department: extractFactFromSummary(adminPage.evidence.value, "문의처", baseNotice.sections?.find((section) => section.key === "contact")?.text || baseNotice.department || "담당 부서 확인 필요"),
     date: baseNotice.date || today,
-    status: baseNotice.status || "공개됨",
+    status: approvalStatus === "published" ? (baseNotice.status || "공개됨") : "검수 중",
+    approvalStatus,
     sourcePrefix: "관리자 검수 공고",
     sourceTitle: baseNotice.sourceTitle || title,
     sourceUrl,
@@ -669,8 +700,8 @@ function buildPublishedNotice(baseNotice) {
     publishedAt: baseNotice.publishedAt || baseNotice.date || today,
     sourceType: baseNotice.sourceType || (baseNotice.images?.length > 0 ? "image" : "html"),
     dataMethod: baseNotice.isMockChoice ? "가상 샘플" : "AI 초안",
-    reviewed: true,
-    reviewedAt: today,
+    reviewed: approvalStatus === "published",
+    reviewedAt: approvalStatus === "published" ? today : "",
     summary: summary || `${title} 공고입니다. 공식 원문과 관리자 검수 내용을 함께 확인해 주세요.`,
     facts: {
       period: extractFactFromSummary(summary, "핵심 일정", "공식 공고 원문 확인"),
@@ -680,24 +711,30 @@ function buildPublishedNotice(baseNotice) {
       operation: baseNotice.sections?.find((section) => section.key === "period")?.text || "공식 공고 원문 확인",
     },
     faqs: parseFaqDraft(faq),
-    isPublished: true,
+    isPublished: approvalStatus === "published",
     updatedAt: Date.now(),
   };
 }
 
-function savePublishedNotice() {
-  const publishedNotice = buildPublishedNotice(currentDraftNotice);
-  if (!publishedNotice) return;
+function saveModeratedNotice(approvalStatus) {
+  const moderatedNotice = buildModeratedNotice(currentDraftNotice, approvalStatus);
+  if (!moderatedNotice) return null;
 
-  const notices = loadPublishedNotices().filter((notice) => notice.id !== publishedNotice.id && notice.sourceUrl !== publishedNotice.sourceUrl);
-  notices.unshift(publishedNotice);
+  const notices = loadPublishedNotices().filter((notice) => notice.id !== moderatedNotice.id && notice.sourceUrl !== moderatedNotice.sourceUrl);
+  notices.unshift(moderatedNotice);
   savePublishedNotices(notices.slice(0, 20));
   const deletedIds = loadDeletedNoticeIds();
-  deletedIds.delete(publishedNotice.id);
+  if (approvalStatus === "published") {
+    deletedIds.delete(moderatedNotice.id);
+  } else {
+    deletedIds.add(moderatedNotice.id);
+  }
   saveDeletedNoticeIds(deletedIds);
-  selectedPublishedId = publishedNotice.id;
+  selectedPublishedId = moderatedNotice.id;
+  currentDraftNotice = moderatedNotice;
   renderPublishedNotices();
   updateApprovalState();
+  return moderatedNotice;
 }
 
 function renderPublishedNotices() {
@@ -721,13 +758,17 @@ function renderPublishedNotices() {
       const button = document.createElement("button");
       const title = document.createElement("strong");
       const meta = document.createElement("span");
+      const state = document.createElement("small");
       button.type = "button";
       button.className = "published-item";
       button.dataset.noticeId = notice.id;
+      button.dataset.approvalStatus = notice.approvalStatus || "published";
       if (notice.id === selectedPublishedId) button.setAttribute("aria-current", "true");
       title.textContent = notice.title;
       meta.textContent = `${notice.department} · ${notice.date}${notice.isPublished ? "" : " · 기본 공고"}`;
-      button.append(title, meta);
+      state.className = "approval-state-label";
+      state.textContent = APPROVAL_STATUS_LABELS[notice.approvalStatus || "published"] || "공개";
+      button.append(title, meta, state);
       button.addEventListener("click", () => selectPublishedNotice(notice.id));
       return button;
     }),
@@ -752,7 +793,7 @@ function selectPublishedNotice(noticeId) {
   adminPage.summary.value = notice.summary;
   adminPage.faq.value = formatFaqDraft(notice.faqs || []);
   adminPage.evidence.value = `출처 URL: ${notice.sourceUrl}\n근거. 신청 기간: ${notice.facts?.period || "공식 공고 원문 확인"}\n근거. 지원 자격: ${notice.facts?.eligibility || "공식 공고 원문 확인"}\n근거. 신청/지원: ${notice.facts?.field || "공식 공고 원문 확인"}`;
-  adminPage.chip.textContent = "수정 중";
+  setApprovalStatus(notice.approvalStatus || "published");
   setAdminNote("공개된 공고를 불러왔습니다. 수정 후 저장하거나 삭제할 수 있습니다.");
   adminPage.checkboxes.forEach((checkbox) => {
     checkbox.checked = true;
@@ -763,17 +804,21 @@ function selectPublishedNotice(noticeId) {
 
 function handlePublishedSave() {
   if (currentRole !== "owner" || !selectedPublishedId || !currentDraftNotice) return;
-  const updatedNotice = buildPublishedNotice(currentDraftNotice);
+  const updatedNotice = buildModeratedNotice(currentDraftNotice, currentDraftNotice.approvalStatus || currentApprovalStatus);
   if (!updatedNotice) return;
 
   const notices = loadPublishedNotices().filter((notice) => notice.id !== selectedPublishedId);
   notices.unshift(updatedNotice);
   savePublishedNotices(notices);
   const deletedIds = loadDeletedNoticeIds();
-  deletedIds.delete(updatedNotice.id);
+  if ((updatedNotice.approvalStatus || "published") === "published") {
+    deletedIds.delete(updatedNotice.id);
+  } else {
+    deletedIds.add(updatedNotice.id);
+  }
   saveDeletedNoticeIds(deletedIds);
   setAdminNote("공개된 공고 수정 사항을 저장했습니다.");
-  adminPage.chip.textContent = "수정 저장됨";
+  setApprovalStatus(updatedNotice.approvalStatus || "draft");
   renderPublishedNotices();
   updateApprovalState();
 }
@@ -799,7 +844,7 @@ function handlePublishedDelete() {
   adminPage.summary.value = "";
   adminPage.faq.value = "";
   adminPage.evidence.value = "";
-  adminPage.chip.textContent = "미생성";
+  setApprovalStatus("draft");
   setAdminNote("공개된 공고를 삭제했습니다.");
   adminPage.checkboxes.forEach((checkbox) => {
     checkbox.checked = false;
@@ -826,17 +871,17 @@ async function handleDraftGeneration(event) {
 
   if (noticeInputMode === "url" && !adminPage.urlInput?.value.trim()) {
     setAdminNote("공고 URL을 입력하거나 공고를 선택해 주세요.");
-    adminPage.chip.textContent = "미생성";
+    setApprovalStatus("draft");
     return;
   }
 
   if (noticeInputMode === "list" && !selectedMockNoticeId) {
     setAdminNote("공고 URL을 입력하거나 공고를 선택해 주세요.");
-    adminPage.chip.textContent = "미생성";
+    setApprovalStatus("draft");
     return;
   }
 
-  adminPage.chip.textContent = "생성 중";
+  if (adminPage.chip) adminPage.chip.textContent = "생성 중";
   adminPage.generateButton.disabled = true;
   adminPage.note.textContent = noticeInputMode === "url"
     ? "공식 링크의 텍스트와 이미지 공고 후보를 수집하고 있습니다."
@@ -855,7 +900,7 @@ async function handleDraftGeneration(event) {
       adminPage.summary.value = draft.summary;
       adminPage.faq.value = draft.faq;
       adminPage.evidence.value = `${draft.evidence}\n\n현재 공고 목록은 프로토타입용 예시 데이터입니다.`;
-      adminPage.chip.textContent = "예시 결과";
+      setApprovalStatus("review");
       adminPage.note.textContent = `${notice.title} 예시 공고 기준으로 생성했습니다. 현재 결과는 프로토타입용 예시 데이터입니다.`;
       updateApprovalState();
       return;
@@ -874,12 +919,12 @@ async function handleDraftGeneration(event) {
     adminPage.summary.value = draft.summary;
     adminPage.faq.value = draft.faq;
     adminPage.evidence.value = draft.evidence;
-    adminPage.chip.textContent = "검수 필요";
+    setApprovalStatus("review");
     generatedDraftUrl = sourceUrl;
     adminPage.note.textContent = `${notice.title} 기준으로 생성했습니다. 이미지 공고가 포함된 경우 원문 이미지와 함께 검수해 주세요.`;
     updateApprovalState();
   } catch (error) {
-    adminPage.chip.textContent = "생성 실패";
+    if (adminPage.chip) adminPage.chip.textContent = "생성 실패";
     adminPage.note.textContent = `${error.message} Firebase Functions 없이 Hosting만 쓰는 현재 배포에서는 일부 링크가 브라우저 보안 정책에 막힐 수 있습니다.`;
   } finally {
     adminPage.generateButton.disabled = false;
@@ -888,11 +933,26 @@ async function handleDraftGeneration(event) {
 
 function handleDraftApproval() {
   if (currentRole !== "owner") return;
-  savePublishedNotice();
-  adminPage.chip.textContent = "공개됨";
-  adminPage.note.textContent = "승인된 초안이 학생 페이지 목록에 공개되었습니다. 학생 페이지에서 선택해 확인할 수 있습니다.";
-  adminPage.approveButton.disabled = true;
-  adminPage.approveButton.textContent = "공개 완료";
+  const notice = saveModeratedNotice("published");
+  if (!notice) return;
+  setApprovalStatus("published");
+  adminPage.note.textContent = "공고가 학생에게 공개되었습니다.";
+  adminPage.approveButton.textContent = "공개 승인";
+}
+
+function handleDraftDecline() {
+  if (currentRole !== "owner") return;
+  const notice = saveModeratedNotice("declined");
+  if (!notice) return;
+  setApprovalStatus("declined");
+  adminPage.note.textContent = "공고가 보류되었습니다.";
+}
+
+function handleDraftEdit() {
+  if (currentRole !== "owner" || !adminPage.fields || adminPage.fields.hidden) return;
+  setApprovalStatus("draft");
+  adminPage.summary.focus();
+  setAdminNote("초안을 수정할 수 있습니다. 수정 후 공개 승인 또는 보류를 선택해 주세요.");
 }
 
 async function handleLogout() {
@@ -928,6 +988,8 @@ adminPage.deletePublishedButton?.addEventListener("click", handlePublishedDelete
 clearLegacyDefaultNoticeUrl();
 renderMockSchoolNotices();
 adminPage.checkboxes.forEach((checkbox) => checkbox.addEventListener("change", updateApprovalState));
+adminPage.editButton?.addEventListener("click", handleDraftEdit);
 adminPage.approveButton?.addEventListener("click", handleDraftApproval);
+adminPage.declineButton?.addEventListener("click", handleDraftDecline);
 window.addEventListener("kangnam-firebase-ready", initAuth, { once: true });
 initAuth();

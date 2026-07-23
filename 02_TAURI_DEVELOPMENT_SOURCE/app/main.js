@@ -249,7 +249,8 @@ function getPublishedNotices() {
   const merged = [...stored, ...DEFAULT_NOTICES];
   return merged
     .filter((notice, index, list) => list.findIndex((item) => item.id === notice.id) === index)
-    .filter((notice) => !deletedIds.has(notice.id));
+    .filter((notice) => !deletedIds.has(notice.id))
+    .filter((notice) => (notice.approvalStatus || "published") === "published");
 }
 
 function getInitialNotice() {

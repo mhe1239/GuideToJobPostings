@@ -36,6 +36,17 @@ function bootList() {
   return window;
 }
 
+function bootListWithStorage(publishedNotices, deletedIds = []) {
+  const window = new Window({ url: "http://127.0.0.1:4173/" });
+  const page = listHtml.replace(/<script src="\.\/list\.js[^"]*" defer><\/script>/, "");
+  window.document.write(page);
+  window.document.close();
+  window.localStorage.setItem("kangnamPublishedNotices", JSON.stringify(publishedNotices));
+  window.localStorage.setItem("kangnamDeletedNoticeIds", JSON.stringify(deletedIds));
+  window.eval(listScript);
+  return window;
+}
+
 function bootMockNoticeWithoutSourceUrl() {
   const window = new Window({ url: "http://127.0.0.1:4173/notice.html?notice=mock-no-source" });
   const page = html.replace(/<script src="\.\/main\.js[^"]*" defer><\/script>/, "");
@@ -154,8 +165,29 @@ assert.equal(publishDocument.querySelector(".school-notice-item").getAttribute("
 assert.match(publishDocument.querySelector("#selected-notice-title").textContent, /2026학년도 비교과 프로그램 참가자 모집/, "선택한 공고 제목이 표시되어야 합니다.");
 assert.match(publishDocument.querySelector("#selected-notice-source").textContent, /학생지원팀 · 2026\.07\.23 · HTML/, "선택한 공고 출처 정보가 표시되어야 합니다.");
 publishDocument.querySelector("#admin-ingest-form").dispatchEvent(new publishWindow.Event("submit", { bubbles: true, cancelable: true }));
-assert.equal(publishDocument.querySelector("#draft-chip").textContent, "예시 결과", "목록 선택으로 만든 초안은 예시 결과임을 표시해야 합니다.");
+assert.equal(publishDocument.querySelector("#draft-chip").textContent, "검수 필요", "목록 선택으로 만든 초안은 검수 필요 상태로 표시되어야 합니다.");
 assert.match(publishDocument.querySelector("#approval-note").textContent, /프로토타입용 예시 데이터/, "목록 선택 초안은 예시 데이터임을 안내해야 합니다.");
+assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "검수 필요", "초안 생성 후 관리자 검수 상태가 표시되어야 합니다.");
+assert.equal(publishDocument.querySelector("#edit-draft-button").disabled, false, "초안 생성 후 수정 버튼을 사용할 수 있어야 합니다.");
+click(publishWindow, "#edit-draft-button");
+assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "초안", "수정 버튼을 누르면 상태가 초안으로 바뀌어야 합니다.");
+click(publishWindow, "#decline-draft-button");
+assert.equal(publishDocument.querySelector("#approval-note").textContent, "공고가 보류되었습니다.", "보류 시 안내 문구가 표시되어야 합니다.");
+assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "보류", "보류 시 관리자 화면 상태가 구분되어야 합니다.");
+assert.equal(publishDocument.querySelector(".published-item").dataset.approvalStatus, "declined", "관리자 목록에서 보류 상태가 표시되어야 합니다.");
+const declinedNotices = JSON.parse(publishWindow.localStorage.getItem("kangnamPublishedNotices"));
+const declinedListWindow = bootListWithStorage(declinedNotices, JSON.parse(publishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
+assert.doesNotMatch(declinedListWindow.document.querySelector("#notice-list").textContent, /2026학년도 비교과 프로그램 참가자 모집/, "보류된 공고는 학생 목록에 표시되지 않아야 합니다.");
+publishDocument.querySelectorAll(".approval-checkbox").forEach((checkbox) => {
+  checkbox.checked = true;
+  checkbox.dispatchEvent(new publishWindow.Event("change", { bubbles: true }));
+});
+click(publishWindow, "#approve-draft-button");
+assert.equal(publishDocument.querySelector("#approval-note").textContent, "공고가 학생에게 공개되었습니다.", "공개 승인 시 안내 문구가 표시되어야 합니다.");
+assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "공개", "공개 승인 시 관리자 화면 상태가 공개로 바뀌어야 합니다.");
+const approvedNotices = JSON.parse(publishWindow.localStorage.getItem("kangnamPublishedNotices"));
+const approvedListWindow = bootListWithStorage(approvedNotices, JSON.parse(publishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
+assert.match(approvedListWindow.document.querySelector("#notice-list").textContent, /2026학년도 비교과 프로그램 참가자 모집/, "공개 승인된 공고는 학생 목록에 표시되어야 합니다.");
 assert.match(manageHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "공개 공고 관리 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.equal(document.querySelectorAll(".faq-item").length, 3, "P0 FAQ 3개가 표시되어야 합니다.");
 assert.equal(document.querySelectorAll(".key-facts > div").length, 6, "핵심 정보는 신청 기간, 지원 대상, 모집 분야, 제출 서류, 운영 기간, 담당 부서 6개 항목으로 표시되어야 합니다.");
@@ -249,4 +281,4 @@ assert.match(styles, /\.full-notice-image-wrap img\s*\{[^}]*max-width:\s*100%/s,
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 
-console.log("preview integration: 103 checks passed");
+console.log("preview integration: 118 checks passed");

@@ -190,6 +190,35 @@ async function bootSeededPrimaryWithStaleRole() {
   return window;
 }
 
+async function bootStoredAdminAccess() {
+  const window = new Window({ url: "http://127.0.0.1:4173/admin.html" });
+  const page = adminHtml
+    .replace(/<script src="\.\/admin-config\.js[^"]*" defer><\/script>/, "")
+    .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
+    .replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
+  window.document.write(page);
+  window.document.close();
+  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail: "jomimin79@gmail.com" };
+  window.KANGNAM_FIREBASE = {
+    auth: { currentUser: null },
+    roleLists: { owners: ["jomimin79@gmail.com"], editors: [] },
+    onAuthStateChanged: (_auth, callback) => callback(null),
+    signOut: async () => {},
+  };
+  window.localStorage.setItem("kangnamAdminLogin", JSON.stringify({
+    email: "jomimin79@gmail.com",
+    role: "owner",
+    savedAt: Date.now(),
+  }));
+  window.eval(adminGuardScript);
+  const result = await window.KANGNAM_ADMIN_ACCESS.ready;
+  if (result.allowed) {
+    window.eval(adminScript);
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+  }
+  return window;
+}
+
 async function bootLogin(user, members = []) {
   const window = new Window({ url: "http://127.0.0.1:4173/login.html" });
   const page = loginHtml
@@ -271,6 +300,7 @@ const signedOutLoginWindow = await bootLogin(null);
 const studentLoginWindow = await bootLogin({ email: "student@kangnam.ac.kr" });
 const editorLoginWindow = await bootLogin({ email: "editor@kangnam.ac.kr" });
 const ownerLoginWindow = await bootLogin({ email: "tee01202@gmail.com" });
+const storedAdminWindow = await bootStoredAdminAccess();
 
 assert.equal(signedOutAdminWindow.document.body.dataset.adminGuard, "denied", "로그아웃 상태에서는 관리자 페이지 접근을 차단해야 합니다.");
 assert.equal(signedOutAdminWindow.document.querySelector("#admin-guard-message").textContent, "관리자만 접근 가능한 페이지입니다.", "로그아웃 차단 안내 문구가 정확해야 합니다.");
@@ -314,6 +344,10 @@ assert.equal(editorLoginWindow.document.querySelector('[href="./admin.html"]').h
 assert.equal(editorLoginWindow.document.querySelector('[href="./members.html"]').hidden, true, "수정 및 공개 가능 계정에는 관리자 관리 버튼을 숨겨야 합니다.");
 assert.equal(editorLoginWindow.document.querySelector('[href="./publish.html"]').hidden, false, "수정 및 공개 가능 계정에는 AI 공고 생성 버튼을 보여야 합니다.");
 assert.equal(ownerLoginWindow.document.querySelector('[href="./members.html"]').hidden, false, "최고 관리자 계정에는 관리자 관리 버튼을 보여야 합니다.");
+assert.equal(ownerLoginWindow.localStorage.getItem("kangnamAdminLogin") !== null, true, "관리자 로그인 성공 시 로컬 관리자 권한을 저장해야 합니다.");
+assert.equal(storedAdminWindow.document.body.dataset.adminGuard, "allowed", "Firebase 콜백이 비어도 저장된 관리자 권한으로 관리자 페이지를 열 수 있어야 합니다.");
+assert.match(storedAdminWindow.document.querySelector("#admin-auth-state").textContent, /jomimin79@gmail.com/, "저장된 관리자 권한으로 화면 로그인 상태를 복구해야 합니다.");
+assert.match(storedAdminWindow.document.querySelector("#admin-auth-badge").textContent, /관리자 관리/, "저장된 최고 관리자 권한은 보기만 가능으로 표시되면 안 됩니다.");
 
 assert.equal(listDocument.querySelector("#notice"), null, "공고 선택 화면에는 상세 공고 본문이 없어야 합니다.");
 assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 4, "공고 선택 화면에는 여러 공고가 4열 카드로 표시되어야 합니다.");
@@ -548,4 +582,4 @@ assert.match(styles, /\.source-image-link img,[\s\S]*\.full-notice-image-wrap im
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 
-console.log("preview integration: 160 checks passed");
+console.log("preview integration: 164 checks passed");

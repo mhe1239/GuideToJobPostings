@@ -8,6 +8,8 @@ const loginElements = {
 };
 
 const LOGIN_ROLE_RANK = Object.freeze({ viewer: 0, editor: 1, owner: 2 });
+const ADMIN_LOGIN_STORAGE_KEY = "kangnamAdminLogin";
+const ADMIN_ACCESS_SNAPSHOT_KEY = "kangnamLastAdminAccess";
 
 function setLoginState(title, message) {
   const strong = loginElements.state.querySelector("strong");
@@ -53,6 +55,28 @@ function canOpenAdmin(email) {
   return LOGIN_ROLE_RANK[resolveLoginRoleKey(email)] >= LOGIN_ROLE_RANK.editor;
 }
 
+function rememberAdminLogin(user) {
+  const email = normalizeEmail(user?.email);
+  const role = resolveLoginRoleKey(email);
+  if (!email || LOGIN_ROLE_RANK[role] < LOGIN_ROLE_RANK.editor) {
+    window.localStorage.removeItem(ADMIN_LOGIN_STORAGE_KEY);
+    window.sessionStorage.removeItem(ADMIN_ACCESS_SNAPSHOT_KEY);
+    return;
+  }
+
+  const members = loadManagedMembers().filter((member) => normalizeEmail(member.email) !== email);
+  const source = role === "owner" ? "최고 관리자" : "로그인 관리자";
+  window.localStorage.setItem("kangnamManagedMembers", JSON.stringify([
+    { email, role, source },
+    ...members,
+  ]));
+  if (role === "owner") window.localStorage.setItem("kangnamAdminBootstrapEmail", email);
+
+  const snapshot = JSON.stringify({ email, role, savedAt: Date.now() });
+  window.localStorage.setItem(ADMIN_LOGIN_STORAGE_KEY, snapshot);
+  window.sessionStorage.setItem(ADMIN_ACCESS_SNAPSHOT_KEY, snapshot);
+}
+
 function renderLoginActions(user) {
   const role = user ? resolveLoginRoleKey(user.email) : "viewer";
   loginElements.adminActions.forEach((action) => {
@@ -78,6 +102,7 @@ function initLoginAuth() {
   firebase.getRedirectResult?.()
     .then((result) => {
       if (result?.user) {
+        rememberAdminLogin(result.user);
         renderLoginActions(result.user);
         const message = canOpenAdmin(result.user.email)
           ? "관리자 작업 버튼을 선택해 이동하세요."
@@ -96,6 +121,7 @@ function initLoginAuth() {
       return;
     }
 
+    rememberAdminLogin(user);
     renderLoginActions(user);
     const role = resolveLoginRole(user.email);
     if (!canOpenAdmin(user.email)) {
@@ -130,6 +156,10 @@ async function handleGoogleLogin() {
 async function handleLogout() {
   const firebase = window.KANGNAM_FIREBASE;
   if (firebase) await firebase.signOut();
+  window.localStorage.removeItem(ADMIN_LOGIN_STORAGE_KEY);
+  window.sessionStorage.removeItem(ADMIN_ACCESS_SNAPSHOT_KEY);
+  renderLoginActions(null);
+  setLoginState("로그아웃 완료", "다른 Google 계정으로 다시 로그인할 수 있습니다.");
 }
 
 loginElements.googleButton.addEventListener("click", handleGoogleLogin);

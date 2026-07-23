@@ -14,6 +14,7 @@ const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
 const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
 const ADMIN_BOOTSTRAP_TRANSFER_KEY = "kangnamBootstrapTransferred";
 const ADMIN_ACCESS_SNAPSHOT_KEY = "kangnamLastAdminAccess";
+const ADMIN_LOGIN_STORAGE_KEY = "kangnamAdminLogin";
 const SCHOOL_NOTICE_MOCK_URL = "./school-notices.mock.json";
 const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
 const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
@@ -352,9 +353,9 @@ function canEditAndPublish() {
 
 function readAllowedAccessSnapshot() {
   try {
-    const snapshot = JSON.parse(window.sessionStorage.getItem(ADMIN_ACCESS_SNAPSHOT_KEY) || "null");
+    const snapshot = JSON.parse(window.sessionStorage.getItem(ADMIN_ACCESS_SNAPSHOT_KEY) || window.localStorage.getItem(ADMIN_LOGIN_STORAGE_KEY) || "null");
     if (!snapshot?.email || !snapshot?.role) return null;
-    if (Date.now() - Number(snapshot.savedAt || 0) > 10 * 60 * 1000) return null;
+    if (Date.now() - Number(snapshot.savedAt || 0) > 24 * 60 * 60 * 1000) return null;
     return { email: normalizeEmail(snapshot.email), role: snapshot.role };
   } catch {
     return null;
@@ -1360,6 +1361,8 @@ function handleDraftEdit() {
 async function handleLogout() {
   const firebase = window.KANGNAM_FIREBASE;
   if (firebase) await firebase.signOut();
+  window.localStorage.removeItem(ADMIN_LOGIN_STORAGE_KEY);
+  window.sessionStorage.removeItem(ADMIN_ACCESS_SNAPSHOT_KEY);
   window.location.assign("./index.html");
 }
 

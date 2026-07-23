@@ -5,6 +5,7 @@ const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
 const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
 const ADMIN_BOOTSTRAP_TRANSFER_KEY = "kangnamBootstrapTransferred";
 const ADMIN_ACCESS_SNAPSHOT_KEY = "kangnamLastAdminAccess";
+const ADMIN_LOGIN_STORAGE_KEY = "kangnamAdminLogin";
 const ADMIN_ROLE_RANK = Object.freeze({ viewer: 0, editor: 1, owner: 2 });
 
 function normalizeAdminEmail(email) {
@@ -115,6 +116,30 @@ function rememberAllowedAccess(user, role) {
   }));
 }
 
+function readStoredAdminLogin() {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(ADMIN_LOGIN_STORAGE_KEY) || "null");
+    if (!stored?.email || !stored?.role) return null;
+    if (Date.now() - Number(stored.savedAt || 0) > 24 * 60 * 60 * 1000) return null;
+    return {
+      user: { email: normalizeAdminEmail(stored.email) },
+      role: stored.role,
+      reason: "stored-admin",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function allowStoredAdminIfPossible(resolve) {
+  const stored = readStoredAdminLogin();
+  if (!stored || !isAllowedRole(stored.role)) return false;
+  document.body.dataset.adminGuard = "allowed";
+  rememberAllowedAccess(stored.user, stored.role);
+  resolve({ allowed: true, user: stored.user, role: stored.role, reason: stored.reason });
+  return true;
+}
+
 function waitForFirebase() {
   if (window.KANGNAM_FIREBASE) return Promise.resolve(window.KANGNAM_FIREBASE);
 
@@ -140,6 +165,8 @@ async function checkAdminAccess() {
   await waitForAdminConfig();
   const firebase = await waitForFirebase();
   if (!firebase?.onAuthStateChanged) {
+    const storedAllowed = await new Promise((resolve) => allowStoredAdminIfPossible(resolve) || resolve(null));
+    if (storedAllowed) return storedAllowed;
     document.body.dataset.adminGuard = "denied";
     setGuardMessage("관리자만 접근 가능한 페이지입니다.");
     redirectToStudentHome();
@@ -149,6 +176,7 @@ async function checkAdminAccess() {
   return new Promise((resolve) => {
     firebase.onAuthStateChanged(firebase.auth, (user) => {
       if (!user) {
+        if (allowStoredAdminIfPossible(resolve)) return;
         document.body.dataset.adminGuard = "denied";
         setGuardMessage("관리자만 접근 가능한 페이지입니다.");
         redirectToStudentHome();

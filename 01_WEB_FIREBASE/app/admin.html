@@ -11,11 +11,13 @@
     <link rel="icon" type="image/png" href="./assets/icons/32x32.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="./assets/icons/128x128.png" />
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=20260723-user-flows" />
+    <link rel="stylesheet" href="./styles.css?v=20260723-admin-guard" />
     <script type="module" src="./firebase-config.js?v=20260722-url-reset"></script>
-    <script src="./admin.js?v=20260722-manage-note-fix" defer></script>
+    <script src="./admin-guard.js?v=20260723-admin-guard" defer></script>
+    <script src="./admin.js?v=20260723-admin-guard" defer></script>
   </head>
-  <body>
+  <body class="admin-guarded-page" data-admin-guard="pending" data-admin-roles="owner editor">
+    <div class="admin-guard-message" id="admin-guard-message" role="alert" aria-live="assertive">관리자 권한을 확인하고 있습니다.</div>
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="./index.html" aria-label="강남대 공고 길잡이 홈">
@@ -85,17 +87,17 @@
         </section>
 
         <div class="admin-menu-grid" data-requires-admin>
-          <a class="admin-menu-card" href="./members.html">
+          <a class="admin-menu-card" href="./members.html" data-required-role="owner">
             <span>01</span>
             <strong>관리자 관리</strong>
             <small>관리자 계정과 역할을 확인하고 추가합니다.</small>
           </a>
-          <a class="admin-menu-card" href="./publish.html">
+          <a class="admin-menu-card" href="./publish.html" data-required-role="editor">
             <span>02</span>
             <strong>AI 공고 생성 및 공개</strong>
             <small>공식 공고 URL로 초안을 만들고 검수 후 공개합니다.</small>
           </a>
-          <a class="admin-menu-card" href="./manage.html">
+          <a class="admin-menu-card" href="./manage.html" data-required-role="editor">
             <span>03</span>
             <strong>공개된 공고 관리</strong>
             <small>이미 공개된 공고를 수정하거나 삭제합니다.</small>

@@ -283,6 +283,30 @@ function saveManagedMembers() {
   window.localStorage.setItem("kangnamManagedMembers", JSON.stringify(managedMembers));
 }
 
+function roleRank(role) {
+  return { viewer: 0, editor: 1, owner: 2 }[role] || 0;
+}
+
+function canManageMembers() {
+  return currentRole === "owner";
+}
+
+function canEditAndPublish() {
+  return roleRank(currentRole) >= roleRank("editor");
+}
+
+function applyRoleVisibility() {
+  document.querySelectorAll("[data-required-role]").forEach((element) => {
+    const requiredRole = element.dataset.requiredRole;
+    const visible = roleRank(currentRole) >= roleRank(requiredRole);
+    element.dataset.roleHidden = visible ? "false" : "true";
+    element.setAttribute("aria-hidden", visible ? "false" : "true");
+    element.querySelectorAll("a, button, input, select, textarea").forEach((control) => {
+      control.tabIndex = visible ? 0 : -1;
+    });
+  });
+}
+
 function renderAuthState() {
   if (adminPage.authBadge) {
     adminPage.authBadge.textContent = ROLE_LABELS[currentRole];
@@ -296,7 +320,7 @@ function renderAuthState() {
       title.textContent = "로그아웃 상태";
       subtitle.textContent = "기본 권한은 학생 보기입니다. Google 로그인 후 관리자 작업을 사용할 수 있습니다.";
     } else {
-      title.textContent = `${currentUser.email} · ${ROLE_LABELS.owner}`;
+      title.textContent = `${currentUser.email} · ${ROLE_LABELS[currentRole] || ROLE_LABELS.viewer}`;
       subtitle.textContent = "관리자 관리, AI 초안 수정, 학생 페이지 공개가 가능합니다.";
     }
   }
@@ -305,16 +329,22 @@ function renderAuthState() {
 }
 
 function updateAccess() {
-  const allowed = currentRole === "owner";
+  const allowed = canEditAndPublish();
   renderMembers();
   renderMockSchoolNotices();
   renderPublishedNotices();
+  applyRoleVisibility();
   adminPage.restrictedAreas.forEach((area) => {
     area.classList.toggle("locked", !allowed);
     area.querySelectorAll("input, select, textarea, button").forEach((control) => {
       control.disabled = !allowed;
     });
   });
+  if (adminPage.memberForm) {
+    adminPage.memberForm.querySelectorAll("input, select, button").forEach((control) => {
+      control.disabled = !canManageMembers();
+    });
+  }
   setSchoolImportState(schoolNoticeLoadState, adminPage.schoolImportStatus?.textContent || "가져오기 버튼을 누르면 최근 공고 10개를 불러옵니다.");
   renderAuthState();
   updateApprovalState();
@@ -368,11 +398,11 @@ function setSchoolImportState(state, message) {
     adminPage.schoolImportStatus.dataset.state = state;
   }
   if (adminPage.loadSchoolNoticesButton) {
-    adminPage.loadSchoolNoticesButton.disabled = currentRole !== "owner" || state === "loading";
+    adminPage.loadSchoolNoticesButton.disabled = !canEditAndPublish() || state === "loading";
     adminPage.loadSchoolNoticesButton.textContent = state === "loading" ? "가져오는 중..." : "학교 홈페이지에서 가져오기";
   }
   if (adminPage.simulateSchoolErrorButton) {
-    adminPage.simulateSchoolErrorButton.disabled = currentRole !== "owner" || state === "loading";
+    adminPage.simulateSchoolErrorButton.disabled = !canEditAndPublish() || state === "loading";
   }
 }
 
@@ -382,7 +412,7 @@ function normalizeImportedSchoolNotice(item) {
 }
 
 async function loadSchoolNoticeList({ simulateError = false } = {}) {
-  if (currentRole !== "owner") return;
+  if (!canEditAndPublish()) return;
   selectedMockNoticeId = "";
   importedSchoolNotices = [];
   renderMockSchoolNotices();
@@ -525,16 +555,16 @@ function updateApprovalState() {
   const ready = adminPage.fields && !adminPage.fields.hidden;
   const checked = adminPage.checkboxes.every((checkbox) => checkbox.checked);
   if (adminPage.editButton) {
-    adminPage.editButton.disabled = !(currentRole === "owner" && ready);
+    adminPage.editButton.disabled = !(canEditAndPublish() && ready);
   }
   if (adminPage.approveButton) {
-    adminPage.approveButton.disabled = !(currentRole === "owner" && ready && checked);
+    adminPage.approveButton.disabled = !(canEditAndPublish() && ready && checked);
   }
   if (adminPage.declineButton) {
-    adminPage.declineButton.disabled = !(currentRole === "owner" && ready);
+    adminPage.declineButton.disabled = !(canEditAndPublish() && ready);
   }
 
-  const canManagePublished = currentRole === "owner" && Boolean(selectedPublishedId);
+  const canManagePublished = canEditAndPublish() && Boolean(selectedPublishedId);
   if (adminPage.savePublishedButton) adminPage.savePublishedButton.disabled = !canManagePublished;
   if (adminPage.deletePublishedButton) adminPage.deletePublishedButton.disabled = !canManagePublished;
 }
@@ -563,7 +593,7 @@ function clearLegacyDefaultNoticeUrl() {
 
 function handleMemberSubmit(event) {
   event.preventDefault();
-  if (currentRole !== "owner") return;
+  if (!canManageMembers()) return;
 
   const email = adminPage.memberEmail.value.trim().toLowerCase();
   if (!email) return;
@@ -934,7 +964,7 @@ function formatFaqDraft(faqs) {
 
 function selectPublishedNotice(noticeId) {
   const notice = getManageableNotices().find((item) => item.id === noticeId);
-  if (!notice || currentRole !== "owner") return;
+  if (!notice || !canEditAndPublish()) return;
 
   selectedPublishedId = notice.id;
   currentDraftNotice = notice;
@@ -955,7 +985,7 @@ function selectPublishedNotice(noticeId) {
 }
 
 function handlePublishedSave() {
-  if (currentRole !== "owner" || !selectedPublishedId || !currentDraftNotice) return;
+  if (!canEditAndPublish() || !selectedPublishedId || !currentDraftNotice) return;
   const updatedNotice = buildModeratedNotice(currentDraftNotice, currentDraftNotice.approvalStatus || currentApprovalStatus);
   if (!updatedNotice) return;
 
@@ -976,7 +1006,7 @@ function handlePublishedSave() {
 }
 
 function handlePublishedDelete() {
-  if (currentRole !== "owner" || !selectedPublishedId) return;
+  if (!canEditAndPublish() || !selectedPublishedId) return;
   const notice = getManageableNotices().find((item) => item.id === selectedPublishedId);
   const title = notice?.title || "선택한 공고";
   const confirmed = window.confirm(`"${title}" 공고를 삭제할까요?\n삭제하면 학생 페이지 목록과 상세 페이지에서 보이지 않습니다.`);
@@ -1019,7 +1049,7 @@ async function fetchNoticeMarkdown(url) {
 
 async function handleDraftGeneration(event) {
   event.preventDefault();
-  if (currentRole !== "owner") return;
+  if (!canEditAndPublish()) return;
 
   if (noticeInputMode === "url" && !adminPage.urlInput?.value.trim()) {
     setAdminNote("공고 URL을 입력하거나 공고를 선택해 주세요.");
@@ -1084,7 +1114,7 @@ async function handleDraftGeneration(event) {
 }
 
 function handleDraftApproval() {
-  if (currentRole !== "owner") return;
+  if (!canEditAndPublish()) return;
   const notice = saveModeratedNotice("published");
   if (!notice) return;
   setApprovalStatus("published");
@@ -1093,7 +1123,7 @@ function handleDraftApproval() {
 }
 
 function handleDraftDecline() {
-  if (currentRole !== "owner") return;
+  if (!canEditAndPublish()) return;
   const notice = saveModeratedNotice("declined");
   if (!notice) return;
   setApprovalStatus("declined");
@@ -1101,7 +1131,7 @@ function handleDraftDecline() {
 }
 
 function handleDraftEdit() {
-  if (currentRole !== "owner" || !adminPage.fields || adminPage.fields.hidden) return;
+  if (!canEditAndPublish() || !adminPage.fields || adminPage.fields.hidden) return;
   setApprovalStatus("draft");
   adminPage.summary.focus();
   setAdminNote("초안을 수정할 수 있습니다. 수정 후 공개 승인 또는 보류를 선택해 주세요.");
@@ -1110,20 +1140,24 @@ function handleDraftEdit() {
 async function handleLogout() {
   const firebase = window.KANGNAM_FIREBASE;
   if (firebase) await firebase.signOut();
+  window.location.assign("./index.html");
 }
 
-function initAuth() {
-  const firebase = window.KANGNAM_FIREBASE;
-  if (!firebase) {
+async function initAuth() {
+  const access = window.KANGNAM_ADMIN_ACCESS;
+  if (!access?.ready) {
+    currentUser = null;
+    currentRole = "viewer";
     updateAccess();
     return;
   }
 
-  firebase.onAuthStateChanged(firebase.auth, (user) => {
-    currentUser = user;
-    currentRole = user ? "owner" : "viewer";
-    updateAccess();
-  });
+  const result = await access.ready;
+  if (!result.allowed) return;
+  currentUser = result.user;
+  currentRole = result.role;
+  managedMembers = loadManagedMembers();
+  updateAccess();
 }
 
 adminPage.logoutButton?.addEventListener("click", handleLogout);

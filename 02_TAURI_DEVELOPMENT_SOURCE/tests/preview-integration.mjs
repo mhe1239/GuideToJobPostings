@@ -13,6 +13,7 @@ const styles = await readFile(new URL("app/styles.css", root), "utf8");
 const script = await readFile(new URL("app/main.js", root), "utf8");
 const answerServiceScript = await readFile(new URL("app/answer-service.js", root), "utf8");
 const listScript = await readFile(new URL("app/list.js", root), "utf8");
+const adminGuardScript = await readFile(new URL("app/admin-guard.js", root), "utf8");
 const adminScript = await readFile(new URL("app/admin.js", root), "utf8");
 const schoolNoticeMockJson = await readFile(new URL("app/school-notices.mock.json", root), "utf8");
 const font = await readFile(new URL("app/assets/fonts/PretendardVariable.woff2", root));
@@ -90,7 +91,9 @@ function bootMockNoticeWithoutSourceUrl() {
 
 function bootPublish() {
   const window = new Window({ url: "http://127.0.0.1:4173/publish.html" });
-  const page = publishHtml.replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
+  const page = publishHtml
+    .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
+    .replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
   window.document.write(page);
   window.document.close();
   window.KANGNAM_FIREBASE = {
@@ -119,7 +122,30 @@ function bootPublish() {
       ].join("\n"),
     };
   };
+  window.eval(adminGuardScript);
   window.eval(adminScript);
+  return window;
+}
+
+async function bootAdminGuard(pageHtml, user, members = [], url = "http://127.0.0.1:4173/admin.html") {
+  const window = new Window({ url });
+  const page = pageHtml
+    .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
+    .replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
+  window.document.write(page);
+  window.document.close();
+  window.localStorage.setItem("kangnamManagedMembers", JSON.stringify(members));
+  window.KANGNAM_FIREBASE = {
+    auth: {},
+    onAuthStateChanged: (_auth, callback) => callback(user),
+    signOut: async () => {},
+  };
+  window.eval(adminGuardScript);
+  const result = await window.KANGNAM_ADMIN_ACCESS.ready;
+  if (result.allowed) {
+    window.eval(adminScript);
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+  }
   return window;
 }
 
@@ -153,6 +179,30 @@ const mockWindow = bootMockNoticeWithoutSourceUrl();
 const mockDocument = mockWindow.document;
 const publishWindow = bootPublish();
 const publishDocument = publishWindow.document;
+const signedOutAdminWindow = await bootAdminGuard(adminHtml, null);
+const viewerAdminWindow = await bootAdminGuard(adminHtml, { email: "student@kangnam.ac.kr" }, [
+  { email: "student@kangnam.ac.kr", role: "viewer" },
+]);
+const editorAdminWindow = await bootAdminGuard(adminHtml, { email: "editor@kangnam.ac.kr" }, [
+  { email: "editor@kangnam.ac.kr", role: "editor" },
+]);
+const ownerMembersWindow = await bootAdminGuard(membersHtml, { email: "owner@kangnam.ac.kr" }, [
+  { email: "owner@kangnam.ac.kr", role: "owner" },
+], "http://127.0.0.1:4173/members.html");
+const editorMembersWindow = await bootAdminGuard(membersHtml, { email: "editor@kangnam.ac.kr" }, [
+  { email: "editor@kangnam.ac.kr", role: "editor" },
+], "http://127.0.0.1:4173/members.html");
+
+assert.equal(signedOutAdminWindow.document.body.dataset.adminGuard, "denied", "로그아웃 상태에서는 관리자 페이지 접근을 차단해야 합니다.");
+assert.equal(signedOutAdminWindow.document.querySelector("#admin-guard-message").textContent, "관리자만 접근 가능한 페이지입니다.", "로그아웃 차단 안내 문구가 정확해야 합니다.");
+assert.equal(viewerAdminWindow.document.body.dataset.adminGuard, "denied", "학생 권한은 관리자 메뉴에 접근할 수 없어야 합니다.");
+assert.equal(viewerAdminWindow.document.querySelector("#admin-guard-message").textContent, "관리자 권한이 없습니다.", "학생 권한 차단 안내 문구가 정확해야 합니다.");
+assert.equal(editorAdminWindow.document.body.dataset.adminGuard, "allowed", "수정 및 공개 가능 권한은 관리자 메뉴에 접근할 수 있어야 합니다.");
+assert.equal(editorAdminWindow.document.querySelector('[href="./members.html"]').dataset.roleHidden, "true", "수정 및 공개 가능 권한은 관리자 관리 메뉴를 볼 수 없어야 합니다.");
+assert.equal(editorAdminWindow.document.querySelector('[href="./publish.html"]').dataset.roleHidden, "false", "수정 및 공개 가능 권한은 AI 공고 생성 메뉴를 볼 수 있어야 합니다.");
+assert.equal(ownerMembersWindow.document.body.dataset.adminGuard, "allowed", "관리자 관리 권한은 관리자 관리 페이지에 접근할 수 있어야 합니다.");
+assert.equal(editorMembersWindow.document.body.dataset.adminGuard, "denied", "수정 및 공개 가능 권한은 관리자 관리 페이지 직접 접근도 차단되어야 합니다.");
+assert.equal(editorMembersWindow.document.querySelector("#admin-guard-message").textContent, "관리자 권한이 없습니다.", "관리자 관리 직접 접근 차단 안내 문구가 정확해야 합니다.");
 
 assert.equal(listDocument.querySelector("#notice"), null, "공고 선택 화면에는 상세 공고 본문이 없어야 합니다.");
 assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 4, "공고 선택 화면에는 여러 공고가 4열 카드로 표시되어야 합니다.");
@@ -387,4 +437,4 @@ assert.match(styles, /\.source-image-link img,[\s\S]*\.full-notice-image-wrap im
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 
-console.log("preview integration: 124 checks passed");
+console.log("preview integration: 134 checks passed");

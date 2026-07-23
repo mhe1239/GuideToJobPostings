@@ -2000,6 +2000,28 @@ button:disabled {
   min-height: calc(100vh - 76px);
 }
 
+.admin-guard-message {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  color: var(--ink);
+  font-weight: 800;
+  text-align: center;
+}
+
+body.admin-guarded-page[data-admin-guard="pending"] > .site-header,
+body.admin-guarded-page[data-admin-guard="pending"] > main,
+body.admin-guarded-page[data-admin-guard="denied"] > .site-header,
+body.admin-guarded-page[data-admin-guard="denied"] > main,
+[data-role-hidden="true"] {
+  display: none;
+}
+
+body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
+  display: none;
+}
+
 .admin-grid-single {
   grid-template-columns: minmax(0, 640px);
 }

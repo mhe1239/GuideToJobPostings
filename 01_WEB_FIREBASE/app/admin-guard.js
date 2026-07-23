@@ -36,7 +36,7 @@ function resolveAdminRole(user) {
 
   if (!bootstrapEmail && members.length === 0) {
     window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, email);
-    writeManagedMembers([{ email, role: "owner", source: "초기 관리자" }]);
+    writeManagedMembers([{ email, role: "owner", source: "최고 관리자" }]);
     return "owner";
   }
 

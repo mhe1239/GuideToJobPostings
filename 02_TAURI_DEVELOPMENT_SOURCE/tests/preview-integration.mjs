@@ -127,7 +127,7 @@ function bootPublish() {
   return window;
 }
 
-async function bootAdminGuard(pageHtml, user, members = [], url = "http://127.0.0.1:4173/admin.html") {
+async function bootAdminGuard(pageHtml, user, members = [], url = "http://127.0.0.1:4173/admin.html", bootstrapEmail = "") {
   const window = new Window({ url });
   const page = pageHtml
     .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
@@ -135,6 +135,7 @@ async function bootAdminGuard(pageHtml, user, members = [], url = "http://127.0.
   window.document.write(page);
   window.document.close();
   window.localStorage.setItem("kangnamManagedMembers", JSON.stringify(members));
+  if (bootstrapEmail) window.localStorage.setItem("kangnamAdminBootstrapEmail", bootstrapEmail);
   window.KANGNAM_FIREBASE = {
     auth: {},
     onAuthStateChanged: (_auth, callback) => callback(user),
@@ -192,6 +193,15 @@ const ownerMembersWindow = await bootAdminGuard(membersHtml, { email: "owner@kan
 const editorMembersWindow = await bootAdminGuard(membersHtml, { email: "editor@kangnam.ac.kr" }, [
   { email: "editor@kangnam.ac.kr", role: "editor" },
 ], "http://127.0.0.1:4173/members.html");
+const bootstrapMembersWindow = await bootAdminGuard(membersHtml, { email: "owner@kangnam.ac.kr" }, [
+  { email: "owner@kangnam.ac.kr", role: "owner", source: "최고 관리자" },
+  { email: "editor@kangnam.ac.kr", role: "editor" },
+  { email: "viewer@kangnam.ac.kr", role: "viewer" },
+], "http://127.0.0.1:4173/members.html", "owner@kangnam.ac.kr");
+const deleteMemberWindow = await bootAdminGuard(membersHtml, { email: "owner@kangnam.ac.kr" }, [
+  { email: "owner@kangnam.ac.kr", role: "owner", source: "최고 관리자" },
+  { email: "editor@kangnam.ac.kr", role: "editor" },
+], "http://127.0.0.1:4173/members.html", "owner@kangnam.ac.kr");
 
 assert.equal(signedOutAdminWindow.document.body.dataset.adminGuard, "denied", "로그아웃 상태에서는 관리자 페이지 접근을 차단해야 합니다.");
 assert.equal(signedOutAdminWindow.document.querySelector("#admin-guard-message").textContent, "관리자만 접근 가능한 페이지입니다.", "로그아웃 차단 안내 문구가 정확해야 합니다.");
@@ -203,6 +213,16 @@ assert.equal(editorAdminWindow.document.querySelector('[href="./publish.html"]')
 assert.equal(ownerMembersWindow.document.body.dataset.adminGuard, "allowed", "관리자 관리 권한은 관리자 관리 페이지에 접근할 수 있어야 합니다.");
 assert.equal(editorMembersWindow.document.body.dataset.adminGuard, "denied", "수정 및 공개 가능 권한은 관리자 관리 페이지 직접 접근도 차단되어야 합니다.");
 assert.equal(editorMembersWindow.document.querySelector("#admin-guard-message").textContent, "관리자 권한이 없습니다.", "관리자 관리 직접 접근 차단 안내 문구가 정확해야 합니다.");
+assert.equal(bootstrapMembersWindow.document.querySelector('[data-bootstrap-admin="true"] small').textContent, "최고 관리자", "초기 관리자 명칭은 최고 관리자로 표시되어야 합니다.");
+assert.equal(bootstrapMembersWindow.document.querySelectorAll(".member-action-button.danger").length, 2, "최고 관리자는 다른 관리자 삭제 버튼을 볼 수 있어야 합니다.");
+assert.equal(bootstrapMembersWindow.document.querySelectorAll(".member-action-button").length >= 3, true, "최고 관리자는 삭제와 최고 관리자 넘기기 버튼을 볼 수 있어야 합니다.");
+bootstrapMembersWindow.confirm = () => true;
+bootstrapMembersWindow.document.querySelector(".member-action-button").click();
+assert.equal(bootstrapMembersWindow.localStorage.getItem("kangnamAdminBootstrapEmail"), "editor@kangnam.ac.kr", "최고 관리자 넘기기 후 최고 관리자 이메일이 변경되어야 합니다.");
+assert.equal(JSON.parse(bootstrapMembersWindow.localStorage.getItem("kangnamManagedMembers")).find((member) => member.email === "editor@kangnam.ac.kr").role, "owner", "최고 관리자를 넘겨받은 관리자는 owner로 승격되어야 합니다.");
+deleteMemberWindow.confirm = () => true;
+deleteMemberWindow.document.querySelector(".member-action-button.danger").click();
+assert.equal(JSON.parse(deleteMemberWindow.localStorage.getItem("kangnamManagedMembers")).some((member) => member.email === "editor@kangnam.ac.kr"), false, "최고 관리자는 다른 관리자를 삭제할 수 있어야 합니다.");
 
 assert.equal(listDocument.querySelector("#notice"), null, "공고 선택 화면에는 상세 공고 본문이 없어야 합니다.");
 assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 4, "공고 선택 화면에는 여러 공고가 4열 카드로 표시되어야 합니다.");
@@ -437,4 +457,4 @@ assert.match(styles, /\.source-image-link img,[\s\S]*\.full-notice-image-wrap im
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 
-console.log("preview integration: 134 checks passed");
+console.log("preview integration: 142 checks passed");

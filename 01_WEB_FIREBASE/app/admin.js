@@ -10,6 +10,7 @@ const READER_ENDPOINT = "https://r.jina.ai/http://r.jina.ai/http://";
 const MAX_NOTICE_CHARS = 9000;
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
+const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
 const SCHOOL_NOTICE_MOCK_URL = "./school-notices.mock.json";
 const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
 const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
@@ -283,6 +284,19 @@ function saveManagedMembers() {
   window.localStorage.setItem("kangnamManagedMembers", JSON.stringify(managedMembers));
 }
 
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function getBootstrapAdminEmail() {
+  return normalizeEmail(window.localStorage.getItem(ADMIN_BOOTSTRAP_KEY));
+}
+
+function setBootstrapAdminEmail(email) {
+  const normalized = normalizeEmail(email);
+  if (normalized) window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, normalized);
+}
+
 function roleRank(role) {
   return { viewer: 0, editor: 1, owner: 2 }[role] || 0;
 }
@@ -293,6 +307,10 @@ function canManageMembers() {
 
 function canEditAndPublish() {
   return roleRank(currentRole) >= roleRank("editor");
+}
+
+function isBootstrapAdmin() {
+  return normalizeEmail(currentUser?.email) === getBootstrapAdminEmail();
 }
 
 function applyRoleVisibility() {
@@ -526,10 +544,30 @@ function resetDraftSelectionState(message) {
 
 function renderMembers() {
   if (!adminPage.memberList) return;
-  const members = [
-    ...(currentUser ? [{ email: currentUser.email, role: "owner", source: "Google 로그인" }] : []),
-    ...managedMembers,
-  ];
+  const bootstrapEmail = getBootstrapAdminEmail();
+  const uniqueMembers = new Map();
+  managedMembers.forEach((member) => {
+    const email = normalizeEmail(member.email);
+    if (!email) return;
+    uniqueMembers.set(email, {
+      ...member,
+      email,
+      role: member.role || "viewer",
+    });
+  });
+  if (currentUser && !uniqueMembers.has(normalizeEmail(currentUser.email))) {
+    uniqueMembers.set(normalizeEmail(currentUser.email), {
+      email: normalizeEmail(currentUser.email),
+      role: currentRole,
+      source: "현재 로그인",
+    });
+  }
+  const members = [...uniqueMembers.values()].sort((a, b) => {
+    const aBootstrap = normalizeEmail(a.email) === bootstrapEmail;
+    const bBootstrap = normalizeEmail(b.email) === bootstrapEmail;
+    if (aBootstrap !== bBootstrap) return aBootstrap ? -1 : 1;
+    return roleRank(b.role) - roleRank(a.role) || a.email.localeCompare(b.email);
+  });
 
   if (members.length === 0) {
     adminPage.memberList.innerHTML = "<p class=\"member-empty\">로그인한 관리자 계정이 없습니다.</p>";
@@ -542,10 +580,42 @@ function renderMembers() {
       const email = document.createElement("strong");
       const role = document.createElement("span");
       const source = document.createElement("small");
+      const actions = document.createElement("div");
+      const isCurrentBootstrap = normalizeEmail(member.email) === bootstrapEmail;
+      const canReceiveBootstrap = isBootstrapAdmin() && !isCurrentBootstrap && roleRank(member.role) >= roleRank("editor");
+      const canDeleteMember = isBootstrapAdmin() && !isCurrentBootstrap;
+      row.dataset.bootstrapAdmin = String(isCurrentBootstrap);
+      actions.className = "member-actions";
       email.textContent = member.email;
       role.textContent = ROLE_LABELS[member.role] || ROLE_LABELS.viewer;
-      source.textContent = member.source || "브라우저 저장";
-      row.append(email, role, source);
+      source.textContent = isCurrentBootstrap ? "최고 관리자" : member.source || "브라우저 저장";
+
+      if (isCurrentBootstrap) {
+        const badge = document.createElement("em");
+        badge.className = "member-primary-badge";
+        badge.textContent = "최고 관리자";
+        actions.append(badge);
+      }
+
+      if (canReceiveBootstrap) {
+        const transferButton = document.createElement("button");
+        transferButton.type = "button";
+        transferButton.className = "member-action-button";
+        transferButton.textContent = "최고 관리자 넘기기";
+        transferButton.addEventListener("click", () => handleBootstrapTransfer(member.email));
+        actions.append(transferButton);
+      }
+
+      if (canDeleteMember) {
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "member-action-button danger";
+        deleteButton.textContent = "삭제";
+        deleteButton.addEventListener("click", () => handleMemberDelete(member.email));
+        actions.append(deleteButton);
+      }
+
+      row.append(email, role, source, actions);
       return row;
     }),
   );
@@ -595,13 +665,49 @@ function handleMemberSubmit(event) {
   event.preventDefault();
   if (!canManageMembers()) return;
 
-  const email = adminPage.memberEmail.value.trim().toLowerCase();
+  const email = normalizeEmail(adminPage.memberEmail.value);
   if (!email) return;
 
   managedMembers = managedMembers.filter((member) => member.email !== email);
   managedMembers.push({ email, role: adminPage.memberRole.value });
   saveManagedMembers();
   adminPage.memberEmail.value = "";
+  renderMembers();
+}
+
+function handleBootstrapTransfer(email) {
+  if (!isBootstrapAdmin()) return;
+  const normalized = normalizeEmail(email);
+  const member = managedMembers.find((item) => normalizeEmail(item.email) === normalized);
+  if (!member || roleRank(member.role) < roleRank("editor")) return;
+  const confirmed = window.confirm(`${normalized} 계정에 최고 관리자 권한을 넘길까요?`);
+  if (!confirmed) return;
+
+  setBootstrapAdminEmail(normalized);
+  managedMembers = managedMembers.map((item) => {
+    if (normalizeEmail(item.email) === normalized) {
+      return { ...item, email: normalized, role: "owner", source: "최고 관리자" };
+    }
+    if (normalizeEmail(item.email) === normalizeEmail(currentUser?.email) && item.source === "최고 관리자") {
+      return { ...item, source: "권한 위임 완료" };
+    }
+    return item;
+  });
+  saveManagedMembers();
+  setAdminNote("최고 관리자를 변경했습니다.");
+  renderMembers();
+}
+
+function handleMemberDelete(email) {
+  if (!isBootstrapAdmin()) return;
+  const normalized = normalizeEmail(email);
+  if (!normalized || normalized === getBootstrapAdminEmail()) return;
+  const confirmed = window.confirm(`${normalized} 관리자를 삭제할까요?`);
+  if (!confirmed) return;
+
+  managedMembers = managedMembers.filter((member) => normalizeEmail(member.email) !== normalized);
+  saveManagedMembers();
+  setAdminNote("관리자를 삭제했습니다.");
   renderMembers();
 }
 

@@ -168,7 +168,7 @@ const SOURCE_TYPE_LABELS = Object.freeze({
 let notices = getPublishedNotices();
 let activeNotice = getInitialNotice();
 let FAQS = activeNotice.faqs;
-let ANSWER_RULES = buildAnswerRules(activeNotice);
+let answerRequestId = 0;
 
 const elements = {
   faqList: document.querySelector("#faq-list"),
@@ -372,65 +372,6 @@ function setFullNoticeExpanded(expanded) {
   elements.fullNoticeToggle.textContent = expanded ? "전체 공고 내용 닫기" : "전체 공고 내용 보기";
 }
 
-function buildAnswerRules(notice) {
-  const period = getFact(notice, "period");
-  const eligibility = getFact(notice, "eligibility");
-  const field = getFact(notice, "field");
-  const documents = getFact(notice, "documents");
-  const operation = getFact(notice, "operation");
-  const faqRules = notice.faqs.map((faq) => ({
-    keywords: faq.question.split(/[\s?.,·~()[\]{}'"“”‘’_-]+/).filter((word) => word.length >= 2),
-    answer: faq.answer,
-    source: faq.source,
-  }));
-
-  return [
-    {
-      keywords: ["편입생", "편입"],
-      answer: eligibility.includes("편입생")
-        ? "편입생은 지원할 수 있습니다. 공고의 다른 활동 조건도 함께 확인해 주세요."
-        : eligibility,
-      source: "지원 자격",
-    },
-    {
-      keywords: ["휴학생", "휴학"],
-      answer: "휴학생 지원 가능 여부는 공식 공고의 지원 자격과 문의처를 통해 추가로 확인해 주세요.",
-      source: "지원 자격",
-    },
-    ...faqRules,
-    {
-      keywords: ["신청기간", "신청일", "기간", "언제", "마감", "일정"],
-      answer: period,
-      source: "핵심 정보 > 신청 기간",
-    },
-    {
-      keywords: ["지원자격", "자격", "대상", "재학생", "편입생", "휴학생"],
-      answer: eligibility,
-      source: "핵심 정보 > 지원 대상",
-    },
-    {
-      keywords: ["모집분야", "분야", "인원", "프로그램", "행사"],
-      answer: field,
-      source: "핵심 정보 > 모집 분야",
-    },
-    {
-      keywords: ["제출서류", "서류", "지원서", "신청서"],
-      answer: documents,
-      source: "핵심 정보 > 제출 서류",
-    },
-    {
-      keywords: ["운영기간", "활동기간", "운영", "활동"],
-      answer: operation,
-      source: "핵심 정보 > 운영 기간",
-    },
-    {
-      keywords: ["문의처", "문의", "연락처", "전화", "담당부서"],
-      answer: `담당 부서는 ${notice.department}입니다. 정확한 연락처는 공식 공고 원문에서 확인해 주세요.`,
-      source: "공고 등록 부서 및 문의처",
-    },
-  ];
-}
-
 function renderNoticeList() {
   if (!elements.noticeList) return;
 
@@ -457,7 +398,6 @@ function selectNotice(noticeId) {
 
   activeNotice = nextNotice;
   FAQS = activeNotice.faqs;
-  ANSWER_RULES = buildAnswerRules(activeNotice);
   window.history.replaceState({}, "", `./notice.html?notice=${encodeURIComponent(activeNotice.id)}`);
   renderNotice();
   renderNoticeList();
@@ -553,17 +493,6 @@ function renderFaqs() {
   elements.faqList.replaceChildren(fragment);
 }
 
-function normalizeQuestion(value) {
-  return value
-    .toLocaleLowerCase("ko-KR")
-    .replace(/[\s?!.,·~()\[\]{}'"“”‘’_-]/g, "");
-}
-
-function findExampleAnswer(question) {
-  const normalized = normalizeQuestion(question);
-  return ANSWER_RULES.find((rule) => rule.keywords.some((keyword) => normalized.includes(normalizeQuestion(keyword)))) ?? null;
-}
-
 function updateQuestionCount() {
   elements.questionCount.textContent = String(elements.questionInput.value.length);
 }
@@ -597,7 +526,7 @@ function activateFaq(button) {
 function showAnswer(question, result) {
   elements.emptyResult.hidden = true;
   elements.answerCard.hidden = false;
-  elements.answerCard.classList.remove("no-result");
+  elements.answerCard.classList.remove("no-result", "is-loading", "is-error");
   elements.answerCard.setAttribute("tabindex", "-1");
   elements.askedQuestion.textContent = question;
   elements.answerTitle.textContent = "답변";
@@ -612,6 +541,7 @@ function showAnswer(question, result) {
 function showNoResult(question) {
   elements.emptyResult.hidden = true;
   elements.answerCard.hidden = false;
+  elements.answerCard.classList.remove("is-loading", "is-error");
   elements.answerCard.classList.add("no-result");
   elements.answerCard.setAttribute("tabindex", "-1");
   elements.askedQuestion.textContent = question;
@@ -621,6 +551,42 @@ function showNoResult(question) {
   elements.answerState.textContent = "답변 없음";
   elements.evidenceCard.hidden = true;
   focusResultOnSmallScreen();
+}
+
+function showLoading(question) {
+  elements.emptyResult.hidden = true;
+  elements.answerCard.hidden = false;
+  elements.answerCard.classList.remove("no-result", "is-error");
+  elements.answerCard.classList.add("is-loading");
+  elements.answerCard.setAttribute("tabindex", "-1");
+  elements.askedQuestion.textContent = question;
+  elements.answerTitle.textContent = "답변 생성 중";
+  elements.answerCopy.textContent = "공고 내용을 확인하고 있습니다.";
+  elements.answerSource.textContent = "";
+  elements.answerState.textContent = "생성 중";
+  elements.evidenceCard.hidden = true;
+}
+
+function showAnswerError(question) {
+  elements.emptyResult.hidden = true;
+  elements.answerCard.hidden = false;
+  elements.answerCard.classList.remove("no-result", "is-loading");
+  elements.answerCard.classList.add("is-error");
+  elements.answerCard.setAttribute("tabindex", "-1");
+  elements.askedQuestion.textContent = question;
+  elements.answerTitle.textContent = "답변 생성 실패";
+  elements.answerCopy.textContent = "답변을 생성하지 못했습니다. 잠시 후 다시 시도하거나 담당 부서에 문의해 주세요.";
+  elements.answerSource.textContent = "";
+  elements.answerState.textContent = "오류";
+  elements.evidenceCard.hidden = true;
+  focusResultOnSmallScreen();
+}
+
+function renderAnswerState(state, question, result = null) {
+  if (state === "loading") showLoading(question);
+  if (state === "success") showAnswer(question, result);
+  if (state === "empty") showNoResult(question);
+  if (state === "error") showAnswerError(question);
 }
 
 function focusResultOnSmallScreen() {
@@ -640,9 +606,19 @@ function selectFaq(faq, button) {
   showAnswer(faq.question, faq);
 }
 
-function handleQuestionSubmit(event) {
+async function requestGeneratedAnswer(question) {
+  const answerService = window.KANGNAM_ANSWER_SERVICE;
+  if (!answerService?.generateAnswer) {
+    throw new Error("answer service is not available");
+  }
+  return answerService.generateAnswer(question, activeNotice);
+}
+
+async function handleQuestionSubmit(event) {
   event.preventDefault();
   const question = elements.questionInput.value.trim();
+  const currentRequestId = answerRequestId + 1;
+  answerRequestId = currentRequestId;
 
   clearQuestionError();
   deactivateFaqs();
@@ -653,15 +629,17 @@ function handleQuestionSubmit(event) {
   }
 
   try {
-    const result = findExampleAnswer(question);
-    if (result) {
-      showAnswer(question, result);
+    renderAnswerState("loading", question);
+    const result = await requestGeneratedAnswer(question);
+    if (currentRequestId !== answerRequestId) return;
+    if (result?.status === "success") {
+      renderAnswerState("success", question, result);
     } else {
-      showNoResult(question);
+      renderAnswerState("empty", question);
     }
   } catch (error) {
     console.error("답변 생성 실패", error);
-    showNoResult(question);
+    if (currentRequestId === answerRequestId) renderAnswerState("error", question);
   }
 }
 
@@ -671,7 +649,7 @@ function resetQuestion() {
   clearQuestionError();
   deactivateFaqs();
   elements.answerCard.hidden = true;
-  elements.answerCard.classList.remove("no-result");
+  elements.answerCard.classList.remove("no-result", "is-loading", "is-error");
   elements.emptyResult.hidden = false;
   elements.questionInput.focus();
 }

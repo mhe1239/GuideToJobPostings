@@ -1452,12 +1452,35 @@ button:disabled {
   color: var(--danger-700);
 }
 
+.answer-card.is-loading #answer-state {
+  color: var(--primary-800);
+}
+
+.answer-card.is-error #answer-state {
+  color: var(--danger-700);
+}
+
 .answer-card.no-result .example-badge {
   color: var(--danger-700);
   background: var(--danger-100);
 }
 
+.answer-card.is-loading .example-badge {
+  color: var(--primary-800);
+  background: var(--primary-50);
+}
+
+.answer-card.is-error .example-badge {
+  color: var(--danger-700);
+  background: var(--danger-100);
+}
+
 .answer-card.no-result .answer-copy {
+  color: var(--danger-700);
+  font-weight: 800;
+}
+
+.answer-card.is-error .answer-copy {
   color: var(--danger-700);
   font-weight: 800;
 }

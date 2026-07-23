@@ -291,6 +291,7 @@ function createNoticeLink(notice) {
   top.className = "notice-card-top";
   category.className = "notice-card-category";
   status.className = "notice-card-status";
+  status.dataset.status = getNoticeRecruitmentStatus(notice);
   eligibility.className = "notice-card-eligibility";
   action.className = "notice-card-action";
   category.textContent = getNoticeCategory(notice);

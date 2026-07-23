@@ -472,6 +472,7 @@ function renderNotice() {
   elements.noticeTitle.textContent = activeNotice.title;
   elements.heroSummary.textContent = activeNotice.summary;
   elements.statusBadge.lastChild.textContent = ` ${activeNotice.status}`;
+  elements.statusBadge.dataset.status = activeNotice.recruitmentStatus || activeNotice.status;
   elements.factPeriod.textContent = period;
   elements.factEligibility.textContent = eligibility;
   elements.factField.textContent = field;

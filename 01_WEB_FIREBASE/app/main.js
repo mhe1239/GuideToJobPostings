@@ -24,6 +24,8 @@ const DEFAULT_NOTICES = Object.freeze([
       period: "7월 20일(월)–8월 2일(일) 17:00",
       eligibility: "강남대학교 재학생 및 편입생",
       field: "기획국·대외홍보국·콘텐츠디자인국",
+      documents: "지원서",
+      operation: "2026학년도 2학기",
     },
     faqs: [
       {
@@ -66,6 +68,8 @@ const DEFAULT_NOTICES = Object.freeze([
       period: "공식 공고 원문 확인",
       eligibility: "자격검정 응시 희망자",
       field: "인터넷중독전문상담사",
+      documents: "공식 공고 원문 확인",
+      operation: "공식 공고 원문 확인",
     },
     faqs: [
       { id: "period", question: "신청 기간은 어디서 확인하나요?", answer: "정확한 신청 기간은 공식 공고 원문에서 확인해야 합니다.", source: "공식 공고 원문" },
@@ -93,6 +97,8 @@ const DEFAULT_NOTICES = Object.freeze([
       period: "7월 문화가 있는 날",
       eligibility: "관심 있는 학생",
       field: "재즈 콘서트",
+      documents: "해당 없음 또는 공식 공고 원문 확인",
+      operation: "공식 공고 원문 확인",
     },
     faqs: [
       { id: "schedule", question: "행사 일정은 언제인가요?", answer: "공고 제목상 7월 문화가 있는 날 행사이며, 정확한 시간은 공식 공고 원문에서 확인해야 합니다.", source: "행사 일정" },
@@ -120,6 +126,8 @@ const DEFAULT_NOTICES = Object.freeze([
       period: "공식 공고 원문 확인",
       eligibility: "강남대학교 재학생",
       field: "대학생활 지원 비교과 프로그램",
+      documents: "공식 공고 원문 확인",
+      operation: "공식 공고 원문 확인",
     },
     faqs: [
       { id: "period", question: "신청 기간은 언제인가요?", answer: "정확한 신청 기간은 공식 공고 원문에서 확인해야 합니다.", source: "신청 기간" },
@@ -172,9 +180,19 @@ const elements = {
   factPeriod: document.querySelector("#fact-period"),
   factEligibility: document.querySelector("#fact-eligibility"),
   factField: document.querySelector("#fact-field"),
+  factDocuments: document.querySelector("#fact-documents"),
+  factOperation: document.querySelector("#fact-operation"),
+  factDepartment: document.querySelector("#fact-department"),
+  fullNoticeSummary: document.querySelector("#full-notice-summary"),
+  fullPeriod: document.querySelector("#full-period"),
+  fullEligibility: document.querySelector("#full-eligibility"),
+  fullField: document.querySelector("#full-field"),
+  fullDocuments: document.querySelector("#full-documents"),
+  fullOperation: document.querySelector("#full-operation"),
   sourceLineText: document.querySelector("#source-line-text"),
   sourceTitle: document.querySelector("#source-title"),
   sourceDepartment: document.querySelector("#source-department"),
+  sourceContactDepartment: document.querySelector("#source-contact-department"),
   sourcePublishedAt: document.querySelector("#source-published-at"),
   sourceType: document.querySelector("#source-type"),
   dataMethod: document.querySelector("#data-method"),
@@ -243,6 +261,10 @@ function getSourceTypeLabel(sourceType) {
   return SOURCE_TYPE_LABELS[sourceType] || "확인 필요";
 }
 
+function getFact(notice, key) {
+  return notice.facts?.[key] || "확인 필요";
+}
+
 function hasSourceUrl(notice) {
   return Boolean(notice.sourceUrl && String(notice.sourceUrl).trim());
 }
@@ -259,6 +281,11 @@ function setSourceLink(link, url) {
 }
 
 function buildAnswerRules(notice) {
+  const period = getFact(notice, "period");
+  const eligibility = getFact(notice, "eligibility");
+  const field = getFact(notice, "field");
+  const documents = getFact(notice, "documents");
+  const operation = getFact(notice, "operation");
   const faqRules = notice.faqs.map((faq) => ({
     keywords: faq.question.split(/[\s?.,·~()[\]{}'"“”‘’_-]+/).filter((word) => word.length >= 2),
     answer: faq.answer,
@@ -268,9 +295,9 @@ function buildAnswerRules(notice) {
   return [
     {
       keywords: ["편입생", "편입"],
-      answer: notice.facts.eligibility.includes("편입생")
+      answer: eligibility.includes("편입생")
         ? "편입생은 지원할 수 있습니다. 공고의 다른 활동 조건도 함께 확인해 주세요."
-        : notice.facts.eligibility,
+        : eligibility,
       source: "지원 자격",
     },
     {
@@ -281,18 +308,28 @@ function buildAnswerRules(notice) {
     ...faqRules,
     {
       keywords: ["신청기간", "신청일", "기간", "언제", "마감", "일정"],
-      answer: notice.facts.period,
+      answer: period,
       source: "핵심 정보 > 신청 기간",
     },
     {
       keywords: ["지원자격", "자격", "대상", "재학생", "편입생", "휴학생"],
-      answer: notice.facts.eligibility,
+      answer: eligibility,
       source: "핵심 정보 > 지원 대상",
     },
     {
       keywords: ["모집분야", "분야", "인원", "프로그램", "행사"],
-      answer: notice.facts.field,
+      answer: field,
       source: "핵심 정보 > 모집 분야",
+    },
+    {
+      keywords: ["제출서류", "서류", "지원서", "신청서"],
+      answer: documents,
+      source: "핵심 정보 > 제출 서류",
+    },
+    {
+      keywords: ["운영기간", "활동기간", "운영", "활동"],
+      answer: operation,
+      source: "핵심 정보 > 운영 기간",
     },
     {
       keywords: ["문의처", "문의", "연락처", "전화", "담당부서"],
@@ -312,12 +349,11 @@ function renderNoticeList() {
       link.className = "notice-list-item";
       link.href = `./notice.html?notice=${encodeURIComponent(notice.id)}`;
       if (notice.id === activeNotice.id) link.setAttribute("aria-current", "true");
-      link.innerHTML = `
-        <span>${notice.category}</span>
-        <strong></strong>
-        <small>${notice.department} · ${notice.date}</small>
-      `;
-      link.querySelector("strong").textContent = notice.title;
+      link.append(
+        createElement("span", "", notice.category),
+        createElement("strong", "", notice.title),
+        createElement("small", "", `${notice.department} · ${notice.date}`),
+      );
       return link;
     }),
   );
@@ -344,21 +380,37 @@ function renderNotice() {
   const sourceType = activeNotice.sourceType || (sourceUrl ? "html" : "mock");
   const dataMethod = activeNotice.dataMethod || (sourceType === "mock" ? "가상 샘플" : "실제 공고 기반 재구성");
   const reviewed = activeNotice.reviewed === true;
+  const period = getFact(activeNotice, "period");
+  const eligibility = getFact(activeNotice, "eligibility");
+  const field = getFact(activeNotice, "field");
+  const documents = getFact(activeNotice, "documents");
+  const operation = getFact(activeNotice, "operation");
+  const department = activeNotice.department || "확인 필요";
 
   document.title = `강남대 공고 길잡이 — ${activeNotice.title}`;
   elements.breadcrumbCategory.textContent = activeNotice.category;
-  elements.noticeMeta.textContent = `${activeNotice.department} · ${activeNotice.category} · ${formatNoticeDate(activeNotice.publishedAt || activeNotice.date)}`;
+  elements.noticeMeta.textContent = `${department} · ${activeNotice.category} · ${formatNoticeDate(activeNotice.publishedAt || activeNotice.date)}`;
   elements.noticeTitle.textContent = activeNotice.title;
   elements.heroSummary.textContent = activeNotice.summary;
   elements.statusBadge.lastChild.textContent = ` ${activeNotice.status}`;
-  elements.factPeriod.textContent = activeNotice.facts.period;
-  elements.factEligibility.textContent = activeNotice.facts.eligibility;
-  elements.factField.textContent = activeNotice.facts.field;
+  elements.factPeriod.textContent = period;
+  elements.factEligibility.textContent = eligibility;
+  elements.factField.textContent = field;
+  elements.factDocuments.textContent = documents;
+  elements.factOperation.textContent = operation;
+  elements.factDepartment.textContent = department;
+  elements.fullNoticeSummary.textContent = activeNotice.summary;
+  elements.fullPeriod.textContent = period;
+  elements.fullEligibility.textContent = eligibility;
+  elements.fullField.textContent = field;
+  elements.fullDocuments.textContent = documents;
+  elements.fullOperation.textContent = operation;
   elements.sourceLineText.textContent = activeNotice.isPublished
     ? "관리자가 검수 후 공개한 공고 초안입니다. 세부 내용은 공식 공고 원문과 함께 확인해 주세요."
     : "공식 공고 내용을 확인해 작성한 답변입니다.";
   elements.sourceTitle.textContent = activeNotice.sourceTitle || activeNotice.title;
-  elements.sourceDepartment.textContent = activeNotice.department || "확인 필요";
+  elements.sourceDepartment.textContent = department;
+  elements.sourceContactDepartment.textContent = department;
   elements.sourcePublishedAt.textContent = formatNoticeDate(activeNotice.publishedAt || activeNotice.date);
   elements.sourceType.textContent = getSourceTypeLabel(sourceType);
   elements.dataMethod.textContent = dataMethod;
@@ -368,7 +420,7 @@ function renderNotice() {
   setSourceLink(elements.sourceOriginalLink, sourceUrl);
   setSourceLink(elements.answerSourceLink, sourceUrl);
   setSourceLink(elements.departmentSourceLink, sourceUrl);
-  elements.departmentTitle.textContent = `${activeNotice.department}으로 문의해 주세요`;
+  elements.departmentTitle.textContent = `${department}으로 문의해 주세요`;
   elements.departmentDescription.textContent = "FAQ와 답변으로 해결되지 않은 문의를 담당합니다.";
   elements.contactNote.textContent = `문의 시 “${activeNotice.title}” 공고를 확인했다고 말씀해 주세요.`;
 }

@@ -33,6 +33,8 @@ const ADMIN_DEFAULT_NOTICES = Object.freeze([
       period: "7월 20일 ~ 8월 2일 17:00",
       eligibility: "강남대학교 재학생 및 편입생",
       field: "기획국, 대외홍보국, 콘텐츠디자인국",
+      documents: "지원서",
+      operation: "2026학년도 2학기",
     },
     faqs: [
       { id: "period", question: "신청 기간은 언제인가요?", answer: "7월 20일부터 8월 2일 17:00까지입니다.", source: "모집 일정" },
@@ -58,6 +60,8 @@ const ADMIN_DEFAULT_NOTICES = Object.freeze([
       period: "공식 공고 원문 확인",
       eligibility: "자격검정 응시 요건 확인",
       field: "인터넷중독전문상담사",
+      documents: "공식 공고 원문 확인",
+      operation: "공식 공고 원문 확인",
     },
     faqs: [
       { id: "period", question: "신청 기간은 어디서 확인하나요?", answer: "정확한 신청 기간은 공식 공고 원문에서 확인해야 합니다.", source: "공식 공고 원문" },
@@ -82,6 +86,8 @@ const ADMIN_DEFAULT_NOTICES = Object.freeze([
       period: "7월 문화가 있는 날",
       eligibility: "관심 있는 학생",
       field: "재즈 콘서트",
+      documents: "해당 없음 또는 공식 공고 원문 확인",
+      operation: "공식 공고 원문 확인",
     },
     faqs: [
       { id: "schedule", question: "행사 일정은 언제인가요?", answer: "공식 공고 원문에서 정확한 일정을 확인하세요.", source: "행사 일정" },
@@ -106,6 +112,8 @@ const ADMIN_DEFAULT_NOTICES = Object.freeze([
       period: "공식 공고 원문 확인",
       eligibility: "강남대학교 재학생",
       field: "대학생활 지원 비교과 프로그램",
+      documents: "공식 공고 원문 확인",
+      operation: "공식 공고 원문 확인",
     },
     faqs: [
       { id: "method", question: "신청 방법은 무엇인가요?", answer: "공식 공고 원문에 안내된 신청 경로를 확인하세요.", source: "신청 방법" },
@@ -528,6 +536,8 @@ function buildPublishedNotice(baseNotice) {
       period: extractFactFromSummary(summary, "핵심 일정", "공식 공고 원문 확인"),
       eligibility: extractFactFromSummary(summary, "대상/자격", "공식 공고 원문 확인"),
       field: extractFactFromSummary(summary, "신청/지원", "공식 공고 원문 확인"),
+      documents: extractFactFromSummary(summary, "신청/지원", "공식 공고 원문 확인"),
+      operation: baseNotice.sections?.find((section) => section.key === "period")?.text || "공식 공고 원문 확인",
     },
     faqs: parseFaqDraft(faq),
     isPublished: true,

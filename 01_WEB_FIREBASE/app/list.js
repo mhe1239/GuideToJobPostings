@@ -98,21 +98,25 @@ function getNotices() {
 
 function createNoticeLink(notice) {
   const link = document.createElement("a");
+  const top = document.createElement("div");
+  const category = document.createElement("span");
+  const status = document.createElement("span");
+  const title = document.createElement("strong");
+  const meta = document.createElement("small");
+  const action = document.createElement("span");
   link.className = "notice-list-item";
   link.href = `./notice.html?notice=${encodeURIComponent(notice.id)}`;
-  link.innerHTML = `
-    <div class="notice-card-top">
-      <span class="notice-card-category"></span>
-      <span class="notice-card-status"></span>
-    </div>
-    <strong></strong>
-    <small></small>
-    <span class="notice-card-action">상세 FAQ 보기</span>
-  `;
-  link.querySelector(".notice-card-category").textContent = notice.category;
-  link.querySelector(".notice-card-status").textContent = notice.status;
-  link.querySelector("strong").textContent = notice.title;
-  link.querySelector("small").textContent = `${notice.department} · ${notice.date}`;
+  top.className = "notice-card-top";
+  category.className = "notice-card-category";
+  status.className = "notice-card-status";
+  action.className = "notice-card-action";
+  category.textContent = notice.category;
+  status.textContent = notice.status;
+  title.textContent = notice.title;
+  meta.textContent = `${notice.department} · ${notice.date}`;
+  action.textContent = "상세 FAQ 보기";
+  top.append(category, status);
+  link.append(top, title, meta, action);
   return link;
 }
 

@@ -98,11 +98,22 @@ assert.match(document.querySelector("#notice-title").textContent, /늘품 12기 
 assert.match(document.querySelector("#header-auth-link").textContent, /관리자 로그인/, "학생용 공고 상세에서는 관리자용 로그인임을 명확히 알려야 합니다.");
 assert.equal(document.querySelector("#notice-list"), null, "상세 페이지에는 공고 선택 목록이 없어야 합니다.");
 assert.equal(document.querySelector(".notice-list-back").getAttribute("href"), "./index.html", "상세 공고에서 공고 선택 화면으로 돌아갈 수 있어야 합니다.");
+assert.ok(html.indexOf('class="notice-hero"') < html.indexOf('class="overview-section"'), "공고 제목과 핵심 정보가 프로그램 개요보다 먼저 나와야 합니다.");
+assert.ok(html.indexOf('class="overview-section"') < html.indexOf('class="content-grid"'), "프로그램 개요가 FAQ와 질문 영역보다 먼저 나와야 합니다.");
+assert.ok(html.indexOf('class="content-grid"') < html.indexOf('class="full-notice-section"'), "FAQ와 질문 영역 다음에 전체 공고 내용이 나와야 합니다.");
+assert.ok(html.indexOf('class="full-notice-section"') < html.indexOf('class="source-section"'), "전체 공고 내용 다음에 출처 및 담당 부서가 나와야 합니다.");
 assert.match(adminHtml, /href="\.\/index\.html"[^>]*>[\s\S]*?공고 목록으로/, "관리자 메뉴에서 공고 목록으로 돌아갈 수 있어야 합니다.");
 assert.match(membersHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "관리자 관리 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.match(publishHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "AI 공고 공개 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.match(manageHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "공개 공고 관리 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.equal(document.querySelectorAll(".faq-item").length, 3, "P0 FAQ 3개가 표시되어야 합니다.");
+assert.equal(document.querySelectorAll(".key-facts > div").length, 6, "핵심 정보는 신청 기간, 지원 대상, 모집 분야, 제출 서류, 운영 기간, 담당 부서 6개 항목으로 표시되어야 합니다.");
+assert.equal(document.querySelector("#fact-documents").textContent, "지원서", "핵심 정보에 제출 서류가 표시되어야 합니다.");
+assert.equal(document.querySelector("#fact-operation").textContent, "2026학년도 2학기", "핵심 정보에 운영 기간이 표시되어야 합니다.");
+assert.equal(document.querySelector("#fact-department").textContent, "입학전형관리팀", "핵심 정보에 담당 부서가 표시되어야 합니다.");
+assert.match(document.querySelector("#program-overview").textContent, /늘품의 2026학년도 2학기 수습 임원/, "프로그램 개요가 공고 요약을 표시해야 합니다.");
+assert.equal(document.querySelector("#full-documents").textContent, "지원서", "전체 공고 내용에도 제출 서류가 표시되어야 합니다.");
+assert.equal(document.querySelector("#source-contact-department").textContent, "입학전형관리팀", "출처 및 담당 부서 섹션에 담당 부서가 표시되어야 합니다.");
 assert.match(document.querySelector(".example-notice").textContent, /공고 기반 답변/, "입력 화면에 공고 기반 답변임을 알려야 합니다.");
 assert.match(document.querySelector(".source-line").textContent, /공식 공고 내용을 확인해 작성한 답변/, "공식 공고 기반 답변임을 알려야 합니다.");
 assert.equal(document.querySelector("#source-title").textContent, "입학처 공식 홍보대사 늘품 12기 2학기 수습 위원 모집 공고", "상세 화면에 원문 제목이 표시되어야 합니다.");
@@ -163,7 +174,10 @@ assert.equal(document.querySelector('link[rel="preload"][as="font"]').getAttribu
 assert.match(styles, /font-family:\s*"Pretendard Variable"/, "Mac, Windows, 웹에서 공통 글꼴을 우선 사용해야 합니다.");
 assert.match(styles, /\.notice-hero h1\s*\{[^}]*word-break:\s*keep-all/s, "상세 공고 제목은 한글 단어 중간에서 줄바꿈되지 않아야 합니다.");
 assert.match(styles, /\.notice-hero h1\s*\{[^}]*overflow-wrap:\s*anywhere/s, "매우 긴 공고 제목은 좁은 화면에서도 영역을 넘지 않아야 합니다.");
+assert.match(styles, /\.key-facts\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*1fr\)/s, "핵심 정보는 데스크톱에서 정돈된 그리드로 표시되어야 합니다.");
+assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.key-facts\s*\{[\s\S]*grid-template-columns:\s*1fr/s, "모바일에서 핵심 정보는 한 열로 정렬되어야 합니다.");
+assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.full-notice-details\s*\{[\s\S]*grid-template-columns:\s*1fr/s, "모바일에서 전체 공고 내용도 한 열로 정렬되어야 합니다.");
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 
-console.log("preview integration: 59 checks passed");
+console.log("preview integration: 73 checks passed");

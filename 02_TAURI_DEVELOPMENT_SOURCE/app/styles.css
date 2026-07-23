@@ -249,7 +249,7 @@ button:disabled {
 .notice-hero {
   position: relative;
   overflow: hidden;
-  padding: 46px 48px 0;
+  padding: 38px 44px 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -280,7 +280,7 @@ button:disabled {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .status-badge,
@@ -329,8 +329,8 @@ button:disabled {
   max-width: 800px;
   margin: 0;
   color: var(--primary-950);
-  font-size: clamp(32px, 4.5vw, 54px);
-  line-height: 1.18;
+  font-size: clamp(32px, 4vw, 50px);
+  line-height: 1.16;
   letter-spacing: -0.045em;
   word-break: keep-all;
   overflow-wrap: anywhere;
@@ -339,9 +339,9 @@ button:disabled {
 
 .hero-summary {
   max-width: 720px;
-  margin: 22px 0 32px;
+  margin: 18px 0 26px;
   color: var(--ink-soft);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.72;
   word-break: keep-all;
 }
@@ -351,14 +351,14 @@ button:disabled {
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  margin: 0 -48px;
+  margin: 0 -44px;
   background: var(--primary-50);
   border-top: 1px solid var(--border);
 }
 
 .key-facts > div {
   min-width: 0;
-  padding: 22px 28px;
+  padding: 18px 24px;
 }
 
 .key-facts > div + div {
@@ -401,12 +401,12 @@ button:disabled {
 .source-line {
   position: relative;
   z-index: 1;
-  min-height: 48px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 -48px;
-  padding: 10px 28px;
+  margin: 0 -44px;
+  padding: 8px 24px;
   color: var(--ink-faint);
   background: var(--warm);
   border-top: 1px solid var(--border);

@@ -5,6 +5,6 @@
   "compatibility_date": "2026-07-23",
   "vars": {
     "ALLOWED_ORIGINS": "https://guide-to-job-postings.web.app,http://127.0.0.1:4174,http://localhost:4174",
-    "GEMINI_MODEL": "gemini-1.5-flash"
+    "GEMINI_MODEL": "gemini-2.0-flash"
   }
 }

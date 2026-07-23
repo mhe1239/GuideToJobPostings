@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="./styles.css" />
     <script type="module" src="./firebase-config.js?v=20260723-auth-state"></script>
     <script src="./admin-config.js?v=20260723-admin-env"></script>
-    <script src="./login.js?v=20260723-login-actions" defer></script>
+    <script src="./login.js?v=20260723-login-logout" defer></script>
   </head>
   <body class="login-page">
     <main class="login-shell">
@@ -58,7 +58,7 @@
           <a class="button primary" href="./members.html" data-admin-action data-min-role="owner" hidden>관리자 관리</a>
           <a class="button primary" href="./publish.html" data-admin-action data-min-role="editor" hidden>AI 공고 생성 및 공개</a>
           <a class="button primary" href="./manage.html" data-admin-action data-min-role="editor" hidden>공개된 공고 관리</a>
-          <button class="button secondary" id="login-logout-button" type="button" hidden disabled>로그아웃</button>
+          <button class="button secondary" id="login-logout-button" type="button" disabled>로그아웃</button>
         </div>
       </section>
     </main>

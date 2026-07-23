@@ -60,8 +60,8 @@ function renderLoginActions(user) {
     action.hidden = LOGIN_ROLE_RANK[role] < LOGIN_ROLE_RANK[minRole];
   });
   if (loginElements.logoutButton) {
-    loginElements.logoutButton.hidden = !user;
     loginElements.logoutButton.disabled = !user;
+    loginElements.logoutButton.textContent = user && role === "viewer" ? "로그아웃 후 다른 계정 선택" : "로그아웃";
   }
   if (loginElements.googleButton) {
     loginElements.googleButton.hidden = Boolean(user);

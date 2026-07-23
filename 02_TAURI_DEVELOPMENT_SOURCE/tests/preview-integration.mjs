@@ -305,8 +305,11 @@ stalePrimaryWindow.document.querySelector("#member-role").value = "editor";
 stalePrimaryWindow.document.querySelector("#member-form").dispatchEvent(new stalePrimaryWindow.Event("submit", { bubbles: true, cancelable: true }));
 assert.equal(JSON.parse(stalePrimaryWindow.localStorage.getItem("kangnamManagedMembers")).some((member) => member.email === "fixed-admin@kangnam.ac.kr" && member.role === "editor"), true, "복구된 최고 관리자 계정에서도 관리자 추가가 저장되어야 합니다.");
 assert.equal(signedOutLoginWindow.document.querySelector('[href="./admin.html"]').hidden, true, "로그인 전에는 관리자 메뉴 버튼을 숨겨야 합니다.");
+assert.equal(signedOutLoginWindow.document.querySelector("#login-logout-button").disabled, true, "로그인 전 로그아웃 버튼은 비활성화되어야 합니다.");
 assert.equal(studentLoginWindow.document.querySelector('[href="./admin.html"]').hidden, true, "학생 권한 계정에는 관리자 메뉴 버튼을 숨겨야 합니다.");
 assert.equal(studentLoginWindow.document.querySelector('[href="./members.html"]').hidden, true, "학생 권한 계정에는 관리자 관리 버튼을 숨겨야 합니다.");
+assert.equal(studentLoginWindow.document.querySelector("#login-logout-button").disabled, false, "관리자 권한이 없어도 로그인된 계정은 로그아웃할 수 있어야 합니다.");
+assert.equal(studentLoginWindow.document.querySelector("#login-logout-button").textContent, "로그아웃 후 다른 계정 선택", "권한 없는 계정에는 다른 계정 선택을 위한 로그아웃 안내를 보여야 합니다.");
 assert.equal(editorLoginWindow.document.querySelector('[href="./admin.html"]').hidden, false, "수정 및 공개 가능 계정에는 관리자 메뉴 버튼을 보여야 합니다.");
 assert.equal(editorLoginWindow.document.querySelector('[href="./members.html"]').hidden, true, "수정 및 공개 가능 계정에는 관리자 관리 버튼을 숨겨야 합니다.");
 assert.equal(editorLoginWindow.document.querySelector('[href="./publish.html"]').hidden, false, "수정 및 공개 가능 계정에는 AI 공고 생성 버튼을 보여야 합니다.");
@@ -545,4 +548,4 @@ assert.match(styles, /\.source-image-link img,[\s\S]*\.full-notice-image-wrap im
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 
-console.log("preview integration: 157 checks passed");
+console.log("preview integration: 160 checks passed");

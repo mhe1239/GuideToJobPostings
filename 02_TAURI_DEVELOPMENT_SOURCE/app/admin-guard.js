@@ -2,7 +2,6 @@
 
 const ADMIN_ROLE_STORAGE_KEY = "kangnamManagedMembers";
 const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
-const PRIMARY_ADMIN_EMAIL = "tee01202@gmail.com";
 const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
 const ADMIN_ROLE_RANK = Object.freeze({ viewer: 0, editor: 1, owner: 2 });
 
@@ -23,8 +22,12 @@ function writeManagedMembers(members) {
   window.localStorage.setItem(ADMIN_ROLE_STORAGE_KEY, JSON.stringify(members));
 }
 
+function getPrimaryAdminEmail() {
+  return normalizeAdminEmail(window.KANGNAM_ADMIN_CONFIG?.primaryAdminEmail);
+}
+
 function ensurePrimaryAdmin() {
-  const primaryEmail = normalizeAdminEmail(PRIMARY_ADMIN_EMAIL);
+  const primaryEmail = getPrimaryAdminEmail();
   if (!primaryEmail) return;
   if (window.localStorage.getItem(PRIMARY_ADMIN_MIGRATION_KEY) === primaryEmail) return;
 
@@ -90,10 +93,20 @@ function waitForFirebase() {
   });
 }
 
+function waitForAdminConfig() {
+  if (window.KANGNAM_ADMIN_CONFIG) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    window.addEventListener("kangnam-admin-config-ready", () => resolve(), { once: true });
+    window.setTimeout(resolve, 1200);
+  });
+}
+
 async function checkAdminAccess() {
   document.body.dataset.adminGuard = "pending";
   setGuardMessage("관리자 권한을 확인하고 있습니다.");
 
+  await waitForAdminConfig();
   const firebase = await waitForFirebase();
   if (!firebase?.onAuthStateChanged) {
     document.body.dataset.adminGuard = "denied";

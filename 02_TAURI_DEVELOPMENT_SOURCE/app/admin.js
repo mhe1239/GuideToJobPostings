@@ -11,7 +11,6 @@ const MAX_NOTICE_CHARS = 9000;
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
 const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
-const PRIMARY_ADMIN_EMAIL = "tee01202@gmail.com";
 const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
 const SCHOOL_NOTICE_MOCK_URL = "./school-notices.mock.json";
 const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
@@ -299,8 +298,12 @@ function setBootstrapAdminEmail(email) {
   if (normalized) window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, normalized);
 }
 
+function getPrimaryAdminEmail() {
+  return normalizeEmail(window.KANGNAM_ADMIN_CONFIG?.primaryAdminEmail);
+}
+
 function ensurePrimaryAdmin() {
-  const primaryEmail = normalizeEmail(PRIMARY_ADMIN_EMAIL);
+  const primaryEmail = getPrimaryAdminEmail();
   if (!primaryEmail) return;
   if (window.localStorage.getItem(PRIMARY_ADMIN_MIGRATION_KEY) === primaryEmail) return;
 

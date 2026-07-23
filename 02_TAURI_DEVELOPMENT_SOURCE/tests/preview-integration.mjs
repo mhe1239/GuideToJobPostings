@@ -101,6 +101,7 @@ function bootPublish() {
   window.localStorage.setItem("kangnamManagedMembers", JSON.stringify([
     { email: "admin@kangnam.ac.kr", role: "owner", source: "테스트 관리자" },
   ]));
+  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail: "tee01202@gmail.com" };
   window.KANGNAM_FIREBASE = {
     auth: {},
     onAuthStateChanged: (_auth, callback) => callback({ email: "admin@kangnam.ac.kr" }),
@@ -144,6 +145,7 @@ async function bootAdminGuard(pageHtml, user, members = [], url = "http://127.0.
     window.localStorage.setItem("kangnamAdminBootstrapEmail", bootstrapEmail);
     window.localStorage.setItem("kangnamPrimaryAdminSeeded20260723", "tee01202@gmail.com");
   }
+  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail: "tee01202@gmail.com" };
   window.KANGNAM_FIREBASE = {
     auth: {},
     onAuthStateChanged: (_auth, callback) => callback(user),

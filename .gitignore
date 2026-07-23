@@ -7,3 +7,4 @@
 **/.firebase/
 **/firebase-debug.log
 **/app/firebase-config.js
+**/app/admin-config.js

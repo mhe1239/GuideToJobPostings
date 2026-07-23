@@ -2,7 +2,7 @@
 
 (function registerAnswerService(global) {
   const EMPTY_RESULT = Object.freeze({ status: "empty", answer: "", source: "" });
-  const ANSWER_ENDPOINT = "/api/askNotice";
+  const DEFAULT_ANSWER_ENDPOINT = "/api/askNotice";
 
   function getFact(notice, key) {
     return notice.facts?.[key] || "확인 필요";
@@ -102,7 +102,8 @@
   }
 
   async function generateGeminiAnswer(question, notice) {
-    const response = await fetch(ANSWER_ENDPOINT, {
+    const endpoint = global.KANGNAM_PUBLIC_CONFIG?.answerEndpoint || DEFAULT_ANSWER_ENDPOINT;
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

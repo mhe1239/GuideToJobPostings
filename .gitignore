@@ -5,5 +5,8 @@
 **/node_modules/
 **/target/
 **/.firebase/
+**/.wrangler/
+**/.dev.vars
+**/.dev.vars.*
 **/firebase-debug.log
 **/app/firebase-config.js

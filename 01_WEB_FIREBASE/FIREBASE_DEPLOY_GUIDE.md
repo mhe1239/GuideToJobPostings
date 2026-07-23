@@ -1,63 +1,66 @@
-# 강남대 공고 길잡이 웹 배포 안내
+# 강남대 공고 길잡이 배포 안내
 
-이 폴더는 `강남대 공고 길잡이` 공식 공고 기반 버전의 Firebase Hosting 배포용 파일입니다.
+이 프로젝트는 Firebase Hosting으로 정적 앱을 배포하고, 상세 공고 질문 답변만 Cloudflare Worker를 통해 Gemini API로 처리합니다.
 
-화면은 `app/` 폴더에 있고, 상세 공고 질문 답변은 `functions/`의 서버리스 함수가 Gemini API를 호출해 생성합니다. Gemini API 키는 클라이언트에 포함하지 않고 Firebase Functions 환경 변수로만 사용합니다.
+Firebase는 계속 사용합니다. Cloudflare Worker는 브라우저에 Gemini API 키가 노출되지 않도록 중간 서버 역할만 합니다.
 
 ## 준비
 
-1. [Firebase Console](https://console.firebase.google.com/)에서 무료 Spark 플랜 프로젝트를 만듭니다.
-2. Node.js와 npm이 설치된 컴퓨터에서 터미널을 엽니다.
-3. 아래 명령으로 Firebase CLI를 설치하고 로그인합니다.
+1. Firebase CLI에 로그인합니다.
+2. Cloudflare 계정에 로그인합니다.
+3. `.env.local`에는 공개 설정만 둡니다.
+4. Gemini API 키는 Cloudflare Worker Secret으로만 설정합니다.
 
 ```bash
 npm install -g firebase-tools
 firebase login
+npm --prefix worker install
 ```
 
-## Firebase 프로젝트 연결
+## Cloudflare Worker 배포
 
-압축을 푼 이 폴더로 이동한 뒤 실행합니다.
+Gemini 답변 기능을 사용하려면 Worker Secret으로 `GEMINI_API_KEY`를 설정해야 합니다.
 
 ```bash
-firebase use --add
+npm --prefix worker exec wrangler secret put GEMINI_API_KEY
+npm run deploy:worker
 ```
 
-표시되는 목록에서 배포할 Firebase 프로젝트를 선택하고 별칭은 `default`로 입력합니다.
+배포 후 표시되는 Worker URL을 `.env.local`의 `ANSWER_API_ENDPOINT`에 넣고 웹 앱을 다시 빌드합니다.
 
-이 명령은 선택한 프로젝트 정보를 담은 `.firebaserc`를 현재 폴더에 생성합니다. 다른 사람의 `.firebaserc`는 전달받지 않아도 됩니다.
-
-## 7일 검증 링크 배포
-
-Gemini 답변 기능을 배포하려면 `.env.local` 또는 Firebase Functions 환경에 `GEMINI_API_KEY`를 설정해야 합니다. 선택적으로 `GEMINI_MODEL`을 지정할 수 있으며, 기본값은 `gemini-2.0-flash`입니다.
-
-```bash
-firebase hosting:channel:deploy fixed-review --expires 7d
+```env
+ANSWER_API_ENDPOINT=https://example.workers.dev
 ```
 
-완료 후 터미널에 표시되는 `https://...web.app` 주소를 검증자에게 전달합니다. Preview URL은 주소를 아는 누구나 접속할 수 있으므로 프로토타입 검증용으로만 사용합니다.
+Google API 키가 HTTP referrer 제한만 걸린 브라우저용 키이면 Cloudflare Worker에서 차단될 수 있습니다. Worker Secret에 넣는 키는 서버 호출이 가능해야 하며, API 제한을 둘 경우 Generative Language API 호출이 허용되어야 합니다.
 
-같은 링크를 최신 파일로 갱신할 때도 위 명령을 다시 실행합니다.
-
-## 검증 링크 삭제
+## Firebase Hosting 배포
 
 ```bash
-firebase hosting:channel:delete fixed-review
-```
-
-## 정식 주소 배포가 필요한 경우
-
-검증 완료 후에만 실행합니다.
-
-```bash
+npm run build
 npm run deploy
+```
+
+Firebase Hosting은 Spark 무료 요금제로 유지할 수 있습니다. Firebase Functions는 사용하지 않습니다.
+
+## 검증 명령
+
+```bash
+npm run build
+npm run lint
+```
+
+데스크톱 앱 변경이 함께 있을 때는 `02_TAURI_DEVELOPMENT_SOURCE`에서 제공되는 검증 명령도 실행합니다.
+
+```bash
+npm run test:preview
+npm run build
 ```
 
 ## 주의사항
 
-- `firebase init hosting`을 다시 실행할 필요가 없습니다.
-- `app/index.html`을 덮어쓰면 안 됩니다.
-- Public directory는 이미 `app`으로 설정되어 있습니다.
-- Firebase SDK, Authentication, Functions를 사용합니다.
-- Functions 배포 및 외부 Gemini API 호출에는 Firebase 프로젝트 설정과 요금제 조건을 확인해야 합니다.
-- DMG는 Mac 설치용이며 이 웹 배포 ZIP에는 포함하지 않았습니다.
+- Gemini API 키를 앱 코드, Firebase Hosting 파일, Git에 넣지 않습니다.
+- `.env`, `.env.local`, `.dev.vars`는 커밋하지 않습니다.
+- Worker는 `https://web.kangnam.ac.kr` 원문 공고 URL만 받습니다.
+- 원문 텍스트는 Jina Reader 경로로 읽고, 저장된 원문 이미지 URL이 있으면 Gemini 요청에 함께 첨부합니다.
+- Worker 또는 Gemini 호출이 실패하면 사용자 화면은 기존 저장 공고 기반 답변으로 내려갑니다.

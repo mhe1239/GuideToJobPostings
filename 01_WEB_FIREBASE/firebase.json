@@ -16,18 +16,6 @@
           }
         ]
       }
-    ],
-    "rewrites": [
-      {
-        "source": "/api/askNotice",
-        "function": {
-          "functionId": "askNotice",
-          "region": "asia-northeast3"
-        }
-      }
     ]
-  },
-  "functions": {
-    "source": "functions"
   }
 }

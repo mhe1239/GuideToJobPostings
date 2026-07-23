@@ -67,6 +67,9 @@ const roleLists = ${JSON.stringify({
   owners: (env.FIREBASE_OWNER_EMAILS || "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean),
   editors: (env.FIREBASE_EDITOR_EMAILS || "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean),
 }, null, 2)};
+const publicConfig = ${JSON.stringify({
+  answerEndpoint: env.ANSWER_API_ENDPOINT || "",
+}, null, 2)};
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -88,6 +91,8 @@ window.KANGNAM_FIREBASE = {
   signInWithRedirect: () => signInWithRedirect(auth, googleProvider),
   signOut: () => signOut(auth)
 };
+
+window.KANGNAM_PUBLIC_CONFIG = publicConfig;
 
 window.dispatchEvent(new CustomEvent("kangnam-firebase-ready"));
 

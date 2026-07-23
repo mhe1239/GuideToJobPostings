@@ -2135,11 +2135,6 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   border-radius: 10px;
 }
 
-.member-list > div[data-bootstrap-admin="true"] {
-  border-color: var(--primary-700);
-  box-shadow: inset 3px 0 0 var(--primary-800);
-}
-
 .member-list strong {
   min-width: 0;
   color: var(--primary-950);
@@ -2157,55 +2152,6 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   grid-column: 1 / -1;
   color: var(--ink-faint);
   font-size: 10px;
-}
-
-.member-actions {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 6px;
-}
-
-.member-primary-badge,
-.member-action-button {
-  min-height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5px 9px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 900;
-}
-
-.member-primary-badge {
-  color: var(--primary-800);
-  background: var(--primary-50);
-  border: 1px solid var(--primary-100);
-}
-
-.member-action-button {
-  color: var(--primary-900);
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-}
-
-.member-action-button:hover,
-.member-action-button:focus-visible {
-  border-color: var(--primary-700);
-  box-shadow: 0 0 0 3px rgb(23 58 103 / 10%);
-}
-
-.member-action-button.danger {
-  color: var(--status-danger-700);
-  border-color: var(--status-danger-700);
-}
-
-.member-action-button.danger:hover,
-.member-action-button.danger:focus-visible {
-  background: var(--danger-100);
 }
 
 .member-empty,

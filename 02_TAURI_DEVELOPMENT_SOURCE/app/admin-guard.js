@@ -2,10 +2,6 @@
 
 const ADMIN_ROLE_STORAGE_KEY = "kangnamManagedMembers";
 const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
-const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
-const ADMIN_BOOTSTRAP_TRANSFER_KEY = "kangnamBootstrapTransferred";
-const ADMIN_ACCESS_SNAPSHOT_KEY = "kangnamLastAdminAccess";
-const ADMIN_LOGIN_STORAGE_KEY = "kangnamAdminLogin";
 const ADMIN_ROLE_RANK = Object.freeze({ viewer: 0, editor: 1, owner: 2 });
 
 function normalizeAdminEmail(email) {
@@ -25,47 +21,9 @@ function writeManagedMembers(members) {
   window.localStorage.setItem(ADMIN_ROLE_STORAGE_KEY, JSON.stringify(members));
 }
 
-function getPrimaryAdminEmail() {
-  return normalizeAdminEmail(window.KANGNAM_ADMIN_CONFIG?.primaryAdminEmail);
-}
-
-function getConfiguredRole(email) {
-  const roleLists = window.KANGNAM_FIREBASE?.roleLists || {};
-  const owners = Array.isArray(roleLists.owners) ? roleLists.owners.map(normalizeAdminEmail) : [];
-  const editors = Array.isArray(roleLists.editors) ? roleLists.editors.map(normalizeAdminEmail) : [];
-  if (owners.includes(email)) return "owner";
-  if (editors.includes(email)) return "editor";
-  return "";
-}
-
-function ensurePrimaryAdmin() {
-  const primaryEmail = getPrimaryAdminEmail();
-  if (!primaryEmail) return;
-
-  const members = readManagedMembers();
-  const primaryMember = members.find((member) => normalizeAdminEmail(member.email) === primaryEmail);
-  const alreadySeeded = window.localStorage.getItem(PRIMARY_ADMIN_MIGRATION_KEY) === primaryEmail;
-  const bootstrapTransferred = window.localStorage.getItem(ADMIN_BOOTSTRAP_TRANSFER_KEY) === "true";
-  const shouldOwnBootstrap = !bootstrapTransferred;
-  const primarySource = shouldOwnBootstrap ? "최고 관리자" : primaryMember?.source || "관리자 권한";
-  if (alreadySeeded && primaryMember?.role === "owner" && primaryMember?.source === primarySource) return;
-
-  if (shouldOwnBootstrap) window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, primaryEmail);
-  const withoutPrimary = members.filter((member) => normalizeAdminEmail(member.email) !== primaryEmail);
-  writeManagedMembers([
-    { email: primaryEmail, role: "owner", source: primarySource },
-    ...withoutPrimary,
-  ]);
-  window.localStorage.setItem(PRIMARY_ADMIN_MIGRATION_KEY, primaryEmail);
-}
-
 function resolveAdminRole(user) {
-  ensurePrimaryAdmin();
   const email = normalizeAdminEmail(user?.email);
   if (!email) return "viewer";
-  if (email === getPrimaryAdminEmail()) return "owner";
-  const configuredRole = getConfiguredRole(email);
-  if (configuredRole) return configuredRole;
 
   const members = readManagedMembers()
     .map((member) => ({ ...member, email: normalizeAdminEmail(member.email) }))
@@ -78,7 +36,7 @@ function resolveAdminRole(user) {
 
   if (!bootstrapEmail && members.length === 0) {
     window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, email);
-    writeManagedMembers([{ email, role: "owner", source: "최고 관리자" }]);
+    writeManagedMembers([{ email, role: "owner", source: "초기 관리자" }]);
     return "owner";
   }
 
@@ -105,54 +63,6 @@ function redirectToStudentHome() {
   }, 900);
 }
 
-function rememberAllowedAccess(user, role) {
-  const email = normalizeAdminEmail(user?.email);
-  if (!email || !isAllowedRole(role)) return;
-
-  window.sessionStorage.setItem(ADMIN_ACCESS_SNAPSHOT_KEY, JSON.stringify({
-    email,
-    role,
-    savedAt: Date.now(),
-  }));
-}
-
-function allowConfiguredPrimaryAdmin(resolve) {
-  const email = getPrimaryAdminEmail();
-  if (!email) return false;
-
-  const user = { email };
-  const role = "owner";
-  document.body.dataset.adminGuard = "allowed";
-  ensurePrimaryAdmin();
-  rememberAllowedAccess(user, role);
-  resolve({ allowed: true, user, role, reason: "configured-primary" });
-  return true;
-}
-
-function readStoredAdminLogin() {
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(ADMIN_LOGIN_STORAGE_KEY) || "null");
-    if (!stored?.email || !stored?.role) return null;
-    if (Date.now() - Number(stored.savedAt || 0) > 24 * 60 * 60 * 1000) return null;
-    return {
-      user: { email: normalizeAdminEmail(stored.email) },
-      role: stored.role,
-      reason: "stored-admin",
-    };
-  } catch {
-    return null;
-  }
-}
-
-function allowStoredAdminIfPossible(resolve) {
-  const stored = readStoredAdminLogin();
-  if (!stored || !isAllowedRole(stored.role)) return false;
-  document.body.dataset.adminGuard = "allowed";
-  rememberAllowedAccess(stored.user, stored.role);
-  resolve({ allowed: true, user: stored.user, role: stored.role, reason: stored.reason });
-  return true;
-}
-
 function waitForFirebase() {
   if (window.KANGNAM_FIREBASE) return Promise.resolve(window.KANGNAM_FIREBASE);
 
@@ -162,26 +72,12 @@ function waitForFirebase() {
   });
 }
 
-function waitForAdminConfig() {
-  if (window.KANGNAM_ADMIN_CONFIG) return Promise.resolve();
-
-  return new Promise((resolve) => {
-    window.addEventListener("kangnam-admin-config-ready", () => resolve(), { once: true });
-    window.setTimeout(resolve, 1200);
-  });
-}
-
 async function checkAdminAccess() {
   document.body.dataset.adminGuard = "pending";
   setGuardMessage("관리자 권한을 확인하고 있습니다.");
 
-  await waitForAdminConfig();
   const firebase = await waitForFirebase();
   if (!firebase?.onAuthStateChanged) {
-    const storedAllowed = await new Promise((resolve) => allowStoredAdminIfPossible(resolve) || resolve(null));
-    if (storedAllowed) return storedAllowed;
-    const configuredAllowed = await new Promise((resolve) => allowConfiguredPrimaryAdmin(resolve) || resolve(null));
-    if (configuredAllowed) return configuredAllowed;
     document.body.dataset.adminGuard = "denied";
     setGuardMessage("관리자만 접근 가능한 페이지입니다.");
     redirectToStudentHome();
@@ -191,8 +87,6 @@ async function checkAdminAccess() {
   return new Promise((resolve) => {
     firebase.onAuthStateChanged(firebase.auth, (user) => {
       if (!user) {
-        if (allowStoredAdminIfPossible(resolve)) return;
-        if (allowConfiguredPrimaryAdmin(resolve)) return;
         document.body.dataset.adminGuard = "denied";
         setGuardMessage("관리자만 접근 가능한 페이지입니다.");
         redirectToStudentHome();
@@ -210,7 +104,6 @@ async function checkAdminAccess() {
       }
 
       document.body.dataset.adminGuard = "allowed";
-      rememberAllowedAccess(user, role);
       resolve({ allowed: true, user, role, reason: "allowed" });
     });
   });

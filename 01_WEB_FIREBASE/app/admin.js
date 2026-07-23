@@ -6,15 +6,10 @@ const ROLE_LABELS = Object.freeze({
   viewer: "보기만 가능",
 });
 
-const READER_ENDPOINT = "https://r.jina.ai/";
+const READER_ENDPOINT = "https://r.jina.ai/http://r.jina.ai/http://";
 const MAX_NOTICE_CHARS = 9000;
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
-const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
-const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
-const ADMIN_BOOTSTRAP_TRANSFER_KEY = "kangnamBootstrapTransferred";
-const ADMIN_ACCESS_SNAPSHOT_KEY = "kangnamLastAdminAccess";
-const ADMIN_LOGIN_STORAGE_KEY = "kangnamAdminLogin";
 const SCHOOL_NOTICE_MOCK_URL = "./school-notices.mock.json";
 const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
 const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
@@ -208,7 +203,6 @@ const APPROVAL_STATUS_LABELS = Object.freeze({
 const adminPage = {
   authBadge: document.querySelector("#admin-auth-badge") || document.querySelector("#review-status"),
   authState: document.querySelector("#admin-auth-state"),
-  authActions: [...document.querySelectorAll(".auth-actions")],
   logoutButton: document.querySelector("#admin-logout-button"),
   restrictedAreas: [...document.querySelectorAll("[data-requires-admin]")],
   memberList: document.querySelector("#member-list"),
@@ -259,41 +253,6 @@ let schoolNoticeLoadState = "idle";
 let importedSchoolNotices = [];
 let currentApprovalStatus = "draft";
 
-function readStoredAdminLogin() {
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(ADMIN_LOGIN_STORAGE_KEY) || "null");
-    if (!stored?.email || !stored?.role) return null;
-    if (Date.now() - Number(stored.savedAt || 0) > 24 * 60 * 60 * 1000) return null;
-    return { email: normalizeEmail(stored.email), role: stored.role };
-  } catch {
-    return null;
-  }
-}
-
-function applyStoredAdminLogin() {
-  const stored = readStoredAdminLogin();
-  if (!stored || roleRank(stored.role) < roleRank("editor")) return false;
-  currentUser = { email: stored.email };
-  currentRole = stored.role;
-  return true;
-}
-
-function applyConfiguredPrimaryAdmin() {
-  const email = getPrimaryAdminEmail();
-  if (!email) return false;
-  currentUser = { email };
-  currentRole = "owner";
-  return true;
-}
-
-function setAdminRuntimeError(error) {
-  const title = adminPage.authState?.querySelector("strong");
-  const subtitle = adminPage.authState?.querySelector("span");
-  if (!title || !subtitle) return;
-  title.textContent = "관리자 화면 초기화 오류";
-  subtitle.textContent = error?.message || "관리자 화면 스크립트를 실행하지 못했습니다.";
-}
-
 function setAdminNote(message) {
   if (adminPage.note) adminPage.note.textContent = message;
   if (adminPage.publishedNote) adminPage.publishedNote.textContent = message;
@@ -324,56 +283,6 @@ function saveManagedMembers() {
   window.localStorage.setItem("kangnamManagedMembers", JSON.stringify(managedMembers));
 }
 
-function normalizeEmail(email) {
-  return String(email || "").trim().toLowerCase();
-}
-
-function getBootstrapAdminEmail() {
-  return normalizeEmail(window.localStorage.getItem(ADMIN_BOOTSTRAP_KEY));
-}
-
-function setBootstrapAdminEmail(email) {
-  const normalized = normalizeEmail(email);
-  if (normalized) window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, normalized);
-}
-
-function getPrimaryAdminEmail() {
-  return normalizeEmail(window.KANGNAM_ADMIN_CONFIG?.primaryAdminEmail);
-}
-
-function ensurePrimaryAdmin() {
-  const primaryEmail = getPrimaryAdminEmail();
-  if (!primaryEmail) return;
-
-  const primaryMember = managedMembers.find((member) => normalizeEmail(member.email) === primaryEmail);
-  const alreadySeeded = window.localStorage.getItem(PRIMARY_ADMIN_MIGRATION_KEY) === primaryEmail;
-  const bootstrapTransferred = window.localStorage.getItem(ADMIN_BOOTSTRAP_TRANSFER_KEY) === "true";
-  const shouldOwnBootstrap = !bootstrapTransferred;
-  const primarySource = shouldOwnBootstrap ? "최고 관리자" : primaryMember?.source || "관리자 권한";
-  if (alreadySeeded && primaryMember?.role === "owner" && primaryMember?.source === primarySource) return;
-
-  if (shouldOwnBootstrap) setBootstrapAdminEmail(primaryEmail);
-  if (!primaryMember) {
-    managedMembers = [
-      { email: primaryEmail, role: "owner", source: primarySource },
-      ...managedMembers,
-    ];
-    saveManagedMembers();
-    window.localStorage.setItem(PRIMARY_ADMIN_MIGRATION_KEY, primaryEmail);
-    return;
-  }
-
-  let changed = false;
-  managedMembers = managedMembers.map((member) => {
-    if (normalizeEmail(member.email) !== primaryEmail) return member;
-    if (member.role === "owner" && member.source === primarySource) return member;
-    changed = true;
-    return { ...member, email: primaryEmail, role: "owner", source: primarySource };
-  });
-  if (changed) saveManagedMembers();
-  window.localStorage.setItem(PRIMARY_ADMIN_MIGRATION_KEY, primaryEmail);
-}
-
 function roleRank(role) {
   return { viewer: 0, editor: 1, owner: 2 }[role] || 0;
 }
@@ -384,34 +293,6 @@ function canManageMembers() {
 
 function canEditAndPublish() {
   return roleRank(currentRole) >= roleRank("editor");
-}
-
-function readAllowedAccessSnapshot() {
-  try {
-    const snapshot = JSON.parse(window.sessionStorage.getItem(ADMIN_ACCESS_SNAPSHOT_KEY) || window.localStorage.getItem(ADMIN_LOGIN_STORAGE_KEY) || "null");
-    if (!snapshot?.email || !snapshot?.role) return null;
-    if (Date.now() - Number(snapshot.savedAt || 0) > 24 * 60 * 60 * 1000) return null;
-    return { email: normalizeEmail(snapshot.email), role: snapshot.role };
-  } catch {
-    return null;
-  }
-}
-
-function getResolvedAdminAccess(result) {
-  const firebaseUser = window.KANGNAM_FIREBASE?.auth?.currentUser || null;
-  const snapshot = readAllowedAccessSnapshot();
-  const user = result?.user || firebaseUser || (result?.allowed && snapshot ? { email: snapshot.email } : null);
-  const resolvedRole = user && window.KANGNAM_ADMIN_ACCESS?.resolveAdminRole
-    ? window.KANGNAM_ADMIN_ACCESS.resolveAdminRole(user)
-    : "viewer";
-  const fallbackRole = result?.role || snapshot?.role || "viewer";
-  const role = roleRank(resolvedRole) >= roleRank(fallbackRole) ? resolvedRole : fallbackRole;
-
-  return { user, role };
-}
-
-function isBootstrapAdmin() {
-  return normalizeEmail(currentUser?.email) === getBootstrapAdminEmail();
 }
 
 function applyRoleVisibility() {
@@ -445,28 +326,6 @@ function renderAuthState() {
   }
 
   if (adminPage.logoutButton) adminPage.logoutButton.disabled = !currentUser;
-  adminPage.authActions.forEach((area) => {
-    area.hidden = Boolean(currentUser);
-  });
-}
-
-function renderDeniedAuthState(result) {
-  currentUser = result?.user || null;
-  currentRole = result?.role || "viewer";
-  renderAuthState();
-
-  const title = adminPage.authState?.querySelector("strong");
-  const subtitle = adminPage.authState?.querySelector("span");
-  if (!title || !subtitle) return;
-
-  if (result?.reason === "forbidden" && currentUser?.email) {
-    title.textContent = `${currentUser.email} · 관리자 권한 없음`;
-    subtitle.textContent = "등록된 관리자 계정이 아닙니다. 최고 관리자 계정으로 다시 로그인해 주세요.";
-    return;
-  }
-
-  title.textContent = "로그인 필요";
-  subtitle.textContent = "관리자 페이지는 Google 로그인 후 사용할 수 있습니다.";
 }
 
 function updateAccess() {
@@ -667,31 +526,10 @@ function resetDraftSelectionState(message) {
 
 function renderMembers() {
   if (!adminPage.memberList) return;
-  ensurePrimaryAdmin();
-  const bootstrapEmail = getBootstrapAdminEmail();
-  const uniqueMembers = new Map();
-  managedMembers.forEach((member) => {
-    const email = normalizeEmail(member.email);
-    if (!email) return;
-    uniqueMembers.set(email, {
-      ...member,
-      email,
-      role: member.role || "viewer",
-    });
-  });
-  if (currentUser && !uniqueMembers.has(normalizeEmail(currentUser.email))) {
-    uniqueMembers.set(normalizeEmail(currentUser.email), {
-      email: normalizeEmail(currentUser.email),
-      role: currentRole,
-      source: "현재 로그인",
-    });
-  }
-  const members = [...uniqueMembers.values()].sort((a, b) => {
-    const aBootstrap = normalizeEmail(a.email) === bootstrapEmail;
-    const bBootstrap = normalizeEmail(b.email) === bootstrapEmail;
-    if (aBootstrap !== bBootstrap) return aBootstrap ? -1 : 1;
-    return roleRank(b.role) - roleRank(a.role) || a.email.localeCompare(b.email);
-  });
+  const members = [
+    ...(currentUser ? [{ email: currentUser.email, role: "owner", source: "Google 로그인" }] : []),
+    ...managedMembers,
+  ];
 
   if (members.length === 0) {
     adminPage.memberList.innerHTML = "<p class=\"member-empty\">로그인한 관리자 계정이 없습니다.</p>";
@@ -704,52 +542,10 @@ function renderMembers() {
       const email = document.createElement("strong");
       const role = document.createElement("span");
       const source = document.createElement("small");
-      const actions = document.createElement("div");
-      const isCurrentBootstrap = normalizeEmail(member.email) === bootstrapEmail;
-      const canReceiveBootstrap = isBootstrapAdmin() && !isCurrentBootstrap && roleRank(member.role) >= roleRank("editor");
-      const canDeleteMember = isBootstrapAdmin() && !isCurrentBootstrap;
-      row.dataset.bootstrapAdmin = String(isCurrentBootstrap);
-      actions.className = "member-actions";
       email.textContent = member.email;
       role.textContent = ROLE_LABELS[member.role] || ROLE_LABELS.viewer;
-      source.textContent = isCurrentBootstrap ? "최고 관리자" : member.source || "브라우저 저장";
-
-      if (isCurrentBootstrap) {
-        const badge = document.createElement("em");
-        badge.className = "member-primary-badge";
-        badge.textContent = "최고 관리자";
-        actions.append(badge);
-      }
-
-      if (canReceiveBootstrap) {
-        const transferButton = document.createElement("button");
-        transferButton.type = "button";
-        transferButton.className = "member-action-button";
-        transferButton.dataset.memberAction = "transfer";
-        transferButton.dataset.memberEmail = member.email;
-        transferButton.textContent = "최고 관리자 넘기기";
-        transferButton.addEventListener("click", (event) => {
-          event.stopPropagation();
-          handleBootstrapTransfer(member.email);
-        });
-        actions.append(transferButton);
-      }
-
-      if (canDeleteMember) {
-        const deleteButton = document.createElement("button");
-        deleteButton.type = "button";
-        deleteButton.className = "member-action-button danger";
-        deleteButton.dataset.memberAction = "delete";
-        deleteButton.dataset.memberEmail = member.email;
-        deleteButton.textContent = "삭제";
-        deleteButton.addEventListener("click", (event) => {
-          event.stopPropagation();
-          handleMemberDelete(member.email);
-        });
-        actions.append(deleteButton);
-      }
-
-      row.append(email, role, source, actions);
+      source.textContent = member.source || "브라우저 저장";
+      row.append(email, role, source);
       return row;
     }),
   );
@@ -798,9 +594,8 @@ function clearLegacyDefaultNoticeUrl() {
 function handleMemberSubmit(event) {
   event.preventDefault();
   if (!canManageMembers()) return;
-  ensurePrimaryAdmin();
 
-  const email = normalizeEmail(adminPage.memberEmail.value);
+  const email = adminPage.memberEmail.value.trim().toLowerCase();
   if (!email) return;
 
   managedMembers = managedMembers.filter((member) => member.email !== email);
@@ -810,59 +605,8 @@ function handleMemberSubmit(event) {
   renderMembers();
 }
 
-function handleBootstrapTransfer(email) {
-  if (!isBootstrapAdmin()) return;
-  const normalized = normalizeEmail(email);
-  const member = managedMembers.find((item) => normalizeEmail(item.email) === normalized);
-  if (!member || roleRank(member.role) < roleRank("editor")) return;
-  const confirmed = window.confirm(`${normalized} 계정에 최고 관리자 권한을 넘길까요?`);
-  if (!confirmed) return;
-
-  setBootstrapAdminEmail(normalized);
-  window.localStorage.setItem(ADMIN_BOOTSTRAP_TRANSFER_KEY, "true");
-  managedMembers = managedMembers.map((item) => {
-    if (normalizeEmail(item.email) === normalized) {
-      return { ...item, email: normalized, role: "owner", source: "최고 관리자" };
-    }
-    if (normalizeEmail(item.email) === normalizeEmail(currentUser?.email) && item.source === "최고 관리자") {
-      return { ...item, source: "권한 위임 완료" };
-    }
-    return item;
-  });
-  saveManagedMembers();
-  setAdminNote("최고 관리자를 변경했습니다.");
-  renderMembers();
-}
-
-function handleMemberDelete(email) {
-  if (!isBootstrapAdmin()) return;
-  const normalized = normalizeEmail(email);
-  if (!normalized || normalized === getBootstrapAdminEmail()) return;
-  const confirmed = window.confirm(`${normalized} 관리자를 삭제할까요?`);
-  if (!confirmed) return;
-
-  managedMembers = managedMembers.filter((member) => normalizeEmail(member.email) !== normalized);
-  saveManagedMembers();
-  setAdminNote("관리자를 삭제했습니다.");
-  renderMembers();
-}
-
-function handleMemberListClick(event) {
-  const actionButton = event.target.closest("[data-member-action]");
-  if (!actionButton) return;
-  const email = actionButton.dataset.memberEmail;
-  if (actionButton.dataset.memberAction === "transfer") {
-    handleBootstrapTransfer(email);
-    return;
-  }
-  if (actionButton.dataset.memberAction === "delete") {
-    handleMemberDelete(email);
-  }
-}
-
 function buildReaderUrl(url) {
-  const target = new URL(url);
-  return `${READER_ENDPOINT}${target.protocol}//${target.host}${target.pathname}${target.search}`;
+  return `${READER_ENDPOINT}${url}`;
 }
 
 function cleanReaderText(text) {
@@ -1396,54 +1140,27 @@ function handleDraftEdit() {
 async function handleLogout() {
   const firebase = window.KANGNAM_FIREBASE;
   if (firebase) await firebase.signOut();
-  window.localStorage.removeItem(ADMIN_LOGIN_STORAGE_KEY);
-  window.sessionStorage.removeItem(ADMIN_ACCESS_SNAPSHOT_KEY);
   window.location.assign("./index.html");
 }
 
 async function initAuth() {
-  try {
-    const access = window.KANGNAM_ADMIN_ACCESS;
-    if (!access?.ready) {
-      if (!applyStoredAdminLogin() && !applyConfiguredPrimaryAdmin()) {
-        currentUser = null;
-        currentRole = "viewer";
-      }
-      updateAccess();
-      return;
-    }
-
-    const result = await access.ready;
-    if (!result.allowed) {
-      if (applyStoredAdminLogin() || applyConfiguredPrimaryAdmin()) {
-        managedMembers = loadManagedMembers();
-        ensurePrimaryAdmin();
-        updateAccess();
-        return;
-      }
-      renderDeniedAuthState(result);
-      return;
-    }
-    const resolved = getResolvedAdminAccess(result);
-    currentUser = resolved.user;
-    currentRole = resolved.role;
-    managedMembers = loadManagedMembers();
-    ensurePrimaryAdmin();
+  const access = window.KANGNAM_ADMIN_ACCESS;
+  if (!access?.ready) {
+    currentUser = null;
+    currentRole = "viewer";
     updateAccess();
-  } catch (error) {
-    console.error("관리자 화면 초기화 실패", error);
-    if (applyStoredAdminLogin() || applyConfiguredPrimaryAdmin()) {
-      managedMembers = loadManagedMembers();
-      ensurePrimaryAdmin();
-      updateAccess();
-      return;
-    }
-    setAdminRuntimeError(error);
+    return;
   }
+
+  const result = await access.ready;
+  if (!result.allowed) return;
+  currentUser = result.user;
+  currentRole = result.role;
+  managedMembers = loadManagedMembers();
+  updateAccess();
 }
 
 adminPage.logoutButton?.addEventListener("click", handleLogout);
-adminPage.memberList?.addEventListener("click", handleMemberListClick);
 adminPage.memberForm?.addEventListener("submit", handleMemberSubmit);
 adminPage.form?.addEventListener("submit", handleDraftGeneration);
 adminPage.urlInput?.addEventListener("input", resetDraftForUrlChange);

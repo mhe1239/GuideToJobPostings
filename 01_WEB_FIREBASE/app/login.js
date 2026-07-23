@@ -4,12 +4,7 @@ const loginElements = {
   googleButton: document.querySelector("#login-google-button"),
   logoutButton: document.querySelector("#login-logout-button"),
   state: document.querySelector("#login-state"),
-  adminActions: document.querySelectorAll("[data-admin-action]"),
 };
-
-const LOGIN_ROLE_RANK = Object.freeze({ viewer: 0, editor: 1, owner: 2 });
-const ADMIN_LOGIN_STORAGE_KEY = "kangnamAdminLogin";
-const ADMIN_ACCESS_SNAPSHOT_KEY = "kangnamLastAdminAccess";
 
 function setLoginState(title, message) {
   const strong = loginElements.state.querySelector("strong");
@@ -18,79 +13,13 @@ function setLoginState(title, message) {
   span.textContent = message;
 }
 
-function normalizeEmail(email) {
-  return String(email || "").trim().toLowerCase();
-}
-
-function loadManagedMembers() {
-  try {
-    const members = JSON.parse(window.localStorage.getItem("kangnamManagedMembers") || "[]");
-    return Array.isArray(members) ? members : [];
-  } catch {
-    return [];
-  }
-}
-
-function resolveLoginRoleKey(email) {
-  const normalized = normalizeEmail(email);
-  const primaryAdmin = normalizeEmail(window.KANGNAM_ADMIN_CONFIG?.primaryAdminEmail);
-  const owners = window.KANGNAM_FIREBASE?.roleLists?.owners || [];
-  const editors = window.KANGNAM_FIREBASE?.roleLists?.editors || [];
-  const managedMember = loadManagedMembers().find((member) => normalizeEmail(member.email) === normalized);
-  const bootstrapAdmin = normalizeEmail(window.localStorage.getItem("kangnamAdminBootstrapEmail"));
-  if (normalized && (normalized === primaryAdmin || normalized === bootstrapAdmin || owners.map(normalizeEmail).includes(normalized))) return "owner";
-  if (managedMember?.role === "owner") return "owner";
-  if (managedMember?.role === "editor" || editors.map(normalizeEmail).includes(normalized)) return "editor";
-  return "viewer";
-}
-
 function resolveLoginRole(email) {
-  const role = resolveLoginRoleKey(email);
-  if (role === "owner") return "관리자 관리 가능";
-  if (role === "editor") return "수정 및 공개 가능";
-  return "관리자 권한 없음";
+  if (email) return "관리자 관리 가능";
+  return "보기만 가능";
 }
 
-function canOpenAdmin(email) {
-  return LOGIN_ROLE_RANK[resolveLoginRoleKey(email)] >= LOGIN_ROLE_RANK.editor;
-}
-
-function rememberAdminLogin(user) {
-  const email = normalizeEmail(user?.email);
-  const role = resolveLoginRoleKey(email);
-  if (!email || LOGIN_ROLE_RANK[role] < LOGIN_ROLE_RANK.editor) {
-    window.localStorage.removeItem(ADMIN_LOGIN_STORAGE_KEY);
-    window.sessionStorage.removeItem(ADMIN_ACCESS_SNAPSHOT_KEY);
-    return;
-  }
-
-  const members = loadManagedMembers().filter((member) => normalizeEmail(member.email) !== email);
-  const source = role === "owner" ? "최고 관리자" : "로그인 관리자";
-  window.localStorage.setItem("kangnamManagedMembers", JSON.stringify([
-    { email, role, source },
-    ...members,
-  ]));
-  if (role === "owner") window.localStorage.setItem("kangnamAdminBootstrapEmail", email);
-
-  const snapshot = JSON.stringify({ email, role, savedAt: Date.now() });
-  window.localStorage.setItem(ADMIN_LOGIN_STORAGE_KEY, snapshot);
-  window.sessionStorage.setItem(ADMIN_ACCESS_SNAPSHOT_KEY, snapshot);
-}
-
-function renderLoginActions(user) {
-  const configuredPrimary = normalizeEmail(window.KANGNAM_ADMIN_CONFIG?.primaryAdminEmail);
-  const role = user ? resolveLoginRoleKey(user.email) : configuredPrimary ? "owner" : "viewer";
-  loginElements.adminActions.forEach((action) => {
-    const minRole = action.dataset.minRole || "editor";
-    action.hidden = LOGIN_ROLE_RANK[role] < LOGIN_ROLE_RANK[minRole];
-  });
-  if (loginElements.logoutButton) {
-    loginElements.logoutButton.disabled = !user;
-    loginElements.logoutButton.textContent = user && role === "viewer" ? "로그아웃 후 다른 계정 선택" : "로그아웃";
-  }
-  if (loginElements.googleButton) {
-    loginElements.googleButton.hidden = Boolean(user);
-  }
+function goToAdminPage() {
+  window.location.assign("./admin.html");
 }
 
 function initLoginAuth() {
@@ -103,12 +32,8 @@ function initLoginAuth() {
   firebase.getRedirectResult?.()
     .then((result) => {
       if (result?.user) {
-        rememberAdminLogin(result.user);
-        renderLoginActions(result.user);
-        const message = canOpenAdmin(result.user.email)
-          ? "관리자 작업 버튼을 선택해 이동하세요."
-          : "이 계정은 관리자 목록에 없습니다. 최고 관리자 계정으로 다시 로그인해 주세요.";
-        setLoginState(`${result.user.email} · ${resolveLoginRole(result.user.email)}`, message);
+        setLoginState(`${result.user.email} · ${resolveLoginRole(result.user.email)}`, "로그인되었습니다. 관리자 메뉴로 이동합니다.");
+        goToAdminPage();
       }
     })
     .catch((error) => {
@@ -117,23 +42,14 @@ function initLoginAuth() {
 
   firebase.onAuthStateChanged(firebase.auth, (user) => {
     if (!user) {
-      renderLoginActions(null);
-      if (normalizeEmail(window.KANGNAM_ADMIN_CONFIG?.primaryAdminEmail)) {
-        setLoginState("프로토타입 관리자 모드", "env에 지정된 최고 관리자 기준으로 관리자 메뉴를 사용할 수 있습니다.");
-        return;
-      }
+      loginElements.logoutButton.disabled = true;
       setLoginState("로그인 대기", "Google 계정으로 로그인하면 역할을 확인합니다.");
       return;
     }
 
-    rememberAdminLogin(user);
-    renderLoginActions(user);
-    const role = resolveLoginRole(user.email);
-    if (!canOpenAdmin(user.email)) {
-      setLoginState(`${user.email} · ${role}`, "이 계정은 관리자 목록에 없습니다. 최고 관리자 계정으로 다시 로그인해 주세요.");
-      return;
-    }
-    setLoginState(`${user.email} · ${role}`, "관리자 작업 버튼을 선택해 이동하세요.");
+    loginElements.logoutButton.disabled = false;
+    setLoginState(`${user.email} · ${resolveLoginRole(user.email)}`, "로그인되었습니다. 관리자 메뉴로 이동합니다.");
+    goToAdminPage();
   });
 }
 
@@ -161,14 +77,9 @@ async function handleGoogleLogin() {
 async function handleLogout() {
   const firebase = window.KANGNAM_FIREBASE;
   if (firebase) await firebase.signOut();
-  window.localStorage.removeItem(ADMIN_LOGIN_STORAGE_KEY);
-  window.sessionStorage.removeItem(ADMIN_ACCESS_SNAPSHOT_KEY);
-  renderLoginActions(null);
-  setLoginState("로그아웃 완료", "다른 Google 계정으로 다시 로그인할 수 있습니다.");
 }
 
 loginElements.googleButton.addEventListener("click", handleGoogleLogin);
 loginElements.logoutButton.addEventListener("click", handleLogout);
-renderLoginActions(null);
 window.addEventListener("kangnam-firebase-ready", initLoginAuth, { once: true });
 initLoginAuth();

@@ -6,7 +6,6 @@ const root = new URL("../", import.meta.url);
 const listHtml = await readFile(new URL("app/index.html", root), "utf8");
 const html = await readFile(new URL("app/notice.html", root), "utf8");
 const adminHtml = await readFile(new URL("app/admin.html", root), "utf8");
-const loginHtml = await readFile(new URL("app/login.html", root), "utf8");
 const membersHtml = await readFile(new URL("app/members.html", root), "utf8");
 const publishHtml = await readFile(new URL("app/publish.html", root), "utf8");
 const manageHtml = await readFile(new URL("app/manage.html", root), "utf8");
@@ -14,7 +13,6 @@ const styles = await readFile(new URL("app/styles.css", root), "utf8");
 const script = await readFile(new URL("app/main.js", root), "utf8");
 const answerServiceScript = await readFile(new URL("app/answer-service.js", root), "utf8");
 const listScript = await readFile(new URL("app/list.js", root), "utf8");
-const loginScript = await readFile(new URL("app/login.js", root), "utf8");
 const adminGuardScript = await readFile(new URL("app/admin-guard.js", root), "utf8");
 const adminScript = await readFile(new URL("app/admin.js", root), "utf8");
 const schoolNoticeMockJson = await readFile(new URL("app/school-notices.mock.json", root), "utf8");
@@ -98,12 +96,6 @@ function bootPublish() {
     .replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
   window.document.write(page);
   window.document.close();
-  window.localStorage.setItem("kangnamAdminBootstrapEmail", "admin@kangnam.ac.kr");
-  window.localStorage.setItem("kangnamPrimaryAdminSeeded20260723", "tee01202@gmail.com");
-  window.localStorage.setItem("kangnamManagedMembers", JSON.stringify([
-    { email: "admin@kangnam.ac.kr", role: "owner", source: "테스트 관리자" },
-  ]));
-  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail: "tee01202@gmail.com" };
   window.KANGNAM_FIREBASE = {
     auth: {},
     onAuthStateChanged: (_auth, callback) => callback({ email: "admin@kangnam.ac.kr" }),
@@ -135,7 +127,7 @@ function bootPublish() {
   return window;
 }
 
-async function bootAdminGuard(pageHtml, user, members = [], url = "http://127.0.0.1:4173/admin.html", bootstrapEmail = "", primaryAdminEmail = "tee01202@gmail.com") {
+async function bootAdminGuard(pageHtml, user, members = [], url = "http://127.0.0.1:4173/admin.html") {
   const window = new Window({ url });
   const page = pageHtml
     .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
@@ -143,11 +135,6 @@ async function bootAdminGuard(pageHtml, user, members = [], url = "http://127.0.
   window.document.write(page);
   window.document.close();
   window.localStorage.setItem("kangnamManagedMembers", JSON.stringify(members));
-  if (bootstrapEmail) {
-    window.localStorage.setItem("kangnamAdminBootstrapEmail", bootstrapEmail);
-    window.localStorage.setItem("kangnamPrimaryAdminSeeded20260723", primaryAdminEmail);
-  }
-  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail };
   window.KANGNAM_FIREBASE = {
     auth: {},
     onAuthStateChanged: (_auth, callback) => callback(user),
@@ -159,127 +146,6 @@ async function bootAdminGuard(pageHtml, user, members = [], url = "http://127.0.
     window.eval(adminScript);
     await new Promise((resolve) => window.setTimeout(resolve, 0));
   }
-  return window;
-}
-
-async function bootSeededPrimaryWithStaleRole() {
-  const window = new Window({ url: "http://127.0.0.1:4173/members.html" });
-  const page = membersHtml
-    .replace(/<script src="\.\/admin-config\.js[^"]*" defer><\/script>/, "")
-    .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
-    .replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
-  window.document.write(page);
-  window.document.close();
-  window.localStorage.setItem("kangnamAdminBootstrapEmail", "old-owner@kangnam.ac.kr");
-  window.localStorage.setItem("kangnamPrimaryAdminSeeded20260723", "tee01202@gmail.com");
-  window.localStorage.setItem("kangnamManagedMembers", JSON.stringify([
-    { email: "tee01202@gmail.com", role: "viewer", source: "이전 저장값" },
-  ]));
-  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail: "tee01202@gmail.com" };
-  window.KANGNAM_FIREBASE = {
-    auth: {},
-    onAuthStateChanged: (_auth, callback) => callback({ email: "tee01202@gmail.com" }),
-    signOut: async () => {},
-  };
-  window.eval(adminGuardScript);
-  const result = await window.KANGNAM_ADMIN_ACCESS.ready;
-  if (result.allowed) {
-    window.eval(adminScript);
-    await new Promise((resolve) => window.setTimeout(resolve, 0));
-  }
-  return window;
-}
-
-async function bootStoredAdminAccess() {
-  const window = new Window({ url: "http://127.0.0.1:4173/admin.html" });
-  const page = adminHtml
-    .replace(/<script src="\.\/admin-config\.js[^"]*" defer><\/script>/, "")
-    .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
-    .replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
-  window.document.write(page);
-  window.document.close();
-  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail: "jomimin79@gmail.com" };
-  window.KANGNAM_FIREBASE = {
-    auth: { currentUser: null },
-    roleLists: { owners: ["jomimin79@gmail.com"], editors: [] },
-    onAuthStateChanged: (_auth, callback) => callback(null),
-    signOut: async () => {},
-  };
-  window.localStorage.setItem("kangnamAdminLogin", JSON.stringify({
-    email: "jomimin79@gmail.com",
-    role: "owner",
-    savedAt: Date.now(),
-  }));
-  window.eval(adminGuardScript);
-  const result = await window.KANGNAM_ADMIN_ACCESS.ready;
-  if (result.allowed) {
-    window.eval(adminScript);
-    await new Promise((resolve) => window.setTimeout(resolve, 0));
-  }
-  return window;
-}
-
-async function bootConfiguredPrimaryWithoutLogin() {
-  const window = new Window({ url: "http://127.0.0.1:4173/admin.html" });
-  const page = adminHtml
-    .replace(/<script src="\.\/admin-config\.js[^"]*" defer><\/script>/, "")
-    .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
-    .replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
-  window.document.write(page);
-  window.document.close();
-  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail: "jomimin79@gmail.com" };
-  window.KANGNAM_FIREBASE = {
-    auth: { currentUser: null },
-    roleLists: { owners: [], editors: [] },
-    onAuthStateChanged: (_auth, callback) => callback(null),
-    signOut: async () => {},
-  };
-  window.eval(adminGuardScript);
-  const result = await window.KANGNAM_ADMIN_ACCESS.ready;
-  if (result.allowed) {
-    window.eval(adminScript);
-    await new Promise((resolve) => window.setTimeout(resolve, 0));
-  }
-  return window;
-}
-
-async function bootAdminWithoutGuardButStoredLogin() {
-  const window = new Window({ url: "http://127.0.0.1:4173/admin.html" });
-  const page = adminHtml
-    .replace(/<script src="\.\/admin-config\.js[^"]*" defer><\/script>/, "")
-    .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
-    .replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
-  window.document.write(page);
-  window.document.close();
-  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail: "jomimin79@gmail.com" };
-  window.localStorage.setItem("kangnamAdminLogin", JSON.stringify({
-    email: "jomimin79@gmail.com",
-    role: "owner",
-    savedAt: Date.now(),
-  }));
-  window.eval(adminScript);
-  await new Promise((resolve) => window.setTimeout(resolve, 0));
-  return window;
-}
-
-async function bootLogin(user, members = []) {
-  const window = new Window({ url: "http://127.0.0.1:4173/login.html" });
-  const page = loginHtml
-    .replace(/<script src="\.\/admin-config\.js[^"]*"><\/script>/, "")
-    .replace(/<script src="\.\/login\.js[^"]*" defer><\/script>/, "");
-  window.document.write(page);
-  window.document.close();
-  window.localStorage.setItem("kangnamManagedMembers", JSON.stringify(members));
-  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail: "tee01202@gmail.com" };
-  window.KANGNAM_FIREBASE = {
-    auth: {},
-    roleLists: { owners: ["tee01202@gmail.com"], editors: ["editor@kangnam.ac.kr"] },
-    getRedirectResult: async () => null,
-    onAuthStateChanged: (_auth, callback) => callback(user),
-    signOut: async () => {},
-  };
-  window.eval(loginScript);
-  await new Promise((resolve) => window.setTimeout(resolve, 0));
   return window;
 }
 
@@ -326,29 +192,9 @@ const ownerMembersWindow = await bootAdminGuard(membersHtml, { email: "owner@kan
 const editorMembersWindow = await bootAdminGuard(membersHtml, { email: "editor@kangnam.ac.kr" }, [
   { email: "editor@kangnam.ac.kr", role: "editor" },
 ], "http://127.0.0.1:4173/members.html");
-const bootstrapMembersWindow = await bootAdminGuard(membersHtml, { email: "owner@kangnam.ac.kr" }, [
-  { email: "owner@kangnam.ac.kr", role: "owner", source: "최고 관리자" },
-  { email: "editor@kangnam.ac.kr", role: "editor" },
-  { email: "viewer@kangnam.ac.kr", role: "viewer" },
-], "http://127.0.0.1:4173/members.html", "owner@kangnam.ac.kr", "owner@kangnam.ac.kr");
-const deleteMemberWindow = await bootAdminGuard(membersHtml, { email: "owner@kangnam.ac.kr" }, [
-  { email: "owner@kangnam.ac.kr", role: "owner", source: "최고 관리자" },
-  { email: "editor@kangnam.ac.kr", role: "editor" },
-], "http://127.0.0.1:4173/members.html", "owner@kangnam.ac.kr", "owner@kangnam.ac.kr");
-const seededPrimaryWindow = await bootAdminGuard(membersHtml, { email: "tee01202@gmail.com" }, [
-  { email: "old-owner@kangnam.ac.kr", role: "owner", source: "최고 관리자" },
-], "http://127.0.0.1:4173/members.html");
-const stalePrimaryWindow = await bootSeededPrimaryWithStaleRole();
-const signedOutLoginWindow = await bootLogin(null);
-const studentLoginWindow = await bootLogin({ email: "student@kangnam.ac.kr" });
-const editorLoginWindow = await bootLogin({ email: "editor@kangnam.ac.kr" });
-const ownerLoginWindow = await bootLogin({ email: "tee01202@gmail.com" });
-const storedAdminWindow = await bootStoredAdminAccess();
-const configuredPrimaryWindow = await bootConfiguredPrimaryWithoutLogin();
-const storedNoGuardWindow = await bootAdminWithoutGuardButStoredLogin();
 
-assert.equal(signedOutAdminWindow.document.body.dataset.adminGuard, "allowed", "env 최고 관리자 모드에서는 로그인 세션이 없어도 관리자 페이지를 열 수 있어야 합니다.");
-assert.match(signedOutAdminWindow.document.querySelector("#admin-auth-badge").textContent, /관리자 관리/, "env 최고 관리자 모드에서는 보기만 가능 상태가 나오면 안 됩니다.");
+assert.equal(signedOutAdminWindow.document.body.dataset.adminGuard, "denied", "로그아웃 상태에서는 관리자 페이지 접근을 차단해야 합니다.");
+assert.equal(signedOutAdminWindow.document.querySelector("#admin-guard-message").textContent, "관리자만 접근 가능한 페이지입니다.", "로그아웃 차단 안내 문구가 정확해야 합니다.");
 assert.equal(viewerAdminWindow.document.body.dataset.adminGuard, "denied", "학생 권한은 관리자 메뉴에 접근할 수 없어야 합니다.");
 assert.equal(viewerAdminWindow.document.querySelector("#admin-guard-message").textContent, "관리자 권한이 없습니다.", "학생 권한 차단 안내 문구가 정확해야 합니다.");
 assert.equal(editorAdminWindow.document.body.dataset.adminGuard, "allowed", "수정 및 공개 가능 권한은 관리자 메뉴에 접근할 수 있어야 합니다.");
@@ -357,47 +203,6 @@ assert.equal(editorAdminWindow.document.querySelector('[href="./publish.html"]')
 assert.equal(ownerMembersWindow.document.body.dataset.adminGuard, "allowed", "관리자 관리 권한은 관리자 관리 페이지에 접근할 수 있어야 합니다.");
 assert.equal(editorMembersWindow.document.body.dataset.adminGuard, "denied", "수정 및 공개 가능 권한은 관리자 관리 페이지 직접 접근도 차단되어야 합니다.");
 assert.equal(editorMembersWindow.document.querySelector("#admin-guard-message").textContent, "관리자 권한이 없습니다.", "관리자 관리 직접 접근 차단 안내 문구가 정확해야 합니다.");
-assert.equal(bootstrapMembersWindow.document.querySelector('[data-bootstrap-admin="true"] small').textContent, "최고 관리자", "초기 관리자 명칭은 최고 관리자로 표시되어야 합니다.");
-assert.equal(bootstrapMembersWindow.document.querySelectorAll(".member-action-button.danger").length, 2, "최고 관리자는 다른 관리자 삭제 버튼을 볼 수 있어야 합니다.");
-assert.equal(bootstrapMembersWindow.document.querySelectorAll(".member-action-button").length >= 3, true, "최고 관리자는 삭제와 최고 관리자 넘기기 버튼을 볼 수 있어야 합니다.");
-bootstrapMembersWindow.confirm = () => true;
-bootstrapMembersWindow.document.querySelector(".member-action-button").click();
-assert.equal(bootstrapMembersWindow.localStorage.getItem("kangnamAdminBootstrapEmail"), "editor@kangnam.ac.kr", "최고 관리자 넘기기 후 최고 관리자 이메일이 변경되어야 합니다.");
-assert.equal(JSON.parse(bootstrapMembersWindow.localStorage.getItem("kangnamManagedMembers")).find((member) => member.email === "editor@kangnam.ac.kr").role, "owner", "최고 관리자를 넘겨받은 관리자는 owner로 승격되어야 합니다.");
-deleteMemberWindow.confirm = () => true;
-deleteMemberWindow.document.querySelector(".member-action-button.danger").click();
-assert.equal(JSON.parse(deleteMemberWindow.localStorage.getItem("kangnamManagedMembers")).some((member) => member.email === "editor@kangnam.ac.kr"), false, "최고 관리자는 다른 관리자를 삭제할 수 있어야 합니다.");
-assert.equal(seededPrimaryWindow.document.body.dataset.adminGuard, "allowed", "tee01202@gmail.com 계정은 최고 관리자로 관리자 관리 페이지에 접근할 수 있어야 합니다.");
-assert.equal(seededPrimaryWindow.localStorage.getItem("kangnamAdminBootstrapEmail"), "tee01202@gmail.com", "기존 최고 관리자 저장값은 tee01202@gmail.com으로 보정되어야 합니다.");
-setValue(seededPrimaryWindow, "#member-email", "new-admin@kangnam.ac.kr");
-seededPrimaryWindow.document.querySelector("#member-role").value = "editor";
-seededPrimaryWindow.document.querySelector("#member-form").dispatchEvent(new seededPrimaryWindow.Event("submit", { bubbles: true, cancelable: true }));
-assert.equal(JSON.parse(seededPrimaryWindow.localStorage.getItem("kangnamManagedMembers")).some((member) => member.email === "new-admin@kangnam.ac.kr" && member.role === "editor"), true, "최고 관리자 계정에서는 관리자 추가가 저장되어야 합니다.");
-assert.equal(stalePrimaryWindow.document.body.dataset.adminGuard, "allowed", "보정 완료 플래그가 있어도 최고 관리자 계정은 접근 가능해야 합니다.");
-assert.equal(JSON.parse(stalePrimaryWindow.localStorage.getItem("kangnamManagedMembers")).find((member) => member.email === "tee01202@gmail.com").role, "owner", "최고 관리자 계정이 이전 저장값에서 viewer여도 owner로 복구되어야 합니다.");
-setValue(stalePrimaryWindow, "#member-email", "fixed-admin@kangnam.ac.kr");
-stalePrimaryWindow.document.querySelector("#member-role").value = "editor";
-stalePrimaryWindow.document.querySelector("#member-form").dispatchEvent(new stalePrimaryWindow.Event("submit", { bubbles: true, cancelable: true }));
-assert.equal(JSON.parse(stalePrimaryWindow.localStorage.getItem("kangnamManagedMembers")).some((member) => member.email === "fixed-admin@kangnam.ac.kr" && member.role === "editor"), true, "복구된 최고 관리자 계정에서도 관리자 추가가 저장되어야 합니다.");
-assert.equal(signedOutLoginWindow.document.querySelector('[href="./admin.html"]').hidden, false, "env 최고 관리자 모드에서는 로그인 전에도 관리자 메뉴 버튼을 보여야 합니다.");
-assert.equal(signedOutLoginWindow.document.querySelector('[href="./members.html"]').hidden, false, "env 최고 관리자 모드에서는 로그인 전에도 관리자 관리 버튼을 보여야 합니다.");
-assert.equal(signedOutLoginWindow.document.querySelector("#login-logout-button").disabled, true, "로그인 전 로그아웃 버튼은 비활성화되어야 합니다.");
-assert.equal(studentLoginWindow.document.querySelector('[href="./admin.html"]').hidden, true, "학생 권한 계정에는 관리자 메뉴 버튼을 숨겨야 합니다.");
-assert.equal(studentLoginWindow.document.querySelector('[href="./members.html"]').hidden, true, "학생 권한 계정에는 관리자 관리 버튼을 숨겨야 합니다.");
-assert.equal(studentLoginWindow.document.querySelector("#login-logout-button").disabled, false, "관리자 권한이 없어도 로그인된 계정은 로그아웃할 수 있어야 합니다.");
-assert.equal(studentLoginWindow.document.querySelector("#login-logout-button").textContent, "로그아웃 후 다른 계정 선택", "권한 없는 계정에는 다른 계정 선택을 위한 로그아웃 안내를 보여야 합니다.");
-assert.equal(editorLoginWindow.document.querySelector('[href="./admin.html"]').hidden, false, "수정 및 공개 가능 계정에는 관리자 메뉴 버튼을 보여야 합니다.");
-assert.equal(editorLoginWindow.document.querySelector('[href="./members.html"]').hidden, true, "수정 및 공개 가능 계정에는 관리자 관리 버튼을 숨겨야 합니다.");
-assert.equal(editorLoginWindow.document.querySelector('[href="./publish.html"]').hidden, false, "수정 및 공개 가능 계정에는 AI 공고 생성 버튼을 보여야 합니다.");
-assert.equal(ownerLoginWindow.document.querySelector('[href="./members.html"]').hidden, false, "최고 관리자 계정에는 관리자 관리 버튼을 보여야 합니다.");
-assert.equal(ownerLoginWindow.localStorage.getItem("kangnamAdminLogin") !== null, true, "관리자 로그인 성공 시 로컬 관리자 권한을 저장해야 합니다.");
-assert.equal(storedAdminWindow.document.body.dataset.adminGuard, "allowed", "Firebase 콜백이 비어도 저장된 관리자 권한으로 관리자 페이지를 열 수 있어야 합니다.");
-assert.equal(configuredPrimaryWindow.document.body.dataset.adminGuard, "allowed", "로그인 세션이 없어도 env 최고 관리자 기준으로 프로토타입 관리자 메뉴를 열 수 있어야 합니다.");
-assert.match(configuredPrimaryWindow.document.querySelector("#admin-auth-badge").textContent, /관리자 관리/, "env 최고 관리자 모드에서는 보기만 가능 배지가 나오면 안 됩니다.");
-assert.match(storedAdminWindow.document.querySelector("#admin-auth-state").textContent, /jomimin79@gmail.com/, "저장된 관리자 권한으로 화면 로그인 상태를 복구해야 합니다.");
-assert.match(storedAdminWindow.document.querySelector("#admin-auth-badge").textContent, /관리자 관리/, "저장된 최고 관리자 권한은 보기만 가능으로 표시되면 안 됩니다.");
-assert.match(storedNoGuardWindow.document.querySelector("#admin-auth-state").textContent, /jomimin79@gmail.com/, "가드 객체가 늦거나 없어도 저장된 관리자 로그인으로 화면 상태를 복구해야 합니다.");
-assert.match(storedNoGuardWindow.document.querySelector("#admin-auth-badge").textContent, /관리자 관리/, "가드 객체가 없어도 관리자 배지가 보기만 가능에 머물면 안 됩니다.");
 
 assert.equal(listDocument.querySelector("#notice"), null, "공고 선택 화면에는 상세 공고 본문이 없어야 합니다.");
 assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 4, "공고 선택 화면에는 여러 공고가 4열 카드로 표시되어야 합니다.");
@@ -632,4 +437,4 @@ assert.match(styles, /\.source-image-link img,[\s\S]*\.full-notice-image-wrap im
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 
-console.log("preview integration: 168 checks passed");
+console.log("preview integration: 134 checks passed");

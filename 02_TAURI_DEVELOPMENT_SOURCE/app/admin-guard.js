@@ -27,6 +27,15 @@ function getPrimaryAdminEmail() {
   return normalizeAdminEmail(window.KANGNAM_ADMIN_CONFIG?.primaryAdminEmail);
 }
 
+function getConfiguredRole(email) {
+  const roleLists = window.KANGNAM_FIREBASE?.roleLists || {};
+  const owners = Array.isArray(roleLists.owners) ? roleLists.owners.map(normalizeAdminEmail) : [];
+  const editors = Array.isArray(roleLists.editors) ? roleLists.editors.map(normalizeAdminEmail) : [];
+  if (owners.includes(email)) return "owner";
+  if (editors.includes(email)) return "editor";
+  return "";
+}
+
 function ensurePrimaryAdmin() {
   const primaryEmail = getPrimaryAdminEmail();
   if (!primaryEmail) return;
@@ -53,6 +62,8 @@ function resolveAdminRole(user) {
   const email = normalizeAdminEmail(user?.email);
   if (!email) return "viewer";
   if (email === getPrimaryAdminEmail()) return "owner";
+  const configuredRole = getConfiguredRole(email);
+  if (configuredRole) return configuredRole;
 
   const members = readManagedMembers()
     .map((member) => ({ ...member, email: normalizeAdminEmail(member.email) }))

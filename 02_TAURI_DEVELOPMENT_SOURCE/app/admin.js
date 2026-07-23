@@ -6,7 +6,7 @@ const ROLE_LABELS = Object.freeze({
   viewer: "보기만 가능",
 });
 
-const READER_ENDPOINT = "https://r.jina.ai/http://r.jina.ai/http://";
+const READER_ENDPOINT = "https://r.jina.ai/";
 const MAX_NOTICE_CHARS = 9000;
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
@@ -796,7 +796,8 @@ function handleMemberListClick(event) {
 }
 
 function buildReaderUrl(url) {
-  return `${READER_ENDPOINT}${url}`;
+  const target = new URL(url);
+  return `${READER_ENDPOINT}${target.protocol}//${target.host}${target.pathname}${target.search}`;
 }
 
 function cleanReaderText(text) {

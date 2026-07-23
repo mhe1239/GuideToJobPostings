@@ -4,6 +4,7 @@ const ADMIN_ROLE_STORAGE_KEY = "kangnamManagedMembers";
 const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
 const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
 const ADMIN_BOOTSTRAP_TRANSFER_KEY = "kangnamBootstrapTransferred";
+const ADMIN_ACCESS_SNAPSHOT_KEY = "kangnamLastAdminAccess";
 const ADMIN_ROLE_RANK = Object.freeze({ viewer: 0, editor: 1, owner: 2 });
 
 function normalizeAdminEmail(email) {
@@ -103,6 +104,17 @@ function redirectToStudentHome() {
   }, 900);
 }
 
+function rememberAllowedAccess(user, role) {
+  const email = normalizeAdminEmail(user?.email);
+  if (!email || !isAllowedRole(role)) return;
+
+  window.sessionStorage.setItem(ADMIN_ACCESS_SNAPSHOT_KEY, JSON.stringify({
+    email,
+    role,
+    savedAt: Date.now(),
+  }));
+}
+
 function waitForFirebase() {
   if (window.KANGNAM_FIREBASE) return Promise.resolve(window.KANGNAM_FIREBASE);
 
@@ -154,6 +166,7 @@ async function checkAdminAccess() {
       }
 
       document.body.dataset.adminGuard = "allowed";
+      rememberAllowedAccess(user, role);
       resolve({ allowed: true, user, role, reason: "allowed" });
     });
   });

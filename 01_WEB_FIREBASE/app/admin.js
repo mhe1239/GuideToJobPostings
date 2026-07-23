@@ -13,6 +13,7 @@ const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
 const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
 const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
 const ADMIN_BOOTSTRAP_TRANSFER_KEY = "kangnamBootstrapTransferred";
+const ADMIN_ACCESS_SNAPSHOT_KEY = "kangnamLastAdminAccess";
 const SCHOOL_NOTICE_MOCK_URL = "./school-notices.mock.json";
 const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
 const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
@@ -206,6 +207,7 @@ const APPROVAL_STATUS_LABELS = Object.freeze({
 const adminPage = {
   authBadge: document.querySelector("#admin-auth-badge") || document.querySelector("#review-status"),
   authState: document.querySelector("#admin-auth-state"),
+  authActions: [...document.querySelectorAll(".auth-actions")],
   logoutButton: document.querySelector("#admin-logout-button"),
   restrictedAreas: [...document.querySelectorAll("[data-requires-admin]")],
   memberList: document.querySelector("#member-list"),
@@ -348,6 +350,30 @@ function canEditAndPublish() {
   return roleRank(currentRole) >= roleRank("editor");
 }
 
+function readAllowedAccessSnapshot() {
+  try {
+    const snapshot = JSON.parse(window.sessionStorage.getItem(ADMIN_ACCESS_SNAPSHOT_KEY) || "null");
+    if (!snapshot?.email || !snapshot?.role) return null;
+    if (Date.now() - Number(snapshot.savedAt || 0) > 10 * 60 * 1000) return null;
+    return { email: normalizeEmail(snapshot.email), role: snapshot.role };
+  } catch {
+    return null;
+  }
+}
+
+function getResolvedAdminAccess(result) {
+  const firebaseUser = window.KANGNAM_FIREBASE?.auth?.currentUser || null;
+  const snapshot = readAllowedAccessSnapshot();
+  const user = result?.user || firebaseUser || (result?.allowed && snapshot ? { email: snapshot.email } : null);
+  const resolvedRole = user && window.KANGNAM_ADMIN_ACCESS?.resolveAdminRole
+    ? window.KANGNAM_ADMIN_ACCESS.resolveAdminRole(user)
+    : "viewer";
+  const fallbackRole = result?.role || snapshot?.role || "viewer";
+  const role = roleRank(resolvedRole) >= roleRank(fallbackRole) ? resolvedRole : fallbackRole;
+
+  return { user, role };
+}
+
 function isBootstrapAdmin() {
   return normalizeEmail(currentUser?.email) === getBootstrapAdminEmail();
 }
@@ -383,6 +409,9 @@ function renderAuthState() {
   }
 
   if (adminPage.logoutButton) adminPage.logoutButton.disabled = !currentUser;
+  adminPage.authActions.forEach((area) => {
+    area.hidden = Boolean(currentUser);
+  });
 }
 
 function renderDeniedAuthState(result) {
@@ -1348,8 +1377,9 @@ async function initAuth() {
     renderDeniedAuthState(result);
     return;
   }
-  currentUser = result.user;
-  currentRole = result.role;
+  const resolved = getResolvedAdminAccess(result);
+  currentUser = resolved.user;
+  currentRole = resolved.role;
   managedMembers = loadManagedMembers();
   ensurePrimaryAdmin();
   updateAccess();

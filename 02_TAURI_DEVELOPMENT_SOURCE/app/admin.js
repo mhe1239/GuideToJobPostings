@@ -10,6 +10,7 @@ const READER_ENDPOINT = "https://r.jina.ai/http://r.jina.ai/http://";
 const MAX_NOTICE_CHARS = 9000;
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
+const SCHOOL_NOTICE_MOCK_URL = "./school-notices.mock.json";
 const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
 const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
 const LEGACY_DEFAULT_NOTICE_URL =
@@ -213,6 +214,9 @@ const adminPage = {
   urlPanel: document.querySelector("#url-input-panel"),
   listPanel: document.querySelector("#notice-list-panel"),
   urlInput: document.querySelector("#official-notice-url"),
+  loadSchoolNoticesButton: document.querySelector("#load-school-notices-button"),
+  simulateSchoolErrorButton: document.querySelector("#simulate-school-error-button"),
+  schoolImportStatus: document.querySelector("#school-import-status"),
   schoolNoticeList: document.querySelector("#school-notice-list"),
   selectedNoticePanel: document.querySelector("#selected-notice-panel"),
   selectedNoticeTitle: document.querySelector("#selected-notice-title"),
@@ -245,6 +249,8 @@ let currentDraftNotice = null;
 let selectedPublishedId = "";
 let selectedMockNoticeId = "";
 let noticeInputMode = "url";
+let schoolNoticeLoadState = "idle";
+let importedSchoolNotices = [];
 let currentApprovalStatus = "draft";
 
 function setAdminNote(message) {
@@ -309,12 +315,13 @@ function updateAccess() {
       control.disabled = !allowed;
     });
   });
+  setSchoolImportState(schoolNoticeLoadState, adminPage.schoolImportStatus?.textContent || "가져오기 버튼을 누르면 최근 공고 10개를 불러옵니다.");
   renderAuthState();
   updateApprovalState();
 }
 
 function getSelectedMockNotice() {
-  return MOCK_SCHOOL_NOTICES.find((notice) => notice.id === selectedMockNoticeId) || null;
+  return importedSchoolNotices.find((notice) => notice.id === selectedMockNoticeId) || MOCK_SCHOOL_NOTICES.find((notice) => notice.id === selectedMockNoticeId) || null;
 }
 
 function getMockNoticeSourceText(notice) {
@@ -340,24 +347,113 @@ function updateSelectedNoticeSummary() {
     : "공고 URL을 입력하거나 공고를 선택해 주세요.";
 }
 
+function getProcessedNoticeKeys() {
+  const processed = new Set();
+  loadPublishedNotices().forEach((notice) => {
+    if (notice.id) processed.add(notice.id);
+    if (notice.sourceUrl) processed.add(notice.sourceUrl);
+  });
+  return processed;
+}
+
+function isProcessedSchoolNotice(notice) {
+  const processed = getProcessedNoticeKeys();
+  return processed.has(notice.id) || processed.has(notice.sourceUrl);
+}
+
+function setSchoolImportState(state, message) {
+  schoolNoticeLoadState = state;
+  if (adminPage.schoolImportStatus) {
+    adminPage.schoolImportStatus.textContent = message;
+    adminPage.schoolImportStatus.dataset.state = state;
+  }
+  if (adminPage.loadSchoolNoticesButton) {
+    adminPage.loadSchoolNoticesButton.disabled = currentRole !== "owner" || state === "loading";
+    adminPage.loadSchoolNoticesButton.textContent = state === "loading" ? "가져오는 중..." : "학교 홈페이지에서 가져오기";
+  }
+  if (adminPage.simulateSchoolErrorButton) {
+    adminPage.simulateSchoolErrorButton.disabled = currentRole !== "owner" || state === "loading";
+  }
+}
+
+function normalizeImportedSchoolNotice(item) {
+  const detail = MOCK_SCHOOL_NOTICES.find((notice) => notice.id === item.id || notice.sourceUrl === item.sourceUrl);
+  return { ...detail, ...item };
+}
+
+async function loadSchoolNoticeList({ simulateError = false } = {}) {
+  if (currentRole !== "owner") return;
+  selectedMockNoticeId = "";
+  importedSchoolNotices = [];
+  renderMockSchoolNotices();
+  updateSelectedNoticeSummary();
+  setSchoolImportState("loading", "학교 공고 목록을 가져오는 중입니다.");
+
+  await new Promise((resolve) => window.setTimeout(resolve, 450));
+
+  try {
+    if (simulateError) throw new Error("simulated school notice load failure");
+    const response = await fetch(SCHOOL_NOTICE_MOCK_URL, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error(`mock list load failed: ${response.status}`);
+    const notices = await response.json();
+    importedSchoolNotices = notices.slice(0, 10).map(normalizeImportedSchoolNotice);
+    setSchoolImportState("success", "최근 공고 10개를 불러왔습니다.");
+  } catch (error) {
+    console.error("학교 공고 목록 가져오기 실패", error);
+    importedSchoolNotices = [];
+    setSchoolImportState("error", "학교 공고 목록을 불러오지 못했습니다. URL을 직접 입력해 주세요.");
+  }
+
+  renderMockSchoolNotices();
+}
+
 function renderMockSchoolNotices() {
   if (!adminPage.schoolNoticeList) return;
+  if (schoolNoticeLoadState === "idle") {
+    adminPage.schoolNoticeList.replaceChildren();
+    updateSelectedNoticeSummary();
+    setSchoolImportState("idle", "가져오기 버튼을 누르면 최근 공고 10개를 불러옵니다.");
+    return;
+  }
+
+  if (schoolNoticeLoadState === "loading") {
+    const loading = document.createElement("div");
+    loading.className = "school-notice-state";
+    loading.textContent = "학교 공고 목록을 가져오는 중입니다.";
+    adminPage.schoolNoticeList.replaceChildren(loading);
+    return;
+  }
+
+  if (schoolNoticeLoadState === "error") {
+    const error = document.createElement("div");
+    error.className = "school-notice-state error";
+    error.textContent = "학교 공고 목록을 불러오지 못했습니다. URL을 직접 입력해 주세요.";
+    adminPage.schoolNoticeList.replaceChildren(error);
+    updateSelectedNoticeSummary();
+    return;
+  }
 
   adminPage.schoolNoticeList.replaceChildren(
-    ...MOCK_SCHOOL_NOTICES.map((notice) => {
+    ...importedSchoolNotices.map((notice) => {
+      const processed = isProcessedSchoolNotice(notice);
       const button = document.createElement("button");
       const title = document.createElement("strong");
       const meta = document.createElement("span");
       const type = document.createElement("small");
+      const state = document.createElement("em");
       button.type = "button";
       button.className = "school-notice-item";
       button.dataset.noticeId = notice.id;
+      button.disabled = processed;
+      button.dataset.processed = String(processed);
       button.setAttribute("aria-pressed", String(notice.id === selectedMockNoticeId));
       if (notice.id === selectedMockNoticeId) button.setAttribute("aria-current", "true");
       title.textContent = notice.title;
       meta.textContent = `${notice.department} · ${notice.publishedAt}`;
       type.textContent = SOURCE_TYPE_LABELS[notice.sourceType] || "확인 필요";
-      button.append(title, meta, type);
+      state.className = "school-notice-state-label";
+      state.textContent = processed ? "처리 완료" : "선택 가능";
+      button.append(title, meta, type, state);
       button.addEventListener("click", () => selectMockSchoolNotice(notice.id));
       return button;
     }),
@@ -366,6 +462,8 @@ function renderMockSchoolNotices() {
 }
 
 function selectMockSchoolNotice(noticeId) {
+  const notice = importedSchoolNotices.find((notice) => notice.id === noticeId);
+  if (!notice || isProcessedSchoolNotice(notice)) return;
   selectedMockNoticeId = noticeId;
   resetDraftSelectionState("학교 홈페이지 공고가 선택되었습니다. 초안을 생성해 주세요.");
   renderMockSchoolNotices();
@@ -377,7 +475,7 @@ function setNoticeInputMode(mode) {
   if (adminPage.urlPanel) adminPage.urlPanel.hidden = mode !== "url";
   if (adminPage.listPanel) adminPage.listPanel.hidden = mode !== "list";
   if (mode === "url") selectedMockNoticeId = "";
-  resetDraftSelectionState(mode === "url" ? "공식 공고 URL을 입력해 주세요." : "학교 홈페이지 공고 목록에서 공고를 선택해 주세요.");
+  resetDraftSelectionState(mode === "url" ? "공식 공고 URL을 입력해 주세요." : "학교 홈페이지에서 가져오기 버튼을 눌러 공고 목록을 불러와 주세요.");
   renderMockSchoolNotices();
 }
 
@@ -786,6 +884,7 @@ function saveModeratedNotice(approvalStatus) {
   selectedPublishedId = moderatedNotice.id;
   currentDraftNotice = moderatedNotice;
   renderPublishedNotices();
+  renderMockSchoolNotices();
   updateApprovalState();
   return moderatedNotice;
 }
@@ -1031,6 +1130,8 @@ adminPage.logoutButton?.addEventListener("click", handleLogout);
 adminPage.memberForm?.addEventListener("submit", handleMemberSubmit);
 adminPage.form?.addEventListener("submit", handleDraftGeneration);
 adminPage.urlInput?.addEventListener("input", resetDraftForUrlChange);
+adminPage.loadSchoolNoticesButton?.addEventListener("click", () => loadSchoolNoticeList());
+adminPage.simulateSchoolErrorButton?.addEventListener("click", () => loadSchoolNoticeList({ simulateError: true }));
 adminPage.inputModeRadios.forEach((radio) => {
   radio.addEventListener("change", () => {
     if (radio.checked) setNoticeInputMode(radio.value);

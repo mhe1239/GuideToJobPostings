@@ -14,6 +14,7 @@ const script = await readFile(new URL("app/main.js", root), "utf8");
 const answerServiceScript = await readFile(new URL("app/answer-service.js", root), "utf8");
 const listScript = await readFile(new URL("app/list.js", root), "utf8");
 const adminScript = await readFile(new URL("app/admin.js", root), "utf8");
+const schoolNoticeMockJson = await readFile(new URL("app/school-notices.mock.json", root), "utf8");
 const font = await readFile(new URL("app/assets/fonts/PretendardVariable.woff2", root));
 const fontLicense = await readFile(new URL("app/assets/fonts/Pretendard-LICENSE.txt", root), "utf8");
 const officialNoticeUrl = "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9";
@@ -97,18 +98,27 @@ function bootPublish() {
     onAuthStateChanged: (_auth, callback) => callback({ email: "admin@kangnam.ac.kr" }),
     signOut: async () => {},
   };
-  window.fetch = async () => ({
-    ok: true,
-    text: async () => [
-      "Title: URL 입력 테스트 공고",
-      "",
-      "신청 기간 7월 23일 ~ 8월 10일",
-      "지원 자격 강남대학교 재학생",
-      "모집 분야 비교과 프로그램",
-      "지원 방법 온라인 신청서 제출",
-      "문의 학생지원팀",
-    ].join("\n"),
-  });
+  window.fetch = async (url) => {
+    if (String(url).includes("school-notices.mock.json")) {
+      return {
+        ok: true,
+        json: async () => JSON.parse(schoolNoticeMockJson),
+      };
+    }
+
+    return {
+      ok: true,
+      text: async () => [
+        "Title: URL 입력 테스트 공고",
+        "",
+        "신청 기간 7월 23일 ~ 8월 10일",
+        "지원 자격 강남대학교 재학생",
+        "모집 분야 비교과 프로그램",
+        "지원 방법 온라인 신청서 제출",
+        "문의 학생지원팀",
+      ].join("\n"),
+    };
+  };
   window.eval(adminScript);
   return window;
 }
@@ -199,8 +209,16 @@ assert.match(publishDocument.querySelector("#draft-summary").value, /URL 입력 
 click(publishWindow, "input[value='list']");
 assert.equal(publishDocument.querySelector("#url-input-panel").hidden, true, "목록 선택 모드에서는 URL 입력 영역을 숨겨야 합니다.");
 assert.equal(publishDocument.querySelector("#notice-list-panel").hidden, false, "목록 선택 모드에서는 학교 공고 목록을 보여야 합니다.");
+assert.equal(publishDocument.querySelectorAll(".school-notice-item").length, 0, "가져오기 전에는 공고 목록을 자동으로 표시하지 않아야 합니다.");
+assert.match(publishDocument.querySelector(".mock-list-note").textContent, /실제 학교 홈페이지와 연결되지 않은 시뮬레이션/, "학교 공고 가져오기는 시뮬레이션임을 명확히 안내해야 합니다.");
+click(publishWindow, "#load-school-notices-button");
+assert.equal(publishDocument.querySelector("#school-import-status").dataset.state, "loading", "가져오기 버튼 클릭 시 로딩 상태를 표시해야 합니다.");
+assert.match(publishDocument.querySelector("#school-import-status").textContent, /가져오는 중/, "로딩 중 문구가 표시되어야 합니다.");
+await new Promise((resolve) => publishWindow.setTimeout(resolve, 500));
 assert.equal(publishDocument.querySelectorAll(".school-notice-item").length, 10, "학교 홈페이지 공고 선택 화면에는 최근 공고 10개 예시가 표시되어야 합니다.");
+assert.equal(publishDocument.querySelector("#school-import-status").dataset.state, "success", "목록을 불러오면 성공 상태를 표시해야 합니다.");
 assert.match(publishDocument.querySelector(".mock-list-note").textContent, /프로토타입용 예시 데이터/, "Mock 목록은 예시 데이터임을 명확히 안내해야 합니다.");
+assert.match(publishDocument.querySelector(".school-notice-state-label").textContent, /선택 가능/, "처리 전 공고는 선택 가능 상태로 표시되어야 합니다.");
 click(publishWindow, ".school-notice-item");
 assert.equal(publishDocument.querySelector(".school-notice-item").getAttribute("aria-current"), "true", "공고를 선택하면 선택 상태가 명확히 표시되어야 합니다.");
 assert.match(publishDocument.querySelector("#selected-notice-title").textContent, /2026학년도 비교과 프로그램 참가자 모집/, "선택한 공고 제목이 표시되어야 합니다.");
@@ -216,6 +234,9 @@ click(publishWindow, "#decline-draft-button");
 assert.equal(publishDocument.querySelector("#approval-note").textContent, "공고가 보류되었습니다.", "보류 시 안내 문구가 표시되어야 합니다.");
 assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "보류", "보류 시 관리자 화면 상태가 구분되어야 합니다.");
 assert.equal(publishDocument.querySelector(".published-item").dataset.approvalStatus, "declined", "관리자 목록에서 보류 상태가 표시되어야 합니다.");
+assert.equal(publishDocument.querySelector(".school-notice-item").disabled, true, "처리 완료 공고는 다시 선택할 수 없어야 합니다.");
+assert.equal(publishDocument.querySelector(".school-notice-item").dataset.processed, "true", "처리 완료 공고는 처리 상태 데이터가 표시되어야 합니다.");
+assert.match(publishDocument.querySelector(".school-notice-state-label").textContent, /처리 완료/, "처리 완료 공고에는 처리 완료 상태를 표시해야 합니다.");
 const declinedNotices = JSON.parse(publishWindow.localStorage.getItem("kangnamPublishedNotices"));
 const declinedListWindow = bootListWithStorage(declinedNotices, JSON.parse(publishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
 assert.doesNotMatch(declinedListWindow.document.querySelector("#notice-list").textContent, /2026학년도 비교과 프로그램 참가자 모집/, "보류된 공고는 학생 목록에 표시되지 않아야 합니다.");
@@ -229,6 +250,12 @@ assert.equal(publishDocument.querySelector("#approval-status-chip").textContent,
 const approvedNotices = JSON.parse(publishWindow.localStorage.getItem("kangnamPublishedNotices"));
 const approvedListWindow = bootListWithStorage(approvedNotices, JSON.parse(publishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
 assert.match(approvedListWindow.document.querySelector("#notice-list").textContent, /2026학년도 비교과 프로그램 참가자 모집/, "공개 승인된 공고는 학생 목록에 표시되어야 합니다.");
+click(publishWindow, "#simulate-school-error-button");
+assert.equal(publishDocument.querySelector("#school-import-status").dataset.state, "loading", "오류 시뮬레이션도 먼저 로딩 상태를 거쳐야 합니다.");
+await new Promise((resolve) => publishWindow.setTimeout(resolve, 500));
+assert.equal(publishDocument.querySelector("#school-import-status").dataset.state, "error", "목록 불러오기 실패 상태를 표시해야 합니다.");
+assert.equal(publishDocument.querySelector("#school-import-status").textContent, "학교 공고 목록을 불러오지 못했습니다. URL을 직접 입력해 주세요.", "오류 문구가 정확해야 합니다.");
+assert.match(publishDocument.querySelector(".school-notice-state.error").textContent, /URL을 직접 입력해 주세요/, "목록 영역에도 오류 안내가 표시되어야 합니다.");
 assert.match(manageHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "공개 공고 관리 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.equal(document.querySelectorAll(".faq-item").length, 3, "P0 FAQ 3개가 표시되어야 합니다.");
 assert.equal(document.querySelectorAll(".key-facts > div").length, 6, "핵심 정보는 신청 기간, 지원 대상, 모집 분야, 제출 서류, 운영 기간, 담당 부서 6개 항목으로 표시되어야 합니다.");

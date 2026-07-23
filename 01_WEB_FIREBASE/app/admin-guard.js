@@ -3,6 +3,7 @@
 const ADMIN_ROLE_STORAGE_KEY = "kangnamManagedMembers";
 const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
 const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
+const ADMIN_BOOTSTRAP_TRANSFER_KEY = "kangnamBootstrapTransferred";
 const ADMIN_ROLE_RANK = Object.freeze({ viewer: 0, editor: 1, owner: 2 });
 
 function normalizeAdminEmail(email) {
@@ -29,13 +30,19 @@ function getPrimaryAdminEmail() {
 function ensurePrimaryAdmin() {
   const primaryEmail = getPrimaryAdminEmail();
   if (!primaryEmail) return;
-  if (window.localStorage.getItem(PRIMARY_ADMIN_MIGRATION_KEY) === primaryEmail) return;
 
-  window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, primaryEmail);
   const members = readManagedMembers();
+  const primaryMember = members.find((member) => normalizeAdminEmail(member.email) === primaryEmail);
+  const alreadySeeded = window.localStorage.getItem(PRIMARY_ADMIN_MIGRATION_KEY) === primaryEmail;
+  const bootstrapTransferred = window.localStorage.getItem(ADMIN_BOOTSTRAP_TRANSFER_KEY) === "true";
+  const shouldOwnBootstrap = !bootstrapTransferred;
+  const primarySource = shouldOwnBootstrap ? "최고 관리자" : primaryMember?.source || "관리자 권한";
+  if (alreadySeeded && primaryMember?.role === "owner" && primaryMember?.source === primarySource) return;
+
+  if (shouldOwnBootstrap) window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, primaryEmail);
   const withoutPrimary = members.filter((member) => normalizeAdminEmail(member.email) !== primaryEmail);
   writeManagedMembers([
-    { email: primaryEmail, role: "owner", source: "최고 관리자" },
+    { email: primaryEmail, role: "owner", source: primarySource },
     ...withoutPrimary,
   ]);
   window.localStorage.setItem(PRIMARY_ADMIN_MIGRATION_KEY, primaryEmail);
@@ -45,6 +52,7 @@ function resolveAdminRole(user) {
   ensurePrimaryAdmin();
   const email = normalizeAdminEmail(user?.email);
   if (!email) return "viewer";
+  if (email === getPrimaryAdminEmail()) return "owner";
 
   const members = readManagedMembers()
     .map((member) => ({ ...member, email: normalizeAdminEmail(member.email) }))

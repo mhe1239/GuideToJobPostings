@@ -12,6 +12,7 @@ const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
 const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
 const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
+const ADMIN_BOOTSTRAP_TRANSFER_KEY = "kangnamBootstrapTransferred";
 const SCHOOL_NOTICE_MOCK_URL = "./school-notices.mock.json";
 const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
 const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
@@ -305,13 +306,18 @@ function getPrimaryAdminEmail() {
 function ensurePrimaryAdmin() {
   const primaryEmail = getPrimaryAdminEmail();
   if (!primaryEmail) return;
-  if (window.localStorage.getItem(PRIMARY_ADMIN_MIGRATION_KEY) === primaryEmail) return;
 
-  setBootstrapAdminEmail(primaryEmail);
-  const exists = managedMembers.some((member) => normalizeEmail(member.email) === primaryEmail);
-  if (!exists) {
+  const primaryMember = managedMembers.find((member) => normalizeEmail(member.email) === primaryEmail);
+  const alreadySeeded = window.localStorage.getItem(PRIMARY_ADMIN_MIGRATION_KEY) === primaryEmail;
+  const bootstrapTransferred = window.localStorage.getItem(ADMIN_BOOTSTRAP_TRANSFER_KEY) === "true";
+  const shouldOwnBootstrap = !bootstrapTransferred;
+  const primarySource = shouldOwnBootstrap ? "최고 관리자" : primaryMember?.source || "관리자 권한";
+  if (alreadySeeded && primaryMember?.role === "owner" && primaryMember?.source === primarySource) return;
+
+  if (shouldOwnBootstrap) setBootstrapAdminEmail(primaryEmail);
+  if (!primaryMember) {
     managedMembers = [
-      { email: primaryEmail, role: "owner", source: "최고 관리자" },
+      { email: primaryEmail, role: "owner", source: primarySource },
       ...managedMembers,
     ];
     saveManagedMembers();
@@ -322,9 +328,9 @@ function ensurePrimaryAdmin() {
   let changed = false;
   managedMembers = managedMembers.map((member) => {
     if (normalizeEmail(member.email) !== primaryEmail) return member;
-    if (member.role === "owner" && member.source === "최고 관리자") return member;
+    if (member.role === "owner" && member.source === primarySource) return member;
     changed = true;
-    return { ...member, email: primaryEmail, role: "owner", source: "최고 관리자" };
+    return { ...member, email: primaryEmail, role: "owner", source: primarySource };
   });
   if (changed) saveManagedMembers();
   window.localStorage.setItem(PRIMARY_ADMIN_MIGRATION_KEY, primaryEmail);
@@ -635,8 +641,13 @@ function renderMembers() {
         const transferButton = document.createElement("button");
         transferButton.type = "button";
         transferButton.className = "member-action-button";
+        transferButton.dataset.memberAction = "transfer";
+        transferButton.dataset.memberEmail = member.email;
         transferButton.textContent = "최고 관리자 넘기기";
-        transferButton.addEventListener("click", () => handleBootstrapTransfer(member.email));
+        transferButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          handleBootstrapTransfer(member.email);
+        });
         actions.append(transferButton);
       }
 
@@ -644,8 +655,13 @@ function renderMembers() {
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
         deleteButton.className = "member-action-button danger";
+        deleteButton.dataset.memberAction = "delete";
+        deleteButton.dataset.memberEmail = member.email;
         deleteButton.textContent = "삭제";
-        deleteButton.addEventListener("click", () => handleMemberDelete(member.email));
+        deleteButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          handleMemberDelete(member.email);
+        });
         actions.append(deleteButton);
       }
 
@@ -719,6 +735,7 @@ function handleBootstrapTransfer(email) {
   if (!confirmed) return;
 
   setBootstrapAdminEmail(normalized);
+  window.localStorage.setItem(ADMIN_BOOTSTRAP_TRANSFER_KEY, "true");
   managedMembers = managedMembers.map((item) => {
     if (normalizeEmail(item.email) === normalized) {
       return { ...item, email: normalized, role: "owner", source: "최고 관리자" };
@@ -744,6 +761,19 @@ function handleMemberDelete(email) {
   saveManagedMembers();
   setAdminNote("관리자를 삭제했습니다.");
   renderMembers();
+}
+
+function handleMemberListClick(event) {
+  const actionButton = event.target.closest("[data-member-action]");
+  if (!actionButton) return;
+  const email = actionButton.dataset.memberEmail;
+  if (actionButton.dataset.memberAction === "transfer") {
+    handleBootstrapTransfer(email);
+    return;
+  }
+  if (actionButton.dataset.memberAction === "delete") {
+    handleMemberDelete(email);
+  }
 }
 
 function buildReaderUrl(url) {
@@ -1303,6 +1333,7 @@ async function initAuth() {
 }
 
 adminPage.logoutButton?.addEventListener("click", handleLogout);
+adminPage.memberList?.addEventListener("click", handleMemberListClick);
 adminPage.memberForm?.addEventListener("submit", handleMemberSubmit);
 adminPage.form?.addEventListener("submit", handleDraftGeneration);
 adminPage.urlInput?.addEventListener("input", resetDraftForUrlChange);

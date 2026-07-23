@@ -11,6 +11,8 @@ const MAX_NOTICE_CHARS = 9000;
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
 const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
+const PRIMARY_ADMIN_EMAIL = "tee01202@gmail.com";
+const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
 const SCHOOL_NOTICE_MOCK_URL = "./school-notices.mock.json";
 const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
 const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
@@ -297,6 +299,34 @@ function setBootstrapAdminEmail(email) {
   if (normalized) window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, normalized);
 }
 
+function ensurePrimaryAdmin() {
+  const primaryEmail = normalizeEmail(PRIMARY_ADMIN_EMAIL);
+  if (!primaryEmail) return;
+  if (window.localStorage.getItem(PRIMARY_ADMIN_MIGRATION_KEY) === primaryEmail) return;
+
+  setBootstrapAdminEmail(primaryEmail);
+  const exists = managedMembers.some((member) => normalizeEmail(member.email) === primaryEmail);
+  if (!exists) {
+    managedMembers = [
+      { email: primaryEmail, role: "owner", source: "최고 관리자" },
+      ...managedMembers,
+    ];
+    saveManagedMembers();
+    window.localStorage.setItem(PRIMARY_ADMIN_MIGRATION_KEY, primaryEmail);
+    return;
+  }
+
+  let changed = false;
+  managedMembers = managedMembers.map((member) => {
+    if (normalizeEmail(member.email) !== primaryEmail) return member;
+    if (member.role === "owner" && member.source === "최고 관리자") return member;
+    changed = true;
+    return { ...member, email: primaryEmail, role: "owner", source: "최고 관리자" };
+  });
+  if (changed) saveManagedMembers();
+  window.localStorage.setItem(PRIMARY_ADMIN_MIGRATION_KEY, primaryEmail);
+}
+
 function roleRank(role) {
   return { viewer: 0, editor: 1, owner: 2 }[role] || 0;
 }
@@ -544,6 +574,7 @@ function resetDraftSelectionState(message) {
 
 function renderMembers() {
   if (!adminPage.memberList) return;
+  ensurePrimaryAdmin();
   const bootstrapEmail = getBootstrapAdminEmail();
   const uniqueMembers = new Map();
   managedMembers.forEach((member) => {
@@ -664,6 +695,7 @@ function clearLegacyDefaultNoticeUrl() {
 function handleMemberSubmit(event) {
   event.preventDefault();
   if (!canManageMembers()) return;
+  ensurePrimaryAdmin();
 
   const email = normalizeEmail(adminPage.memberEmail.value);
   if (!email) return;
@@ -1263,6 +1295,7 @@ async function initAuth() {
   currentUser = result.user;
   currentRole = result.role;
   managedMembers = loadManagedMembers();
+  ensurePrimaryAdmin();
   updateAccess();
 }
 

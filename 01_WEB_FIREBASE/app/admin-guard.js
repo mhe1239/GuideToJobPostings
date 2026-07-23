@@ -2,6 +2,8 @@
 
 const ADMIN_ROLE_STORAGE_KEY = "kangnamManagedMembers";
 const ADMIN_BOOTSTRAP_KEY = "kangnamAdminBootstrapEmail";
+const PRIMARY_ADMIN_EMAIL = "tee01202@gmail.com";
+const PRIMARY_ADMIN_MIGRATION_KEY = "kangnamPrimaryAdminSeeded20260723";
 const ADMIN_ROLE_RANK = Object.freeze({ viewer: 0, editor: 1, owner: 2 });
 
 function normalizeAdminEmail(email) {
@@ -21,7 +23,23 @@ function writeManagedMembers(members) {
   window.localStorage.setItem(ADMIN_ROLE_STORAGE_KEY, JSON.stringify(members));
 }
 
+function ensurePrimaryAdmin() {
+  const primaryEmail = normalizeAdminEmail(PRIMARY_ADMIN_EMAIL);
+  if (!primaryEmail) return;
+  if (window.localStorage.getItem(PRIMARY_ADMIN_MIGRATION_KEY) === primaryEmail) return;
+
+  window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, primaryEmail);
+  const members = readManagedMembers();
+  const withoutPrimary = members.filter((member) => normalizeAdminEmail(member.email) !== primaryEmail);
+  writeManagedMembers([
+    { email: primaryEmail, role: "owner", source: "최고 관리자" },
+    ...withoutPrimary,
+  ]);
+  window.localStorage.setItem(PRIMARY_ADMIN_MIGRATION_KEY, primaryEmail);
+}
+
 function resolveAdminRole(user) {
+  ensurePrimaryAdmin();
   const email = normalizeAdminEmail(user?.email);
   if (!email) return "viewer";
 

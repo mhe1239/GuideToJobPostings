@@ -259,6 +259,33 @@ let schoolNoticeLoadState = "idle";
 let importedSchoolNotices = [];
 let currentApprovalStatus = "draft";
 
+function readStoredAdminLogin() {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(ADMIN_LOGIN_STORAGE_KEY) || "null");
+    if (!stored?.email || !stored?.role) return null;
+    if (Date.now() - Number(stored.savedAt || 0) > 24 * 60 * 60 * 1000) return null;
+    return { email: normalizeEmail(stored.email), role: stored.role };
+  } catch {
+    return null;
+  }
+}
+
+function applyStoredAdminLogin() {
+  const stored = readStoredAdminLogin();
+  if (!stored || roleRank(stored.role) < roleRank("editor")) return false;
+  currentUser = { email: stored.email };
+  currentRole = stored.role;
+  return true;
+}
+
+function setAdminRuntimeError(error) {
+  const title = adminPage.authState?.querySelector("strong");
+  const subtitle = adminPage.authState?.querySelector("span");
+  if (!title || !subtitle) return;
+  title.textContent = "관리자 화면 초기화 오류";
+  subtitle.textContent = error?.message || "관리자 화면 스크립트를 실행하지 못했습니다.";
+}
+
 function setAdminNote(message) {
   if (adminPage.note) adminPage.note.textContent = message;
   if (adminPage.publishedNote) adminPage.publishedNote.textContent = message;
@@ -1367,25 +1394,44 @@ async function handleLogout() {
 }
 
 async function initAuth() {
-  const access = window.KANGNAM_ADMIN_ACCESS;
-  if (!access?.ready) {
-    currentUser = null;
-    currentRole = "viewer";
-    updateAccess();
-    return;
-  }
+  try {
+    const access = window.KANGNAM_ADMIN_ACCESS;
+    if (!access?.ready) {
+      if (!applyStoredAdminLogin()) {
+        currentUser = null;
+        currentRole = "viewer";
+      }
+      updateAccess();
+      return;
+    }
 
-  const result = await access.ready;
-  if (!result.allowed) {
-    renderDeniedAuthState(result);
-    return;
+    const result = await access.ready;
+    if (!result.allowed) {
+      if (applyStoredAdminLogin()) {
+        managedMembers = loadManagedMembers();
+        ensurePrimaryAdmin();
+        updateAccess();
+        return;
+      }
+      renderDeniedAuthState(result);
+      return;
+    }
+    const resolved = getResolvedAdminAccess(result);
+    currentUser = resolved.user;
+    currentRole = resolved.role;
+    managedMembers = loadManagedMembers();
+    ensurePrimaryAdmin();
+    updateAccess();
+  } catch (error) {
+    console.error("관리자 화면 초기화 실패", error);
+    if (applyStoredAdminLogin()) {
+      managedMembers = loadManagedMembers();
+      ensurePrimaryAdmin();
+      updateAccess();
+      return;
+    }
+    setAdminRuntimeError(error);
   }
-  const resolved = getResolvedAdminAccess(result);
-  currentUser = resolved.user;
-  currentRole = resolved.role;
-  managedMembers = loadManagedMembers();
-  ensurePrimaryAdmin();
-  updateAccess();
 }
 
 adminPage.logoutButton?.addEventListener("click", handleLogout);

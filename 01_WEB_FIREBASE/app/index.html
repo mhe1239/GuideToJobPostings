@@ -11,9 +11,9 @@
     <link rel="icon" type="image/png" href="./assets/icons/32x32.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="./assets/icons/128x128.png" />
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=20260723-eligibility-targets" />
+    <link rel="stylesheet" href="./styles.css?v=20260723-personalized-notices" />
     <script type="module" src="./firebase-config.js?v=20260722-list-page"></script>
-    <script src="./list.js?v=20260723-eligibility-targets" defer></script>
+    <script src="./list.js?v=20260723-personalized-notices" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">본문으로 바로가기</a>
@@ -55,6 +55,54 @@
             <span class="step-label" id="notice-count-label">0개</span>
           </div>
           <p class="section-description">공고를 선택하면 별도 상세 페이지에서 핵심 정보, FAQ, 질문 답변, 담당 부서 안내를 확인할 수 있습니다.</p>
+          <section class="personalized-search-panel" aria-labelledby="personalized-search-title">
+            <div class="personalized-search-heading">
+              <div>
+                <p class="section-label">맞춤형 공고 찾기</p>
+                <h2 id="personalized-search-title">로그인 없이 조건을 선택하세요</h2>
+              </div>
+              <span class="personalized-privacy-note">저장 안 함</span>
+            </div>
+            <div class="personalized-form" aria-label="맞춤형 공고 조건">
+              <div class="personalized-field">
+                <span class="personalized-label">재학 상태</span>
+                <div class="personalized-options" role="group" aria-label="재학 상태">
+                  <label><input type="radio" name="student-enrollment-status" value="" checked /> <span>선택 안 함</span></label>
+                  <label><input type="radio" name="student-enrollment-status" value="재학생" /> <span>재학생</span></label>
+                  <label><input type="radio" name="student-enrollment-status" value="휴학생" /> <span>휴학생</span></label>
+                  <label><input type="radio" name="student-enrollment-status" value="졸업생" /> <span>졸업생</span></label>
+                </div>
+              </div>
+              <div class="personalized-field">
+                <label class="personalized-label" for="student-grade">학년</label>
+                <select id="student-grade">
+                  <option value="">선택 안 함</option>
+                  <option value="1">1학년</option>
+                  <option value="2">2학년</option>
+                  <option value="3">3학년</option>
+                  <option value="4">4학년</option>
+                </select>
+              </div>
+              <div class="personalized-field">
+                <span class="personalized-label">편입 여부</span>
+                <label class="personalized-check"><input type="checkbox" id="student-transfer" /> <span>편입생입니다</span></label>
+              </div>
+              <div class="personalized-field personalized-field-wide">
+                <span class="personalized-label">관심 분야</span>
+                <div class="personalized-options interest-options" role="group" aria-label="관심 분야">
+                  <label><input type="checkbox" name="student-interest" value="비교과 프로그램" /> <span>비교과 프로그램</span></label>
+                  <label><input type="checkbox" name="student-interest" value="장학" /> <span>장학</span></label>
+                  <label><input type="checkbox" name="student-interest" value="취업" /> <span>취업</span></label>
+                  <label><input type="checkbox" name="student-interest" value="행사" /> <span>행사</span></label>
+                  <label><input type="checkbox" name="student-interest" value="학사" /> <span>학사</span></label>
+                </div>
+              </div>
+            </div>
+            <div class="personalized-actions">
+              <p id="personalized-summary">조건을 선택하면 목록에 즉시 반영됩니다. 입력 내용은 저장되지 않습니다.</p>
+              <button class="filter-reset-button personalized-reset-button" id="personalized-reset-button" type="button">조건 초기화</button>
+            </div>
+          </section>
           <div class="notice-filter-panel" aria-label="공고 필터">
             <div class="filter-group">
               <span class="filter-group-label">카테고리</span>

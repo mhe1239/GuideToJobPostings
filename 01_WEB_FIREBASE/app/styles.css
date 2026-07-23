@@ -720,6 +720,129 @@ button:disabled {
   margin-top: 20px;
 }
 
+.personalized-search-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 16px;
+  background: var(--warm);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.personalized-search-heading,
+.personalized-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.personalized-search-heading h2 {
+  margin: 0;
+  color: var(--primary-950);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.personalized-privacy-note {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  color: var(--success-700);
+  background: var(--success-100);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.personalized-form {
+  display: grid;
+  grid-template-columns: 1.2fr 0.75fr 0.85fr;
+  gap: 12px;
+}
+
+.personalized-field {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.personalized-field-wide {
+  grid-column: 1 / -1;
+}
+
+.personalized-label {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.personalized-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.personalized-options label,
+.personalized-check {
+  min-width: 0;
+  cursor: pointer;
+}
+
+.personalized-options input,
+.personalized-check input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.personalized-options span,
+.personalized-check span,
+.personalized-field select {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 11px;
+  color: var(--ink-soft);
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.personalized-field select {
+  width: 100%;
+}
+
+.personalized-options input:checked + span,
+.personalized-check input:checked + span {
+  color: #fff;
+  background: var(--primary-900);
+  border-color: var(--primary-900);
+}
+
+.personalized-options input:focus-visible + span,
+.personalized-check input:focus-visible + span,
+.personalized-field select:focus-visible {
+  outline: 3px solid rgb(37 99 169 / 24%);
+  outline-offset: 2px;
+}
+
+.personalized-actions p {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.personalized-reset-button {
+  flex: 0 0 auto;
+}
+
 .notice-filter-panel {
   display: grid;
   gap: 12px;
@@ -907,6 +1030,12 @@ button:disabled {
   font-size: 11px;
   font-weight: 850;
   line-height: 1.2;
+}
+
+.notice-card-eligibility .condition-check-chip {
+  color: var(--accent-700);
+  background: var(--accent-50);
+  border-color: #eadbbc;
 }
 
 .notice-card-action {
@@ -2846,6 +2975,19 @@ button:disabled {
   .filter-group {
     grid-template-columns: 1fr;
     gap: 7px;
+  }
+
+  .personalized-search-heading,
+  .personalized-actions {
+    display: grid;
+  }
+
+  .personalized-form {
+    grid-template-columns: 1fr;
+  }
+
+  .personalized-reset-button {
+    justify-self: stretch;
   }
 
   .filter-group-label {

@@ -100,6 +100,12 @@ const listElements = {
   emptyMessage: document.querySelector("#filter-empty"),
   resetButton: document.querySelector("#filter-reset-button"),
   filterButtons: [...document.querySelectorAll("[data-filter-type]")],
+  enrollmentRadios: [...document.querySelectorAll("input[name='student-enrollment-status']")],
+  gradeSelect: document.querySelector("#student-grade"),
+  transferCheckbox: document.querySelector("#student-transfer"),
+  interestCheckboxes: [...document.querySelectorAll("input[name='student-interest']")],
+  personalizedResetButton: document.querySelector("#personalized-reset-button"),
+  personalizedSummary: document.querySelector("#personalized-summary"),
 };
 
 const activeFilters = {
@@ -165,11 +171,78 @@ function getCardEligibilityChips(notice) {
   return chips.length > 0 ? chips.slice(0, 3) : [UNKNOWN_ELIGIBILITY];
 }
 
+function getStudentProfile() {
+  return {
+    enrollmentStatus: listElements.enrollmentRadios.find((radio) => radio.checked)?.value || "",
+    grade: listElements.gradeSelect?.value || "",
+    transferStudent: listElements.transferCheckbox?.checked === true,
+    interests: listElements.interestCheckboxes.filter((checkbox) => checkbox.checked).map((checkbox) => checkbox.value),
+  };
+}
+
+function hasPersonalizedConditions(profile = getStudentProfile()) {
+  return Boolean(profile.enrollmentStatus || profile.grade || profile.transferStudent || profile.interests.length > 0);
+}
+
+function parseEligibleGradeNumbers(value) {
+  if (!value) return null;
+  if (value.includes("전체")) return [1, 2, 3, 4];
+  const range = value.match(/([1-4])\s*~\s*([1-4])/);
+  if (range) {
+    const start = Number(range[1]);
+    const end = Number(range[2]);
+    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+  }
+  const grades = [...value.matchAll(/([1-4])학년/g)].map((match) => Number(match[1]));
+  return grades.length > 0 ? grades : null;
+}
+
+function matchesEnrollmentStatus(notice, enrollmentStatus) {
+  if (!enrollmentStatus) return true;
+  if (enrollmentStatus === "졸업생") {
+    return notice.graduateEligible !== false;
+  }
+  const statuses = getEnrollmentChips(notice);
+  return statuses.length === 0 || statuses.includes(enrollmentStatus);
+}
+
+function matchesGrade(notice, grade) {
+  if (!grade) return true;
+  const eligibleGrades = parseEligibleGradeNumbers(notice.eligibleGrades);
+  return eligibleGrades === null || eligibleGrades.includes(Number(grade));
+}
+
+function matchesTransferStatus(notice, transferStudent) {
+  if (!transferStudent) return true;
+  return notice.transferStudentEligible !== false;
+}
+
+function matchesInterests(notice, interests) {
+  return interests.length === 0 || interests.includes(getNoticeCategory(notice));
+}
+
+function needsConditionConfirmation(notice, profile = getStudentProfile()) {
+  if (!hasPersonalizedConditions(profile)) return false;
+  if (profile.enrollmentStatus === "졸업생" && notice.graduateEligible === null) return true;
+  if (profile.enrollmentStatus && profile.enrollmentStatus !== "졸업생" && getEnrollmentChips(notice).length === 0) return true;
+  if (profile.grade && !notice.eligibleGrades) return true;
+  if (profile.transferStudent && notice.transferStudentEligible === null) return true;
+  return false;
+}
+
+function matchesStudentProfile(notice, profile) {
+  return matchesEnrollmentStatus(notice, profile.enrollmentStatus)
+    && matchesGrade(notice, profile.grade)
+    && matchesTransferStatus(notice, profile.transferStudent)
+    && matchesInterests(notice, profile.interests);
+}
+
 function getFilteredNotices(notices) {
+  const profile = getStudentProfile();
   return notices.filter((notice) => {
     const matchesCategory = activeFilters.category === FILTER_ALL || getNoticeCategory(notice) === activeFilters.category;
     const matchesStatus = activeFilters.recruitmentStatus === FILTER_ALL || getNoticeRecruitmentStatus(notice) === activeFilters.recruitmentStatus;
-    return matchesCategory && matchesStatus;
+    return matchesCategory && matchesStatus && matchesStudentProfile(notice, profile);
   });
 }
 
@@ -187,7 +260,24 @@ function setFilter(type, value) {
   renderNoticeList();
 }
 
+function updatePersonalizedSummary(profile = getStudentProfile()) {
+  if (!listElements.personalizedSummary) return;
+  if (!hasPersonalizedConditions(profile)) {
+    listElements.personalizedSummary.textContent = "조건을 선택하면 목록에 즉시 반영됩니다. 입력 내용은 저장되지 않습니다.";
+    return;
+  }
+
+  const selected = [
+    profile.enrollmentStatus,
+    profile.grade ? `${profile.grade}학년` : "",
+    profile.transferStudent ? "편입생" : "",
+    ...profile.interests,
+  ].filter(Boolean);
+  listElements.personalizedSummary.textContent = `선택 조건: ${selected.join(" · ")}. 조건 정보가 없는 공고는 제외하지 않고 조건 확인 필요로 표시합니다.`;
+}
+
 function createNoticeLink(notice) {
+  const profile = getStudentProfile();
   const link = document.createElement("a");
   const top = document.createElement("div");
   const category = document.createElement("span");
@@ -210,9 +300,13 @@ function createNoticeLink(notice) {
   action.textContent = "상세 FAQ 보기";
   eligibility.setAttribute("aria-label", "지원 가능 대상");
   eligibility.replaceChildren(
-    ...getCardEligibilityChips(notice).map((chipText) => {
+    ...[
+      ...getCardEligibilityChips(notice),
+      ...(needsConditionConfirmation(notice, profile) ? ["조건 확인 필요"] : []),
+    ].map((chipText) => {
       const chip = document.createElement("span");
       chip.textContent = chipText;
+      if (chipText === "조건 확인 필요") chip.className = "condition-check-chip";
       return chip;
     }),
   );
@@ -229,6 +323,7 @@ function renderNoticeList() {
   }
   listElements.noticeList.replaceChildren(...notices.map(createNoticeLink));
   updateFilterButtons();
+  updatePersonalizedSummary();
 }
 
 function initListAuth() {
@@ -249,6 +344,25 @@ listElements.filterButtons.forEach((button) => {
 listElements.resetButton?.addEventListener("click", () => {
   activeFilters.category = FILTER_ALL;
   activeFilters.recruitmentStatus = FILTER_ALL;
+  renderNoticeList();
+});
+
+[...listElements.enrollmentRadios, ...listElements.interestCheckboxes].forEach((control) => {
+  control.addEventListener("change", renderNoticeList);
+});
+
+listElements.gradeSelect?.addEventListener("change", renderNoticeList);
+listElements.transferCheckbox?.addEventListener("change", renderNoticeList);
+
+listElements.personalizedResetButton?.addEventListener("click", () => {
+  listElements.enrollmentRadios.forEach((radio) => {
+    radio.checked = radio.value === "";
+  });
+  if (listElements.gradeSelect) listElements.gradeSelect.value = "";
+  if (listElements.transferCheckbox) listElements.transferCheckbox.checked = false;
+  listElements.interestCheckboxes.forEach((checkbox) => {
+    checkbox.checked = false;
+  });
   renderNoticeList();
 });
 

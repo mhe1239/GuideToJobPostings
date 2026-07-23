@@ -526,6 +526,7 @@ function buildPublishedNotice(baseNotice) {
     sourcePrefix: "관리자 검수 공고",
     sourceTitle: baseNotice.sourceTitle || title,
     sourceUrl,
+    sourceImageUrl: baseNotice.sourceImageUrl || baseNotice.images?.[0] || "",
     publishedAt: baseNotice.publishedAt || baseNotice.date || today,
     sourceType: baseNotice.sourceType || (baseNotice.images?.length > 0 ? "image" : "html"),
     dataMethod: "AI 초안",

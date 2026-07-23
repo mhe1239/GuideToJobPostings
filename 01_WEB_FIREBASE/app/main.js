@@ -184,11 +184,19 @@ const elements = {
   factOperation: document.querySelector("#fact-operation"),
   factDepartment: document.querySelector("#fact-department"),
   fullNoticeSummary: document.querySelector("#full-notice-summary"),
+  fullNoticeToggle: document.querySelector("#full-notice-toggle"),
+  fullNoticePanel: document.querySelector("#full-notice-panel"),
+  fullNoticeText: document.querySelector("#full-notice-text"),
   fullPeriod: document.querySelector("#full-period"),
   fullEligibility: document.querySelector("#full-eligibility"),
   fullField: document.querySelector("#full-field"),
   fullDocuments: document.querySelector("#full-documents"),
   fullOperation: document.querySelector("#full-operation"),
+  fullNoticeImageWrap: document.querySelector("#full-notice-image-wrap"),
+  fullNoticeImage: document.querySelector("#full-notice-image"),
+  fullNoticeImageCaption: document.querySelector("#full-notice-image-caption"),
+  fullNoticeImageFallback: document.querySelector("#full-notice-image-fallback"),
+  fullNoticeSourceLink: document.querySelector("#full-notice-source-link"),
   sourceLineText: document.querySelector("#source-line-text"),
   sourceTitle: document.querySelector("#source-title"),
   sourceDepartment: document.querySelector("#source-department"),
@@ -278,6 +286,38 @@ function setSourceLink(link, url) {
   } else {
     link.removeAttribute("href");
   }
+}
+
+function getSourceImageUrl(notice) {
+  return notice.sourceImageUrl || notice.imageUrl || notice.images?.[0] || "";
+}
+
+function buildFullNoticeText(notice, facts) {
+  const lines = [
+    notice.title,
+    "",
+    notice.summary,
+    "",
+    "[핵심 정보]",
+    `신청 기간: ${facts.period}`,
+    `지원 대상: ${facts.eligibility}`,
+    `모집 분야: ${facts.field}`,
+    `제출 서류: ${facts.documents}`,
+    `운영 기간: ${facts.operation}`,
+    `담당 부서: ${notice.department || "확인 필요"}`,
+    "",
+    "[FAQ]",
+    ...notice.faqs.map((faq, index) => `${index + 1}. Q. ${faq.question}\n   A. ${faq.answer}\n   출처: ${faq.source}`),
+  ];
+
+  return lines.join("\n").trim();
+}
+
+function setFullNoticeExpanded(expanded) {
+  if (!elements.fullNoticeToggle || !elements.fullNoticePanel) return;
+  elements.fullNoticePanel.hidden = !expanded;
+  elements.fullNoticeToggle.setAttribute("aria-expanded", String(expanded));
+  elements.fullNoticeToggle.textContent = expanded ? "전체 공고 내용 닫기" : "전체 공고 내용 보기";
 }
 
 function buildAnswerRules(notice) {
@@ -371,6 +411,7 @@ function selectNotice(noticeId) {
   renderNoticeList();
   renderFaqs();
   resetQuestion();
+  setFullNoticeExpanded(false);
   elements.notice.focus({ preventScroll: true });
   elements.notice.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -386,6 +427,7 @@ function renderNotice() {
   const documents = getFact(activeNotice, "documents");
   const operation = getFact(activeNotice, "operation");
   const department = activeNotice.department || "확인 필요";
+  const sourceImageUrl = getSourceImageUrl(activeNotice);
 
   document.title = `강남대 공고 길잡이 — ${activeNotice.title}`;
   elements.breadcrumbCategory.textContent = activeNotice.category;
@@ -400,11 +442,23 @@ function renderNotice() {
   elements.factOperation.textContent = operation;
   elements.factDepartment.textContent = department;
   elements.fullNoticeSummary.textContent = activeNotice.summary;
+  elements.fullNoticeText.textContent = buildFullNoticeText(activeNotice, { period, eligibility, field, documents, operation });
   elements.fullPeriod.textContent = period;
   elements.fullEligibility.textContent = eligibility;
   elements.fullField.textContent = field;
   elements.fullDocuments.textContent = documents;
   elements.fullOperation.textContent = operation;
+  setSourceLink(elements.fullNoticeSourceLink, sourceUrl);
+  elements.fullNoticeImageFallback.hidden = true;
+  elements.fullNoticeImageWrap.hidden = !sourceImageUrl;
+  if (sourceImageUrl) {
+    elements.fullNoticeImage.hidden = false;
+    elements.fullNoticeImage.src = sourceImageUrl;
+    elements.fullNoticeImage.alt = `${activeNotice.sourceTitle || activeNotice.title} 원문 이미지`;
+    elements.fullNoticeImageCaption.textContent = activeNotice.sourceTitle || "원문 이미지";
+  } else {
+    elements.fullNoticeImage.removeAttribute("src");
+  }
   elements.sourceLineText.textContent = activeNotice.isPublished
     ? "관리자가 검수 후 공개한 공고 초안입니다. 세부 내용은 공식 공고 원문과 함께 확인해 주세요."
     : "공식 공고 내용을 확인해 작성한 답변입니다.";
@@ -423,6 +477,7 @@ function renderNotice() {
   elements.departmentTitle.textContent = `${department}으로 문의해 주세요`;
   elements.departmentDescription.textContent = "FAQ와 답변으로 해결되지 않은 문의를 담당합니다.";
   elements.contactNote.textContent = `문의 시 “${activeNotice.title}” 공고를 확인했다고 말씀해 주세요.`;
+  setFullNoticeExpanded(false);
 }
 
 function renderFaqs() {
@@ -593,6 +648,18 @@ elements.questionInput.addEventListener("input", () => {
 elements.retryButton.addEventListener("click", resetQuestion);
 elements.departmentButton.addEventListener("click", showDepartment);
 elements.departmentBackButton.addEventListener("click", returnToNotice);
+elements.fullNoticeToggle.addEventListener("click", () => {
+  const expanded = elements.fullNoticeToggle.getAttribute("aria-expanded") === "true";
+  setFullNoticeExpanded(!expanded);
+});
+elements.fullNoticeImage.addEventListener("error", () => {
+  elements.fullNoticeImage.hidden = true;
+  elements.fullNoticeImageFallback.hidden = false;
+});
+elements.fullNoticeImage.addEventListener("load", () => {
+  elements.fullNoticeImage.hidden = false;
+  elements.fullNoticeImageFallback.hidden = true;
+});
 
 renderNotice();
 renderNoticeList();

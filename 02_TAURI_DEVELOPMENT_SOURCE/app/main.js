@@ -2,6 +2,7 @@
 
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
+const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
 
 const DEFAULT_NOTICES = Object.freeze([
   {
@@ -12,6 +13,10 @@ const DEFAULT_NOTICES = Object.freeze([
     date: "2026.07.20",
     status: "모집 중",
     recruitmentStatus: "모집 중",
+    eligibleEnrollmentStatus: ["재학생"],
+    eligibleGrades: "",
+    transferStudentEligible: true,
+    graduateEligible: null,
     sourceTitle: "입학처 공식 홍보대사 늘품 12기 2학기 수습 위원 모집 공고",
     sourcePrefix: "공식 공고 카드뉴스",
     sourceUrl: "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9",
@@ -57,6 +62,10 @@ const DEFAULT_NOTICES = Object.freeze([
     date: "2026.07.20",
     status: "안내",
     recruitmentStatus: "모집 예정",
+    eligibleEnrollmentStatus: [],
+    eligibleGrades: "",
+    transferStudentEligible: null,
+    graduateEligible: null,
     sourceTitle: "2026년도 제12회 인터넷중독전문상담사 자격검정 시행 공고",
     sourcePrefix: "공식 공고 원문",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
@@ -87,6 +96,10 @@ const DEFAULT_NOTICES = Object.freeze([
     date: "2026.07.16",
     status: "안내",
     recruitmentStatus: "마감",
+    eligibleEnrollmentStatus: [],
+    eligibleGrades: "",
+    transferStudentEligible: null,
+    graduateEligible: null,
     sourceTitle: "7월 문화가 있는 날 재즈 콘서트 개최 공고",
     sourcePrefix: "공식 공고 원문",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
@@ -117,6 +130,10 @@ const DEFAULT_NOTICES = Object.freeze([
     date: "2026.07.15",
     status: "모집 중",
     recruitmentStatus: "모집 중",
+    eligibleEnrollmentStatus: ["재학생"],
+    eligibleGrades: "",
+    transferStudentEligible: null,
+    graduateEligible: null,
     sourceTitle: "2026학년도 대학생활 지원 비교과 프로그램 참여 안내 공고",
     sourcePrefix: "공식 공고 원문",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
@@ -187,6 +204,11 @@ const elements = {
   factDocuments: document.querySelector("#fact-documents"),
   factOperation: document.querySelector("#fact-operation"),
   factDepartment: document.querySelector("#fact-department"),
+  eligibleCurrentStudent: document.querySelector("#eligible-current-student"),
+  eligibleLeaveStudent: document.querySelector("#eligible-leave-student"),
+  eligibleTransferStudent: document.querySelector("#eligible-transfer-student"),
+  eligibleGraduate: document.querySelector("#eligible-graduate"),
+  eligibleGrades: document.querySelector("#eligible-grades"),
   fullNoticeSummary: document.querySelector("#full-notice-summary"),
   fullNoticeToggle: document.querySelector("#full-notice-toggle"),
   fullNoticePanel: document.querySelector("#full-notice-panel"),
@@ -276,6 +298,31 @@ function getSourceTypeLabel(sourceType) {
 
 function getFact(notice, key) {
   return notice.facts?.[key] || "확인 필요";
+}
+
+function getEnrollmentStatuses(notice) {
+  return Array.isArray(notice.eligibleEnrollmentStatus) ? notice.eligibleEnrollmentStatus : [];
+}
+
+function formatEligibilityFlag(value) {
+  if (value === true) return "가능";
+  if (value === false) return "불가";
+  return UNKNOWN_ELIGIBILITY;
+}
+
+function formatEnrollmentStatus(notice, status) {
+  const statuses = getEnrollmentStatuses(notice);
+  if (statuses.includes(status)) return "가능";
+  if (statuses.length > 0) return "불가";
+  return UNKNOWN_ELIGIBILITY;
+}
+
+function renderEligibilityTargets() {
+  elements.eligibleCurrentStudent.textContent = formatEnrollmentStatus(activeNotice, "재학생");
+  elements.eligibleLeaveStudent.textContent = formatEnrollmentStatus(activeNotice, "휴학생");
+  elements.eligibleTransferStudent.textContent = formatEligibilityFlag(activeNotice.transferStudentEligible);
+  elements.eligibleGraduate.textContent = formatEligibilityFlag(activeNotice.graduateEligible);
+  elements.eligibleGrades.textContent = activeNotice.eligibleGrades || UNKNOWN_ELIGIBILITY;
 }
 
 function hasSourceUrl(notice) {
@@ -446,6 +493,7 @@ function renderNotice() {
   elements.factDocuments.textContent = documents;
   elements.factOperation.textContent = operation;
   elements.factDepartment.textContent = department;
+  renderEligibilityTargets();
   elements.fullNoticeSummary.textContent = activeNotice.summary;
   elements.fullNoticeText.textContent = buildFullNoticeText(activeNotice, { period, eligibility, field, documents, operation });
   elements.fullPeriod.textContent = period;

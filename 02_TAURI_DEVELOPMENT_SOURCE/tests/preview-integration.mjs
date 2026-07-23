@@ -12,6 +12,7 @@ const manageHtml = await readFile(new URL("app/manage.html", root), "utf8");
 const styles = await readFile(new URL("app/styles.css", root), "utf8");
 const script = await readFile(new URL("app/main.js", root), "utf8");
 const listScript = await readFile(new URL("app/list.js", root), "utf8");
+const adminScript = await readFile(new URL("app/admin.js", root), "utf8");
 const font = await readFile(new URL("app/assets/fonts/PretendardVariable.woff2", root));
 const fontLicense = await readFile(new URL("app/assets/fonts/Pretendard-LICENSE.txt", root), "utf8");
 const officialNoticeUrl = "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9";
@@ -67,6 +68,32 @@ function bootMockNoticeWithoutSourceUrl() {
   return window;
 }
 
+function bootPublish() {
+  const window = new Window({ url: "http://127.0.0.1:4173/publish.html" });
+  const page = publishHtml.replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
+  window.document.write(page);
+  window.document.close();
+  window.KANGNAM_FIREBASE = {
+    auth: {},
+    onAuthStateChanged: (_auth, callback) => callback({ email: "admin@kangnam.ac.kr" }),
+    signOut: async () => {},
+  };
+  window.fetch = async () => ({
+    ok: true,
+    text: async () => [
+      "Title: URL 입력 테스트 공고",
+      "",
+      "신청 기간 7월 23일 ~ 8월 10일",
+      "지원 자격 강남대학교 재학생",
+      "모집 분야 비교과 프로그램",
+      "지원 방법 온라인 신청서 제출",
+      "문의 학생지원팀",
+    ].join("\n"),
+  });
+  window.eval(adminScript);
+  return window;
+}
+
 function setValue(window, selector, value) {
   const element = window.document.querySelector(selector);
   element.value = value;
@@ -90,6 +117,8 @@ const listWindow = bootList();
 const listDocument = listWindow.document;
 const mockWindow = bootMockNoticeWithoutSourceUrl();
 const mockDocument = mockWindow.document;
+const publishWindow = bootPublish();
+const publishDocument = publishWindow.document;
 
 assert.equal(listDocument.querySelector("#notice"), null, "공고 선택 화면에는 상세 공고 본문이 없어야 합니다.");
 assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 4, "공고 선택 화면에는 여러 공고가 4열 카드로 표시되어야 합니다.");
@@ -106,6 +135,27 @@ assert.ok(html.indexOf('class="full-notice-section"') < html.indexOf('class="sou
 assert.match(adminHtml, /href="\.\/index\.html"[^>]*>[\s\S]*?공고 목록으로/, "관리자 메뉴에서 공고 목록으로 돌아갈 수 있어야 합니다.");
 assert.match(membersHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "관리자 관리 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.match(publishHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "AI 공고 공개 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
+assert.equal(publishDocument.querySelectorAll("input[name='notice-input-mode']").length, 2, "관리자는 URL 입력과 학교 공고 선택 중 입력 방식을 고를 수 있어야 합니다.");
+assert.equal(publishDocument.querySelector("#notice-list-panel").hidden, true, "기본 입력 방식은 URL 직접 입력이어야 합니다.");
+publishDocument.querySelector("#admin-ingest-form").dispatchEvent(new publishWindow.Event("submit", { bubbles: true, cancelable: true }));
+assert.equal(publishDocument.querySelector("#approval-note").textContent, "공고 URL을 입력하거나 공고를 선택해 주세요.", "URL도 선택 공고도 없으면 안내 문구를 표시해야 합니다.");
+setValue(publishWindow, "#official-notice-url", officialNoticeUrl);
+publishDocument.querySelector("#admin-ingest-form").dispatchEvent(new publishWindow.Event("submit", { bubbles: true, cancelable: true }));
+await new Promise((resolve) => publishWindow.setTimeout(resolve, 0));
+assert.equal(publishDocument.querySelector("#draft-fields").hidden, false, "URL 직접 입력으로 초안을 생성할 수 있어야 합니다.");
+assert.match(publishDocument.querySelector("#draft-summary").value, /URL 입력 테스트 공고/, "URL 입력 초안은 읽은 공고 제목을 반영해야 합니다.");
+click(publishWindow, "input[value='list']");
+assert.equal(publishDocument.querySelector("#url-input-panel").hidden, true, "목록 선택 모드에서는 URL 입력 영역을 숨겨야 합니다.");
+assert.equal(publishDocument.querySelector("#notice-list-panel").hidden, false, "목록 선택 모드에서는 학교 공고 목록을 보여야 합니다.");
+assert.equal(publishDocument.querySelectorAll(".school-notice-item").length, 10, "학교 홈페이지 공고 선택 화면에는 최근 공고 10개 예시가 표시되어야 합니다.");
+assert.match(publishDocument.querySelector(".mock-list-note").textContent, /프로토타입용 예시 데이터/, "Mock 목록은 예시 데이터임을 명확히 안내해야 합니다.");
+click(publishWindow, ".school-notice-item");
+assert.equal(publishDocument.querySelector(".school-notice-item").getAttribute("aria-current"), "true", "공고를 선택하면 선택 상태가 명확히 표시되어야 합니다.");
+assert.match(publishDocument.querySelector("#selected-notice-title").textContent, /2026학년도 비교과 프로그램 참가자 모집/, "선택한 공고 제목이 표시되어야 합니다.");
+assert.match(publishDocument.querySelector("#selected-notice-source").textContent, /학생지원팀 · 2026\.07\.23 · HTML/, "선택한 공고 출처 정보가 표시되어야 합니다.");
+publishDocument.querySelector("#admin-ingest-form").dispatchEvent(new publishWindow.Event("submit", { bubbles: true, cancelable: true }));
+assert.equal(publishDocument.querySelector("#draft-chip").textContent, "예시 결과", "목록 선택으로 만든 초안은 예시 결과임을 표시해야 합니다.");
+assert.match(publishDocument.querySelector("#approval-note").textContent, /프로토타입용 예시 데이터/, "목록 선택 초안은 예시 데이터임을 안내해야 합니다.");
 assert.match(manageHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "공개 공고 관리 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.equal(document.querySelectorAll(".faq-item").length, 3, "P0 FAQ 3개가 표시되어야 합니다.");
 assert.equal(document.querySelectorAll(".key-facts > div").length, 6, "핵심 정보는 신청 기간, 지원 대상, 모집 분야, 제출 서류, 운영 기간, 담당 부서 6개 항목으로 표시되어야 합니다.");
@@ -199,4 +249,4 @@ assert.match(styles, /\.full-notice-image-wrap img\s*\{[^}]*max-width:\s*100%/s,
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 
-console.log("preview integration: 88 checks passed");
+console.log("preview integration: 103 checks passed");

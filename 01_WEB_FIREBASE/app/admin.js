@@ -129,6 +129,37 @@ const NOTICE_SECTIONS = Object.freeze([
   { key: "contact", label: "문의처", keywords: ["문의", "담당", "등록자", "부서", "연락"] },
 ]);
 
+const MOCK_SCHOOL_NOTICES = Object.freeze([
+  {
+    id: "mock-school-01",
+    title: "2026학년도 비교과 프로그램 참가자 모집",
+    department: "학생지원팀",
+    publishedAt: "2026.07.23",
+    sourceType: "html",
+    sourceUrl: "https://web.kangnam.ac.kr/mock/notices/2026-non-curricular",
+    category: "비교과 프로그램",
+    status: "모집 중",
+    summary: "학생 역량 강화를 위한 비교과 프로그램 참가자를 모집하는 예시 공고입니다.",
+    facts: { period: "7월 23일 ~ 8월 5일", eligibility: "강남대학교 재학생", field: "비교과 프로그램", documents: "참가 신청서", operation: "2026학년도 2학기" },
+  },
+  { id: "mock-school-02", title: "2026학년도 2학기 장학금 신청 안내", department: "장학복지팀", publishedAt: "2026.07.22", sourceType: "pdf", sourceUrl: "https://web.kangnam.ac.kr/mock/notices/2026-scholarship", category: "장학", status: "안내", summary: "2학기 장학금 신청 절차와 제출 서류를 안내하는 예시 공고입니다.", facts: { period: "7월 22일 ~ 8월 9일", eligibility: "장학금 신청 희망 재학생", field: "교내 장학", documents: "신청서, 증빙서류", operation: "2026학년도 2학기" } },
+  { id: "mock-school-03", title: "학생 상담 프로그램 참여자 모집", department: "학생상담센터", publishedAt: "2026.07.21", sourceType: "image", sourceUrl: "https://web.kangnam.ac.kr/mock/notices/counseling-program", category: "대학생활", status: "모집 중", summary: "학생 심리 지원을 위한 상담 프로그램 참여자를 모집하는 예시 공고입니다.", facts: { period: "7월 21일 ~ 7월 31일", eligibility: "상담 참여 희망 학생", field: "상담 프로그램", documents: "온라인 신청서", operation: "8월 중" } },
+  { id: "mock-school-04", title: "휴학 및 복학 신청 기간 안내", department: "학사관리팀", publishedAt: "2026.07.20", sourceType: "html", sourceUrl: "https://web.kangnam.ac.kr/mock/notices/leave-return", category: "학사", status: "안내", summary: "휴학과 복학 신청 기간, 신청 경로를 안내하는 예시 공고입니다.", facts: { period: "7월 20일 ~ 8월 14일", eligibility: "휴학 또는 복학 예정 학생", field: "학적 변동", documents: "신청서 및 사유서", operation: "2026학년도 2학기" } },
+  { id: "mock-school-05", title: "진로 취업 특강 참가 신청 안내", department: "대학일자리플러스센터", publishedAt: "2026.07.19", sourceType: "image", sourceUrl: "https://web.kangnam.ac.kr/mock/notices/career-lecture", category: "취업", status: "모집 중", summary: "진로 설계와 취업 준비를 돕는 특강 참가 신청 예시 공고입니다.", facts: { period: "7월 19일 ~ 7월 29일", eligibility: "강남대학교 재학생 및 졸업예정자", field: "진로 취업 특강", documents: "참가 신청서", operation: "8월 1일" } },
+  { id: "mock-school-06", title: "교내 봉사활동 모집 안내", department: "사회봉사센터", publishedAt: "2026.07.18", sourceType: "pdf", sourceUrl: "https://web.kangnam.ac.kr/mock/notices/campus-volunteer", category: "봉사", status: "모집 중", summary: "교내 봉사활동 참여 인원과 활동 일정을 안내하는 예시 공고입니다.", facts: { period: "7월 18일 ~ 8월 1일", eligibility: "봉사활동 참여 희망 학생", field: "교내 봉사", documents: "활동 신청서", operation: "8월 중" } },
+  { id: "mock-school-07", title: "도서관 이용 교육 신청 안내", department: "중앙도서관", publishedAt: "2026.07.17", sourceType: "html", sourceUrl: "https://web.kangnam.ac.kr/mock/notices/library-training", category: "교육", status: "안내", summary: "도서관 자료 검색과 전자자료 활용 교육 신청 예시 공고입니다.", facts: { period: "7월 17일 ~ 7월 30일", eligibility: "강남대학교 구성원", field: "도서관 이용 교육", documents: "온라인 신청", operation: "8월 첫째 주" } },
+  { id: "mock-school-08", title: "국제교류 프로그램 설명회 안내", department: "국제교류팀", publishedAt: "2026.07.16", sourceType: "image", sourceUrl: "https://web.kangnam.ac.kr/mock/notices/global-info-session", category: "국제교류", status: "안내", summary: "교환학생과 단기 연수 프로그램 설명회 일정을 안내하는 예시 공고입니다.", facts: { period: "7월 16일 ~ 7월 25일", eligibility: "국제교류 프로그램 관심 학생", field: "설명회", documents: "사전 신청서", operation: "7월 28일" } },
+  { id: "mock-school-09", title: "캡스톤디자인 팀 모집 안내", department: "교육혁신팀", publishedAt: "2026.07.15", sourceType: "pdf", sourceUrl: "https://web.kangnam.ac.kr/mock/notices/capstone-team", category: "학습지원", status: "모집 중", summary: "캡스톤디자인 프로젝트 팀 구성과 신청 방법을 안내하는 예시 공고입니다.", facts: { period: "7월 15일 ~ 8월 7일", eligibility: "캡스톤디자인 참여 학생", field: "팀 프로젝트", documents: "팀 신청서, 계획서", operation: "2026학년도 2학기" } },
+  { id: "mock-school-10", title: "장애학생 지원 서비스 신청 안내", department: "장애학생지원센터", publishedAt: "2026.07.14", sourceType: "html", sourceUrl: "https://web.kangnam.ac.kr/mock/notices/accessibility-support", category: "학생지원", status: "안내", summary: "장애학생 학습 지원 서비스 신청 절차를 안내하는 예시 공고입니다.", facts: { period: "상시 신청", eligibility: "지원 서비스가 필요한 학생", field: "학습 지원 서비스", documents: "신청서, 관련 증빙", operation: "학기 중" } },
+]);
+
+const SOURCE_TYPE_LABELS = Object.freeze({
+  image: "이미지",
+  pdf: "PDF",
+  html: "HTML",
+  mock: "가상 샘플",
+});
+
 const adminPage = {
   authBadge: document.querySelector("#admin-auth-badge") || document.querySelector("#review-status"),
   authState: document.querySelector("#admin-auth-state"),
@@ -139,7 +170,14 @@ const adminPage = {
   memberEmail: document.querySelector("#member-email"),
   memberRole: document.querySelector("#member-role"),
   form: document.querySelector("#admin-ingest-form"),
+  inputModeRadios: [...document.querySelectorAll("input[name='notice-input-mode']")],
+  urlPanel: document.querySelector("#url-input-panel"),
+  listPanel: document.querySelector("#notice-list-panel"),
   urlInput: document.querySelector("#official-notice-url"),
+  schoolNoticeList: document.querySelector("#school-notice-list"),
+  selectedNoticePanel: document.querySelector("#selected-notice-panel"),
+  selectedNoticeTitle: document.querySelector("#selected-notice-title"),
+  selectedNoticeSource: document.querySelector("#selected-notice-source"),
   generateButton: document.querySelector("#generate-draft-button"),
   chip: document.querySelector("#draft-chip"),
   empty: document.querySelector("#draft-empty"),
@@ -163,6 +201,8 @@ let managedMembers = loadManagedMembers();
 let generatedDraftUrl = "";
 let currentDraftNotice = null;
 let selectedPublishedId = "";
+let selectedMockNoticeId = "";
+let noticeInputMode = "url";
 
 function setAdminNote(message) {
   if (adminPage.note) adminPage.note.textContent = message;
@@ -204,6 +244,9 @@ function renderAuthState() {
 
 function updateAccess() {
   const allowed = currentRole === "owner";
+  renderMembers();
+  renderMockSchoolNotices();
+  renderPublishedNotices();
   adminPage.restrictedAreas.forEach((area) => {
     area.classList.toggle("locked", !allowed);
     area.querySelectorAll("input, select, textarea, button").forEach((control) => {
@@ -211,9 +254,90 @@ function updateAccess() {
     });
   });
   renderAuthState();
-  renderMembers();
-  renderPublishedNotices();
   updateApprovalState();
+}
+
+function getSelectedMockNotice() {
+  return MOCK_SCHOOL_NOTICES.find((notice) => notice.id === selectedMockNoticeId) || null;
+}
+
+function getMockNoticeSourceText(notice) {
+  if (!notice) return "공고 URL을 입력하거나 공고를 선택해 주세요.";
+  return `${notice.department} · ${notice.publishedAt} · ${SOURCE_TYPE_LABELS[notice.sourceType] || "확인 필요"} · ${notice.sourceUrl}`;
+}
+
+function updateSelectedNoticeSummary() {
+  if (!adminPage.selectedNoticeTitle || !adminPage.selectedNoticeSource) return;
+  const selectedNotice = getSelectedMockNotice();
+
+  if (noticeInputMode === "list" && selectedNotice) {
+    adminPage.selectedNoticePanel?.classList.add("selected");
+    adminPage.selectedNoticeTitle.textContent = selectedNotice.title;
+    adminPage.selectedNoticeSource.textContent = getMockNoticeSourceText(selectedNotice);
+    return;
+  }
+
+  adminPage.selectedNoticePanel?.classList.remove("selected");
+  adminPage.selectedNoticeTitle.textContent = "아직 선택된 공고가 없습니다.";
+  adminPage.selectedNoticeSource.textContent = noticeInputMode === "url"
+    ? "공식 공고 URL을 직접 입력해 주세요."
+    : "공고 URL을 입력하거나 공고를 선택해 주세요.";
+}
+
+function renderMockSchoolNotices() {
+  if (!adminPage.schoolNoticeList) return;
+
+  adminPage.schoolNoticeList.replaceChildren(
+    ...MOCK_SCHOOL_NOTICES.map((notice) => {
+      const button = document.createElement("button");
+      const title = document.createElement("strong");
+      const meta = document.createElement("span");
+      const type = document.createElement("small");
+      button.type = "button";
+      button.className = "school-notice-item";
+      button.dataset.noticeId = notice.id;
+      button.setAttribute("aria-pressed", String(notice.id === selectedMockNoticeId));
+      if (notice.id === selectedMockNoticeId) button.setAttribute("aria-current", "true");
+      title.textContent = notice.title;
+      meta.textContent = `${notice.department} · ${notice.publishedAt}`;
+      type.textContent = SOURCE_TYPE_LABELS[notice.sourceType] || "확인 필요";
+      button.append(title, meta, type);
+      button.addEventListener("click", () => selectMockSchoolNotice(notice.id));
+      return button;
+    }),
+  );
+  updateSelectedNoticeSummary();
+}
+
+function selectMockSchoolNotice(noticeId) {
+  selectedMockNoticeId = noticeId;
+  resetDraftSelectionState("학교 홈페이지 공고가 선택되었습니다. 초안을 생성해 주세요.");
+  renderMockSchoolNotices();
+  updateApprovalState();
+}
+
+function setNoticeInputMode(mode) {
+  noticeInputMode = mode;
+  if (adminPage.urlPanel) adminPage.urlPanel.hidden = mode !== "url";
+  if (adminPage.listPanel) adminPage.listPanel.hidden = mode !== "list";
+  if (mode === "url") selectedMockNoticeId = "";
+  resetDraftSelectionState(mode === "url" ? "공식 공고 URL을 입력해 주세요." : "학교 홈페이지 공고 목록에서 공고를 선택해 주세요.");
+  renderMockSchoolNotices();
+}
+
+function resetDraftSelectionState(message) {
+  generatedDraftUrl = "";
+  currentDraftNotice = null;
+  if (adminPage.fields) adminPage.fields.hidden = true;
+  if (adminPage.empty) adminPage.empty.hidden = false;
+  if (adminPage.summary) adminPage.summary.value = "";
+  if (adminPage.faq) adminPage.faq.value = "";
+  if (adminPage.evidence) adminPage.evidence.value = "";
+  if (adminPage.chip) adminPage.chip.textContent = "미생성";
+  if (adminPage.note) adminPage.note.textContent = message;
+  adminPage.checkboxes.forEach((checkbox) => {
+    checkbox.checked = false;
+  });
 }
 
 function renderMembers() {
@@ -256,19 +380,10 @@ function updateApprovalState() {
 }
 
 function resetDraftForUrlChange() {
+  if (noticeInputMode !== "url") return;
   if (!adminPage.urlInput || adminPage.urlInput.value.trim() === generatedDraftUrl) return;
 
-  generatedDraftUrl = "";
-  if (adminPage.fields) adminPage.fields.hidden = true;
-  if (adminPage.empty) adminPage.empty.hidden = false;
-  if (adminPage.summary) adminPage.summary.value = "";
-  if (adminPage.faq) adminPage.faq.value = "";
-  if (adminPage.evidence) adminPage.evidence.value = "";
-  if (adminPage.chip) adminPage.chip.textContent = "미생성";
-  if (adminPage.note) adminPage.note.textContent = "새 URL이 입력되었습니다. 초안을 다시 생성해 주세요.";
-  adminPage.checkboxes.forEach((checkbox) => {
-    checkbox.checked = false;
-  });
+  resetDraftSelectionState("새 URL이 입력되었습니다. 초안을 다시 생성해 주세요.");
   updateApprovalState();
 }
 
@@ -438,6 +553,30 @@ function createDraftFromNotice(notice) {
   };
 }
 
+function createDraftNoticeFromMock(mockNotice) {
+  const sections = [
+    { key: "period", label: "신청 기간", text: mockNotice.facts.period },
+    { key: "eligibility", label: "지원 자격", text: mockNotice.facts.eligibility },
+    { key: "field", label: "모집 분야", text: mockNotice.facts.field },
+    { key: "method", label: "신청 방법", text: mockNotice.facts.documents },
+    { key: "contact", label: "문의처", text: mockNotice.department },
+  ];
+
+  return {
+    ...mockNotice,
+    sourceTitle: mockNotice.title,
+    sourcePrefix: "프로토타입 예시 공고",
+    isMockChoice: true,
+    dataMethod: "가상 샘플",
+    date: mockNotice.publishedAt,
+    sections,
+    images: [],
+    bodyPreview:
+      `${mockNotice.title}\n\n${mockNotice.summary}\n\n` +
+      sections.map((section) => `${section.label}: ${section.text}`).join("\n"),
+  };
+}
+
 function createNoticeId(title, sourceUrl) {
   const slug = `${title}-${sourceUrl}`
     .toLocaleLowerCase("ko-KR")
@@ -529,7 +668,7 @@ function buildPublishedNotice(baseNotice) {
     sourceImageUrl: baseNotice.sourceImageUrl || baseNotice.images?.[0] || "",
     publishedAt: baseNotice.publishedAt || baseNotice.date || today,
     sourceType: baseNotice.sourceType || (baseNotice.images?.length > 0 ? "image" : "html"),
-    dataMethod: "AI 초안",
+    dataMethod: baseNotice.isMockChoice ? "가상 샘플" : "AI 초안",
     reviewed: true,
     reviewedAt: today,
     summary: summary || `${title} 공고입니다. 공식 원문과 관리자 검수 내용을 함께 확인해 주세요.`,
@@ -685,11 +824,43 @@ async function handleDraftGeneration(event) {
   event.preventDefault();
   if (currentRole !== "owner") return;
 
+  if (noticeInputMode === "url" && !adminPage.urlInput?.value.trim()) {
+    setAdminNote("공고 URL을 입력하거나 공고를 선택해 주세요.");
+    adminPage.chip.textContent = "미생성";
+    return;
+  }
+
+  if (noticeInputMode === "list" && !selectedMockNoticeId) {
+    setAdminNote("공고 URL을 입력하거나 공고를 선택해 주세요.");
+    adminPage.chip.textContent = "미생성";
+    return;
+  }
+
   adminPage.chip.textContent = "생성 중";
   adminPage.generateButton.disabled = true;
-  adminPage.note.textContent = "공식 링크의 텍스트와 이미지 공고 후보를 수집하고 있습니다.";
+  adminPage.note.textContent = noticeInputMode === "url"
+    ? "공식 링크의 텍스트와 이미지 공고 후보를 수집하고 있습니다."
+    : "프로토타입용 예시 공고 데이터를 바탕으로 초안을 생성하고 있습니다.";
 
   try {
+    if (noticeInputMode === "list") {
+      const selectedNotice = getSelectedMockNotice();
+      const notice = createDraftNoticeFromMock(selectedNotice);
+      const draft = createDraftFromNotice(notice);
+      currentDraftNotice = notice;
+      generatedDraftUrl = notice.sourceUrl;
+
+      adminPage.empty.hidden = true;
+      adminPage.fields.hidden = false;
+      adminPage.summary.value = draft.summary;
+      adminPage.faq.value = draft.faq;
+      adminPage.evidence.value = `${draft.evidence}\n\n현재 공고 목록은 프로토타입용 예시 데이터입니다.`;
+      adminPage.chip.textContent = "예시 결과";
+      adminPage.note.textContent = `${notice.title} 예시 공고 기준으로 생성했습니다. 현재 결과는 프로토타입용 예시 데이터입니다.`;
+      updateApprovalState();
+      return;
+    }
+
     const sourceUrl = new URL(adminPage.urlInput?.value.trim()).toString();
     adminPage.urlInput.value = sourceUrl;
 
@@ -747,9 +918,15 @@ adminPage.logoutButton?.addEventListener("click", handleLogout);
 adminPage.memberForm?.addEventListener("submit", handleMemberSubmit);
 adminPage.form?.addEventListener("submit", handleDraftGeneration);
 adminPage.urlInput?.addEventListener("input", resetDraftForUrlChange);
+adminPage.inputModeRadios.forEach((radio) => {
+  radio.addEventListener("change", () => {
+    if (radio.checked) setNoticeInputMode(radio.value);
+  });
+});
 adminPage.savePublishedButton?.addEventListener("click", handlePublishedSave);
 adminPage.deletePublishedButton?.addEventListener("click", handlePublishedDelete);
 clearLegacyDefaultNoticeUrl();
+renderMockSchoolNotices();
 adminPage.checkboxes.forEach((checkbox) => checkbox.addEventListener("change", updateApprovalState));
 adminPage.approveButton?.addEventListener("click", handleDraftApproval);
 window.addEventListener("kangnam-firebase-ready", initAuth, { once: true });

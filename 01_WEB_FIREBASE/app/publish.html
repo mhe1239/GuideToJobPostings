@@ -11,9 +11,9 @@
     <link rel="icon" type="image/png" href="./assets/icons/32x32.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="./assets/icons/128x128.png" />
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260723-notice-picker" />
     <script type="module" src="./firebase-config.js?v=20260722-url-reset"></script>
-    <script src="./admin.js?v=20260722-manage-note-fix" defer></script>
+    <script src="./admin.js?v=20260723-notice-picker" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -68,26 +68,56 @@
         </section>
 
         <div class="review-flow" aria-label="관리자 공개 절차">
-          <div><span>01</span><strong>공식 공고 링크 등록</strong></div>
-          <div><span>02</span><strong>Codex AI 초안 생성</strong></div>
-          <div><span>03</span><strong>관리자 검수</strong></div>
-          <div><span>04</span><strong>학생 페이지 공개</strong></div>
+          <div><span>01</span><strong>입력 방식 선택</strong></div>
+          <div><span>02</span><strong>공고 선택 또는 URL 입력</strong></div>
+          <div><span>03</span><strong>초안 생성 및 검수</strong></div>
+          <div><span>04</span><strong>공개 또는 취소</strong></div>
         </div>
 
         <div class="admin-grid publish-grid" data-requires-admin>
           <form class="admin-panel ingest-panel" id="admin-ingest-form">
-            <label for="official-notice-url">공식 공고 URL</label>
-            <div class="url-row">
-              <input
-                id="official-notice-url"
-                type="url"
-                placeholder="https://web.kangnam.ac.kr/..."
-                aria-describedby="official-notice-help"
-                required
-              />
-              <button class="button primary" id="generate-draft-button" type="submit">Codex 초안 생성</button>
+            <div class="panel-title-row">
+              <div>
+                <p class="section-label">입력 방식 선택</p>
+                <h2>공고 URL을 입력하거나 목록에서 선택하세요</h2>
+              </div>
             </div>
-            <p id="official-notice-help">공식 링크만 입력하고, 공개 전에는 관리자 승인 상태로 보관합니다.</p>
+            <div class="input-mode-control" role="radiogroup" aria-label="공고 입력 방식">
+              <label>
+                <input type="radio" name="notice-input-mode" value="url" checked />
+                <span>공고 URL 직접 입력</span>
+              </label>
+              <label>
+                <input type="radio" name="notice-input-mode" value="list" />
+                <span>학교 홈페이지 공고에서 선택</span>
+              </label>
+            </div>
+
+            <div class="input-mode-panel" id="url-input-panel">
+              <label for="official-notice-url">공식 공고 URL</label>
+              <div class="url-row">
+                <input
+                  id="official-notice-url"
+                  type="url"
+                  placeholder="https://web.kangnam.ac.kr/..."
+                  aria-describedby="official-notice-help"
+                />
+              </div>
+              <p id="official-notice-help">공식 링크만 입력하고, 공개 전에는 관리자 승인 상태로 보관합니다.</p>
+            </div>
+
+            <div class="input-mode-panel" id="notice-list-panel" hidden>
+              <p class="mock-list-note">현재 공고 목록은 프로토타입용 예시 데이터입니다.</p>
+              <div class="school-notice-list" id="school-notice-list" aria-label="최근 학교 공고 10개"></div>
+            </div>
+
+            <section class="selected-notice-panel" id="selected-notice-panel" aria-live="polite">
+              <span>선택된 공고</span>
+              <strong id="selected-notice-title">아직 선택된 공고가 없습니다.</strong>
+              <small id="selected-notice-source">공고 URL을 입력하거나 공고를 선택해 주세요.</small>
+            </section>
+
+            <button class="button primary generate-draft-button" id="generate-draft-button" type="submit">초안 생성</button>
           </form>
 
           <section class="admin-panel draft-panel">

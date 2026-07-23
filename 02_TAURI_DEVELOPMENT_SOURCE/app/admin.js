@@ -278,6 +278,14 @@ function applyStoredAdminLogin() {
   return true;
 }
 
+function applyConfiguredPrimaryAdmin() {
+  const email = getPrimaryAdminEmail();
+  if (!email) return false;
+  currentUser = { email };
+  currentRole = "owner";
+  return true;
+}
+
 function setAdminRuntimeError(error) {
   const title = adminPage.authState?.querySelector("strong");
   const subtitle = adminPage.authState?.querySelector("span");
@@ -1397,7 +1405,7 @@ async function initAuth() {
   try {
     const access = window.KANGNAM_ADMIN_ACCESS;
     if (!access?.ready) {
-      if (!applyStoredAdminLogin()) {
+      if (!applyStoredAdminLogin() && !applyConfiguredPrimaryAdmin()) {
         currentUser = null;
         currentRole = "viewer";
       }
@@ -1407,7 +1415,7 @@ async function initAuth() {
 
     const result = await access.ready;
     if (!result.allowed) {
-      if (applyStoredAdminLogin()) {
+      if (applyStoredAdminLogin() || applyConfiguredPrimaryAdmin()) {
         managedMembers = loadManagedMembers();
         ensurePrimaryAdmin();
         updateAccess();
@@ -1424,7 +1432,7 @@ async function initAuth() {
     updateAccess();
   } catch (error) {
     console.error("관리자 화면 초기화 실패", error);
-    if (applyStoredAdminLogin()) {
+    if (applyStoredAdminLogin() || applyConfiguredPrimaryAdmin()) {
       managedMembers = loadManagedMembers();
       ensurePrimaryAdmin();
       updateAccess();

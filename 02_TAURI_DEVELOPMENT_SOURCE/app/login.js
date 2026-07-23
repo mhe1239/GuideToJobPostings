@@ -78,7 +78,8 @@ function rememberAdminLogin(user) {
 }
 
 function renderLoginActions(user) {
-  const role = user ? resolveLoginRoleKey(user.email) : "viewer";
+  const configuredPrimary = normalizeEmail(window.KANGNAM_ADMIN_CONFIG?.primaryAdminEmail);
+  const role = user ? resolveLoginRoleKey(user.email) : configuredPrimary ? "owner" : "viewer";
   loginElements.adminActions.forEach((action) => {
     const minRole = action.dataset.minRole || "editor";
     action.hidden = LOGIN_ROLE_RANK[role] < LOGIN_ROLE_RANK[minRole];
@@ -117,6 +118,10 @@ function initLoginAuth() {
   firebase.onAuthStateChanged(firebase.auth, (user) => {
     if (!user) {
       renderLoginActions(null);
+      if (normalizeEmail(window.KANGNAM_ADMIN_CONFIG?.primaryAdminEmail)) {
+        setLoginState("프로토타입 관리자 모드", "env에 지정된 최고 관리자 기준으로 관리자 메뉴를 사용할 수 있습니다.");
+        return;
+      }
       setLoginState("로그인 대기", "Google 계정으로 로그인하면 역할을 확인합니다.");
       return;
     }

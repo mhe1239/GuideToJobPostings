@@ -116,6 +116,19 @@ function rememberAllowedAccess(user, role) {
   }));
 }
 
+function allowConfiguredPrimaryAdmin(resolve) {
+  const email = getPrimaryAdminEmail();
+  if (!email) return false;
+
+  const user = { email };
+  const role = "owner";
+  document.body.dataset.adminGuard = "allowed";
+  ensurePrimaryAdmin();
+  rememberAllowedAccess(user, role);
+  resolve({ allowed: true, user, role, reason: "configured-primary" });
+  return true;
+}
+
 function readStoredAdminLogin() {
   try {
     const stored = JSON.parse(window.localStorage.getItem(ADMIN_LOGIN_STORAGE_KEY) || "null");
@@ -167,6 +180,8 @@ async function checkAdminAccess() {
   if (!firebase?.onAuthStateChanged) {
     const storedAllowed = await new Promise((resolve) => allowStoredAdminIfPossible(resolve) || resolve(null));
     if (storedAllowed) return storedAllowed;
+    const configuredAllowed = await new Promise((resolve) => allowConfiguredPrimaryAdmin(resolve) || resolve(null));
+    if (configuredAllowed) return configuredAllowed;
     document.body.dataset.adminGuard = "denied";
     setGuardMessage("관리자만 접근 가능한 페이지입니다.");
     redirectToStudentHome();
@@ -177,6 +192,7 @@ async function checkAdminAccess() {
     firebase.onAuthStateChanged(firebase.auth, (user) => {
       if (!user) {
         if (allowStoredAdminIfPossible(resolve)) return;
+        if (allowConfiguredPrimaryAdmin(resolve)) return;
         document.body.dataset.adminGuard = "denied";
         setGuardMessage("관리자만 접근 가능한 페이지입니다.");
         redirectToStudentHome();

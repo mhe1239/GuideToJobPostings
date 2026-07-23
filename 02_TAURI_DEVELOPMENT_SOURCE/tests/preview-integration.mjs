@@ -219,6 +219,30 @@ async function bootStoredAdminAccess() {
   return window;
 }
 
+async function bootConfiguredPrimaryWithoutLogin() {
+  const window = new Window({ url: "http://127.0.0.1:4173/admin.html" });
+  const page = adminHtml
+    .replace(/<script src="\.\/admin-config\.js[^"]*" defer><\/script>/, "")
+    .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
+    .replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
+  window.document.write(page);
+  window.document.close();
+  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail: "jomimin79@gmail.com" };
+  window.KANGNAM_FIREBASE = {
+    auth: { currentUser: null },
+    roleLists: { owners: [], editors: [] },
+    onAuthStateChanged: (_auth, callback) => callback(null),
+    signOut: async () => {},
+  };
+  window.eval(adminGuardScript);
+  const result = await window.KANGNAM_ADMIN_ACCESS.ready;
+  if (result.allowed) {
+    window.eval(adminScript);
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+  }
+  return window;
+}
+
 async function bootAdminWithoutGuardButStoredLogin() {
   const window = new Window({ url: "http://127.0.0.1:4173/admin.html" });
   const page = adminHtml
@@ -320,10 +344,11 @@ const studentLoginWindow = await bootLogin({ email: "student@kangnam.ac.kr" });
 const editorLoginWindow = await bootLogin({ email: "editor@kangnam.ac.kr" });
 const ownerLoginWindow = await bootLogin({ email: "tee01202@gmail.com" });
 const storedAdminWindow = await bootStoredAdminAccess();
+const configuredPrimaryWindow = await bootConfiguredPrimaryWithoutLogin();
 const storedNoGuardWindow = await bootAdminWithoutGuardButStoredLogin();
 
-assert.equal(signedOutAdminWindow.document.body.dataset.adminGuard, "denied", "로그아웃 상태에서는 관리자 페이지 접근을 차단해야 합니다.");
-assert.equal(signedOutAdminWindow.document.querySelector("#admin-guard-message").textContent, "관리자만 접근 가능한 페이지입니다.", "로그아웃 차단 안내 문구가 정확해야 합니다.");
+assert.equal(signedOutAdminWindow.document.body.dataset.adminGuard, "allowed", "env 최고 관리자 모드에서는 로그인 세션이 없어도 관리자 페이지를 열 수 있어야 합니다.");
+assert.match(signedOutAdminWindow.document.querySelector("#admin-auth-badge").textContent, /관리자 관리/, "env 최고 관리자 모드에서는 보기만 가능 상태가 나오면 안 됩니다.");
 assert.equal(viewerAdminWindow.document.body.dataset.adminGuard, "denied", "학생 권한은 관리자 메뉴에 접근할 수 없어야 합니다.");
 assert.equal(viewerAdminWindow.document.querySelector("#admin-guard-message").textContent, "관리자 권한이 없습니다.", "학생 권한 차단 안내 문구가 정확해야 합니다.");
 assert.equal(editorAdminWindow.document.body.dataset.adminGuard, "allowed", "수정 및 공개 가능 권한은 관리자 메뉴에 접근할 수 있어야 합니다.");
@@ -354,7 +379,8 @@ setValue(stalePrimaryWindow, "#member-email", "fixed-admin@kangnam.ac.kr");
 stalePrimaryWindow.document.querySelector("#member-role").value = "editor";
 stalePrimaryWindow.document.querySelector("#member-form").dispatchEvent(new stalePrimaryWindow.Event("submit", { bubbles: true, cancelable: true }));
 assert.equal(JSON.parse(stalePrimaryWindow.localStorage.getItem("kangnamManagedMembers")).some((member) => member.email === "fixed-admin@kangnam.ac.kr" && member.role === "editor"), true, "복구된 최고 관리자 계정에서도 관리자 추가가 저장되어야 합니다.");
-assert.equal(signedOutLoginWindow.document.querySelector('[href="./admin.html"]').hidden, true, "로그인 전에는 관리자 메뉴 버튼을 숨겨야 합니다.");
+assert.equal(signedOutLoginWindow.document.querySelector('[href="./admin.html"]').hidden, false, "env 최고 관리자 모드에서는 로그인 전에도 관리자 메뉴 버튼을 보여야 합니다.");
+assert.equal(signedOutLoginWindow.document.querySelector('[href="./members.html"]').hidden, false, "env 최고 관리자 모드에서는 로그인 전에도 관리자 관리 버튼을 보여야 합니다.");
 assert.equal(signedOutLoginWindow.document.querySelector("#login-logout-button").disabled, true, "로그인 전 로그아웃 버튼은 비활성화되어야 합니다.");
 assert.equal(studentLoginWindow.document.querySelector('[href="./admin.html"]').hidden, true, "학생 권한 계정에는 관리자 메뉴 버튼을 숨겨야 합니다.");
 assert.equal(studentLoginWindow.document.querySelector('[href="./members.html"]').hidden, true, "학생 권한 계정에는 관리자 관리 버튼을 숨겨야 합니다.");
@@ -366,6 +392,8 @@ assert.equal(editorLoginWindow.document.querySelector('[href="./publish.html"]')
 assert.equal(ownerLoginWindow.document.querySelector('[href="./members.html"]').hidden, false, "최고 관리자 계정에는 관리자 관리 버튼을 보여야 합니다.");
 assert.equal(ownerLoginWindow.localStorage.getItem("kangnamAdminLogin") !== null, true, "관리자 로그인 성공 시 로컬 관리자 권한을 저장해야 합니다.");
 assert.equal(storedAdminWindow.document.body.dataset.adminGuard, "allowed", "Firebase 콜백이 비어도 저장된 관리자 권한으로 관리자 페이지를 열 수 있어야 합니다.");
+assert.equal(configuredPrimaryWindow.document.body.dataset.adminGuard, "allowed", "로그인 세션이 없어도 env 최고 관리자 기준으로 프로토타입 관리자 메뉴를 열 수 있어야 합니다.");
+assert.match(configuredPrimaryWindow.document.querySelector("#admin-auth-badge").textContent, /관리자 관리/, "env 최고 관리자 모드에서는 보기만 가능 배지가 나오면 안 됩니다.");
 assert.match(storedAdminWindow.document.querySelector("#admin-auth-state").textContent, /jomimin79@gmail.com/, "저장된 관리자 권한으로 화면 로그인 상태를 복구해야 합니다.");
 assert.match(storedAdminWindow.document.querySelector("#admin-auth-badge").textContent, /관리자 관리/, "저장된 최고 관리자 권한은 보기만 가능으로 표시되면 안 됩니다.");
 assert.match(storedNoGuardWindow.document.querySelector("#admin-auth-state").textContent, /jomimin79@gmail.com/, "가드 객체가 늦거나 없어도 저장된 관리자 로그인으로 화면 상태를 복구해야 합니다.");
@@ -604,4 +632,4 @@ assert.match(styles, /\.source-image-link img,[\s\S]*\.full-notice-image-wrap im
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 
-console.log("preview integration: 166 checks passed");
+console.log("preview integration: 168 checks passed");

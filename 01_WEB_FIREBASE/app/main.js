@@ -638,7 +638,7 @@ function renderAuthState() {
     subtitle.textContent = "학생 보기 권한으로 공개된 공고와 FAQ만 볼 수 있습니다.";
     if (adminReview.headerAuthLink) {
       adminReview.headerAuthLink.href = "./login.html";
-      adminReview.headerAuthLink.lastChild.textContent = "Google 로그인";
+      adminReview.headerAuthLink.lastChild.textContent = "관리자 로그인";
     }
   } else {
     title.textContent = `${currentUser.email} · ${ROLE_LABELS[currentRole]}`;

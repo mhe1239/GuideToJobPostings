@@ -655,6 +655,103 @@ button:disabled {
   margin-top: 20px;
 }
 
+.notice-filter-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 14px;
+  background: var(--warm);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.filter-group {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  align-items: start;
+  gap: 10px;
+}
+
+.filter-group-label {
+  padding-top: 7px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.filter-options {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chip,
+.filter-reset-button {
+  min-height: 34px;
+  border: 1px solid var(--border-strong);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background 160ms ease-out, border-color 160ms ease-out, box-shadow 160ms ease-out, color 160ms ease-out;
+}
+
+.filter-chip {
+  padding: 7px 12px;
+  color: var(--ink-soft);
+  background: #fff;
+}
+
+.category-filter-chip {
+  border-radius: 8px;
+}
+
+.status-filter-chip {
+  border-style: dashed;
+  border-radius: 999px;
+}
+
+.filter-chip:hover,
+.filter-chip:focus-visible,
+.filter-reset-button:hover,
+.filter-reset-button:focus-visible {
+  border-color: var(--primary-700);
+  box-shadow: 0 0 0 3px rgb(23 58 103 / 10%);
+}
+
+.category-filter-chip.active {
+  color: var(--primary-950);
+  background: var(--primary-50);
+  border-color: var(--primary-700);
+}
+
+.status-filter-chip.active {
+  color: #69420f;
+  background: var(--accent-50);
+  border-color: var(--accent-700);
+  border-style: solid;
+}
+
+.filter-reset-button {
+  justify-self: end;
+  padding: 7px 12px;
+  color: var(--primary-800);
+  background: #fff;
+  border-radius: 8px;
+}
+
+.filter-empty {
+  margin: 18px 0 0;
+  padding: 18px;
+  color: var(--ink-faint);
+  text-align: center;
+  background: var(--warm);
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+}
+
 .notice-list-item {
   min-width: 0;
   display: grid;
@@ -2566,6 +2663,29 @@ button:disabled {
 
   .breadcrumb {
     margin-bottom: 12px;
+  }
+
+  .filter-group {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .filter-group-label {
+    padding-top: 0;
+  }
+
+  .filter-options {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .filter-chip {
+    flex: 0 0 auto;
+  }
+
+  .filter-reset-button {
+    justify-self: stretch;
   }
 
   .page-shell {

@@ -2,6 +2,8 @@
 
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
+const FILTER_ALL = "전체";
+const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
 
 const DEFAULT_NOTICES = Object.freeze([
   {
@@ -11,6 +13,7 @@ const DEFAULT_NOTICES = Object.freeze([
     department: "입학전형관리팀",
     date: "2026.07.20",
     status: "모집 중",
+    recruitmentStatus: "모집 중",
     sourceTitle: "입학처 공식 홍보대사 늘품 12기 2학기 수습 위원 모집 공고",
     sourceUrl: "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9",
     publishedAt: "2026.07.20",
@@ -22,10 +25,11 @@ const DEFAULT_NOTICES = Object.freeze([
   {
     id: "internet-counselor-2026",
     title: "[한국지능정보사회진흥원] 2026년도 제12회 인터넷중독전문상담사 자격검정 시행",
-    category: "대학생활",
+    category: "취업",
     department: "학생지원 관련 부서",
     date: "2026.07.20",
     status: "안내",
+    recruitmentStatus: "모집 예정",
     sourceTitle: "2026년도 제12회 인터넷중독전문상담사 자격검정 시행 공고",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
     publishedAt: "2026.07.20",
@@ -37,10 +41,11 @@ const DEFAULT_NOTICES = Object.freeze([
   {
     id: "jazz-concert-2026",
     title: "[수원시립미술관] 7월 문화가 있는 날 재즈 콘서트 개최",
-    category: "대학생활",
+    category: "행사",
     department: "학생지원 관련 부서",
     date: "2026.07.16",
     status: "안내",
+    recruitmentStatus: "마감",
     sourceTitle: "7월 문화가 있는 날 재즈 콘서트 개최 공고",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
     publishedAt: "2026.07.16",
@@ -56,6 +61,7 @@ const DEFAULT_NOTICES = Object.freeze([
     department: "학생지원 관련 부서",
     date: "2026.07.15",
     status: "모집 중",
+    recruitmentStatus: "모집 중",
     sourceTitle: "2026학년도 대학생활 지원 비교과 프로그램 참여 안내 공고",
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
     publishedAt: "2026.07.15",
@@ -70,6 +76,14 @@ const listElements = {
   authLink: document.querySelector("#header-auth-link"),
   noticeList: document.querySelector("#notice-list"),
   countLabel: document.querySelector("#notice-count-label"),
+  emptyMessage: document.querySelector("#filter-empty"),
+  resetButton: document.querySelector("#filter-reset-button"),
+  filterButtons: [...document.querySelectorAll("[data-filter-type]")],
+};
+
+const activeFilters = {
+  category: FILTER_ALL,
+  recruitmentStatus: FILTER_ALL,
 };
 
 function loadPublishedNotices() {
@@ -97,6 +111,45 @@ function getNotices() {
     .filter((notice) => (notice.approvalStatus || "published") === "published");
 }
 
+function normalizeRecruitmentStatus(status) {
+  if (RECRUITMENT_STATUSES.includes(status)) return status;
+  if (!status) return "모집 중";
+  if (status.includes("예정")) return "모집 예정";
+  if (status.includes("마감")) return "마감";
+  if (status.includes("모집")) return "모집 중";
+  return "모집 중";
+}
+
+function getNoticeCategory(notice) {
+  return notice.category || "비교과 프로그램";
+}
+
+function getNoticeRecruitmentStatus(notice) {
+  return normalizeRecruitmentStatus(notice.recruitmentStatus || notice.status);
+}
+
+function getFilteredNotices(notices) {
+  return notices.filter((notice) => {
+    const matchesCategory = activeFilters.category === FILTER_ALL || getNoticeCategory(notice) === activeFilters.category;
+    const matchesStatus = activeFilters.recruitmentStatus === FILTER_ALL || getNoticeRecruitmentStatus(notice) === activeFilters.recruitmentStatus;
+    return matchesCategory && matchesStatus;
+  });
+}
+
+function updateFilterButtons() {
+  listElements.filterButtons.forEach((button) => {
+    const type = button.dataset.filterType;
+    const isActive = activeFilters[type] === button.dataset.filterValue;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+function setFilter(type, value) {
+  activeFilters[type] = value;
+  renderNoticeList();
+}
+
 function createNoticeLink(notice) {
   const link = document.createElement("a");
   const top = document.createElement("div");
@@ -111,8 +164,8 @@ function createNoticeLink(notice) {
   category.className = "notice-card-category";
   status.className = "notice-card-status";
   action.className = "notice-card-action";
-  category.textContent = notice.category;
-  status.textContent = notice.status;
+  category.textContent = getNoticeCategory(notice);
+  status.textContent = getNoticeRecruitmentStatus(notice);
   title.textContent = notice.title;
   meta.textContent = `${notice.department} · ${notice.date}`;
   action.textContent = "상세 FAQ 보기";
@@ -122,9 +175,13 @@ function createNoticeLink(notice) {
 }
 
 function renderNoticeList() {
-  const notices = getNotices();
+  const notices = getFilteredNotices(getNotices());
   listElements.countLabel.textContent = `${notices.length}개`;
+  if (listElements.emptyMessage) {
+    listElements.emptyMessage.hidden = notices.length > 0;
+  }
   listElements.noticeList.replaceChildren(...notices.map(createNoticeLink));
+  updateFilterButtons();
 }
 
 function initListAuth() {
@@ -137,6 +194,16 @@ function initListAuth() {
     listElements.authLink.lastChild.textContent = user ? "관리자 메뉴" : "관리자 로그인";
   });
 }
+
+listElements.filterButtons.forEach((button) => {
+  button.addEventListener("click", () => setFilter(button.dataset.filterType, button.dataset.filterValue));
+});
+
+listElements.resetButton?.addEventListener("click", () => {
+  activeFilters.category = FILTER_ALL;
+  activeFilters.recruitmentStatus = FILTER_ALL;
+  renderNoticeList();
+});
 
 renderNoticeList();
 window.addEventListener("kangnam-firebase-ready", initListAuth, { once: true });

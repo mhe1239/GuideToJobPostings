@@ -11,9 +11,9 @@
     <link rel="icon" type="image/png" href="./assets/icons/32x32.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="./assets/icons/128x128.png" />
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=20260723-user-flows" />
+    <link rel="stylesheet" href="./styles.css?v=20260723-notice-filters" />
     <script type="module" src="./firebase-config.js?v=20260722-list-page"></script>
-    <script src="./list.js?v=20260723-admin-login-label" defer></script>
+    <script src="./list.js?v=20260723-notice-filters" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">본문으로 바로가기</a>
@@ -55,6 +55,30 @@
             <span class="step-label" id="notice-count-label">0개</span>
           </div>
           <p class="section-description">공고를 선택하면 별도 상세 페이지에서 핵심 정보, FAQ, 질문 답변, 담당 부서 안내를 확인할 수 있습니다.</p>
+          <div class="notice-filter-panel" aria-label="공고 필터">
+            <div class="filter-group">
+              <span class="filter-group-label">카테고리</span>
+              <div class="filter-options" role="group" aria-label="카테고리 필터">
+                <button class="filter-chip category-filter-chip active" type="button" data-filter-type="category" data-filter-value="전체" aria-pressed="true">전체</button>
+                <button class="filter-chip category-filter-chip" type="button" data-filter-type="category" data-filter-value="비교과 프로그램" aria-pressed="false">비교과 프로그램</button>
+                <button class="filter-chip category-filter-chip" type="button" data-filter-type="category" data-filter-value="장학" aria-pressed="false">장학</button>
+                <button class="filter-chip category-filter-chip" type="button" data-filter-type="category" data-filter-value="취업" aria-pressed="false">취업</button>
+                <button class="filter-chip category-filter-chip" type="button" data-filter-type="category" data-filter-value="행사" aria-pressed="false">행사</button>
+                <button class="filter-chip category-filter-chip" type="button" data-filter-type="category" data-filter-value="학사" aria-pressed="false">학사</button>
+              </div>
+            </div>
+            <div class="filter-group">
+              <span class="filter-group-label">모집 상태</span>
+              <div class="filter-options status-filter-options" role="group" aria-label="모집 상태 필터">
+                <button class="filter-chip status-filter-chip active" type="button" data-filter-type="recruitmentStatus" data-filter-value="전체" aria-pressed="true">전체</button>
+                <button class="filter-chip status-filter-chip" type="button" data-filter-type="recruitmentStatus" data-filter-value="모집 예정" aria-pressed="false">모집 예정</button>
+                <button class="filter-chip status-filter-chip" type="button" data-filter-type="recruitmentStatus" data-filter-value="모집 중" aria-pressed="false">모집 중</button>
+                <button class="filter-chip status-filter-chip" type="button" data-filter-type="recruitmentStatus" data-filter-value="마감" aria-pressed="false">마감</button>
+              </div>
+            </div>
+            <button class="filter-reset-button" id="filter-reset-button" type="button">필터 초기화</button>
+          </div>
+          <p class="filter-empty" id="filter-empty" hidden>조건에 맞는 공고가 없습니다.</p>
           <div class="notice-list notice-list-wide" id="notice-list" aria-live="polite"></div>
         </section>
 

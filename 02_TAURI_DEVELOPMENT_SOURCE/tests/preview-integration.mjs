@@ -70,6 +70,7 @@ function bootMockNoticeWithoutSourceUrl() {
       sourceTitle: "가상 샘플 원문",
       sourceUrl: "",
       sourceImageUrl: "https://example.invalid/missing-notice.png",
+      imageUrls: ["https://example.invalid/missing-notice.png"],
       publishedAt: "2026.07.23",
       sourceType: "mock",
       dataMethod: "가상 샘플",
@@ -256,8 +257,12 @@ click(window, "#full-notice-toggle");
 assert.equal(document.querySelector("#full-notice-panel").hidden, true, "전체 공고 닫기 버튼을 누르면 내용이 다시 닫혀야 합니다.");
 assert.equal(document.querySelector("#full-notice-toggle").textContent, "전체 공고 내용 보기", "닫힌 상태에서는 버튼 문구가 보기로 돌아와야 합니다.");
 assert.equal(mockDocument.querySelector("#full-notice-image-wrap").hidden, false, "원문 이미지 URL이 있으면 이미지 영역을 표시해야 합니다.");
-mockDocument.querySelector("#full-notice-image").dispatchEvent(new mockWindow.Event("error"));
-assert.equal(mockDocument.querySelector("#full-notice-image-fallback").hidden, false, "원문 이미지가 깨지면 대체 안내 문구를 보여야 합니다.");
+assert.equal(mockDocument.querySelectorAll(".source-image-figure").length, 1, "imageUrls 배열의 이미지를 전체 공고 영역에 표시해야 합니다.");
+assert.equal(mockDocument.querySelector(".source-image-link").href, "https://example.invalid/missing-notice.png", "이미지를 클릭하면 새 창에서 원본을 열 수 있어야 합니다.");
+assert.match(mockDocument.querySelector(".source-image-link img").alt, /가상 샘플 원문 원문 이미지 1/, "각 원문 이미지에는 대체 텍스트가 있어야 합니다.");
+mockDocument.querySelector(".source-image-link img").dispatchEvent(new mockWindow.Event("error"));
+assert.equal(mockDocument.querySelector(".image-fallback").hidden, false, "원문 이미지가 깨지면 대체 안내 문구를 보여야 합니다.");
+assert.equal(mockDocument.querySelector(".image-fallback").textContent, "원문 이미지를 불러오지 못했습니다. 원문 링크에서 확인해 주세요.", "이미지 오류 안내 문구가 정확해야 합니다.");
 assert.equal(document.querySelector("#source-contact-department").textContent, "입학전형관리팀", "출처 및 담당 부서 섹션에 담당 부서가 표시되어야 합니다.");
 assert.match(document.querySelector(".example-notice").textContent, /공고 기반 답변/, "입력 화면에 공고 기반 답변임을 알려야 합니다.");
 assert.match(document.querySelector(".source-line").textContent, /공식 공고 내용을 확인해 작성한 답변/, "공식 공고 기반 답변임을 알려야 합니다.");
@@ -332,7 +337,7 @@ assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.key-facts\s*\{[\s\S]*g
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.full-notice-details\s*\{[\s\S]*grid-template-columns:\s*1fr/s, "모바일에서 전체 공고 내용도 한 열로 정렬되어야 합니다.");
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.user-flow-list,[\s\S]*\.admin-flow-section \.user-flow-list\s*\{[\s\S]*grid-template-columns:\s*1fr/s, "모바일에서 학생과 관리자 흐름은 세로로 정렬되어야 합니다.");
 assert.match(styles, /\.full-notice-text\s*\{[^}]*overflow-wrap:\s*anywhere/s, "긴 전체 공고 텍스트는 화면 밖으로 넘치지 않아야 합니다.");
-assert.match(styles, /\.full-notice-image-wrap img\s*\{[^}]*max-width:\s*100%/s, "원문 이미지는 모바일 폭을 넘지 않아야 합니다.");
+assert.match(styles, /\.source-image-link img,[\s\S]*\.full-notice-image-wrap img\s*\{[^}]*max-width:\s*100%/s, "원문 이미지는 모바일 폭을 넘지 않아야 합니다.");
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 

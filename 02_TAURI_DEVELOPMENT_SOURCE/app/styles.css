@@ -548,6 +548,24 @@ button:disabled {
   border-radius: 12px;
 }
 
+.full-notice-image-list {
+  display: grid;
+  gap: 14px;
+}
+
+.source-image-figure {
+  min-width: 0;
+  margin: 0;
+}
+
+.source-image-link {
+  display: block;
+  max-width: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.source-image-link img,
 .full-notice-image-wrap img {
   width: 100%;
   max-width: 100%;
@@ -557,6 +575,7 @@ button:disabled {
   border-radius: 8px;
 }
 
+.source-image-figure figcaption,
 .full-notice-image-wrap figcaption,
 .image-fallback {
   margin: 10px 0 0;

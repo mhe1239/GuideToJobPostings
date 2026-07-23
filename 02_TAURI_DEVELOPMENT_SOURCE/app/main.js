@@ -22,6 +22,7 @@ const DEFAULT_NOTICES = Object.freeze([
     sourceUrl: "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9",
     publishedAt: "2026.07.20",
     sourceType: "image",
+    imageUrls: [],
     dataMethod: "실제 공고 기반 재구성",
     reviewed: true,
     reviewedAt: "2026.07.23",
@@ -71,6 +72,7 @@ const DEFAULT_NOTICES = Object.freeze([
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
     publishedAt: "2026.07.20",
     sourceType: "html",
+    imageUrls: [],
     dataMethod: "실제 공고 기반 재구성",
     reviewed: true,
     reviewedAt: "2026.07.23",
@@ -105,6 +107,7 @@ const DEFAULT_NOTICES = Object.freeze([
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
     publishedAt: "2026.07.16",
     sourceType: "html",
+    imageUrls: [],
     dataMethod: "실제 공고 기반 재구성",
     reviewed: true,
     reviewedAt: "2026.07.23",
@@ -139,6 +142,7 @@ const DEFAULT_NOTICES = Object.freeze([
     sourceUrl: "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do",
     publishedAt: "2026.07.15",
     sourceType: "html",
+    imageUrls: [],
     dataMethod: "실제 공고 기반 재구성",
     reviewed: true,
     reviewedAt: "2026.07.23",
@@ -219,9 +223,7 @@ const elements = {
   fullDocuments: document.querySelector("#full-documents"),
   fullOperation: document.querySelector("#full-operation"),
   fullNoticeImageWrap: document.querySelector("#full-notice-image-wrap"),
-  fullNoticeImage: document.querySelector("#full-notice-image"),
-  fullNoticeImageCaption: document.querySelector("#full-notice-image-caption"),
-  fullNoticeImageFallback: document.querySelector("#full-notice-image-fallback"),
+  fullNoticeImageList: document.querySelector("#full-notice-image-list"),
   fullNoticeSourceLink: document.querySelector("#full-notice-source-link"),
   sourceLineText: document.querySelector("#source-line-text"),
   sourceTitle: document.querySelector("#source-title"),
@@ -340,8 +342,53 @@ function setSourceLink(link, url) {
   }
 }
 
-function getSourceImageUrl(notice) {
-  return notice.sourceImageUrl || notice.imageUrl || notice.images?.[0] || "";
+function getSourceImageUrls(notice) {
+  const imageUrls = [
+    ...(Array.isArray(notice.imageUrls) ? notice.imageUrls : []),
+    ...(Array.isArray(notice.images) ? notice.images : []),
+    notice.sourceImageUrl || "",
+    notice.imageUrl || "",
+  ];
+  return [...new Set(imageUrls.filter(Boolean))];
+}
+
+function createSourceImageFigure(imageUrl, index) {
+  const figure = document.createElement("figure");
+  const link = document.createElement("a");
+  const image = document.createElement("img");
+  const caption = document.createElement("figcaption");
+  const fallback = document.createElement("p");
+
+  figure.className = "source-image-figure";
+  link.className = "source-image-link";
+  link.href = imageUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.setAttribute("aria-label", `원문 이미지 ${index + 1} 새 창에서 보기`);
+  image.src = imageUrl;
+  image.alt = `${activeNotice.sourceTitle || activeNotice.title} 원문 이미지 ${index + 1}`;
+  image.loading = "lazy";
+  caption.textContent = `원문 이미지 ${index + 1} - 클릭하면 새 창에서 원본을 확인할 수 있습니다.`;
+  fallback.className = "image-fallback";
+  fallback.hidden = true;
+  fallback.textContent = "원문 이미지를 불러오지 못했습니다. 원문 링크에서 확인해 주세요.";
+  image.addEventListener("error", () => {
+    link.hidden = true;
+    fallback.hidden = false;
+  });
+  image.addEventListener("load", () => {
+    link.hidden = false;
+    fallback.hidden = true;
+  });
+  link.append(image);
+  figure.append(link, caption, fallback);
+  return figure;
+}
+
+function renderSourceImages(notice) {
+  const imageUrls = getSourceImageUrls(notice);
+  elements.fullNoticeImageWrap.hidden = imageUrls.length === 0;
+  elements.fullNoticeImageList.replaceChildren(...imageUrls.map(createSourceImageFigure));
 }
 
 function buildFullNoticeText(notice, facts) {
@@ -419,8 +466,6 @@ function renderNotice() {
   const documents = getFact(activeNotice, "documents");
   const operation = getFact(activeNotice, "operation");
   const department = activeNotice.department || "확인 필요";
-  const sourceImageUrl = getSourceImageUrl(activeNotice);
-
   document.title = `강남대 공고 길잡이 — ${activeNotice.title}`;
   elements.breadcrumbCategory.textContent = activeNotice.category;
   elements.noticeMeta.textContent = `${department} · ${activeNotice.category} · ${formatNoticeDate(activeNotice.publishedAt || activeNotice.date)}`;
@@ -442,16 +487,7 @@ function renderNotice() {
   elements.fullDocuments.textContent = documents;
   elements.fullOperation.textContent = operation;
   setSourceLink(elements.fullNoticeSourceLink, sourceUrl);
-  elements.fullNoticeImageFallback.hidden = true;
-  elements.fullNoticeImageWrap.hidden = !sourceImageUrl;
-  if (sourceImageUrl) {
-    elements.fullNoticeImage.hidden = false;
-    elements.fullNoticeImage.src = sourceImageUrl;
-    elements.fullNoticeImage.alt = `${activeNotice.sourceTitle || activeNotice.title} 원문 이미지`;
-    elements.fullNoticeImageCaption.textContent = activeNotice.sourceTitle || "원문 이미지";
-  } else {
-    elements.fullNoticeImage.removeAttribute("src");
-  }
+  renderSourceImages(activeNotice);
   elements.sourceLineText.textContent = activeNotice.isPublished
     ? "관리자가 검수 후 공개한 공고 초안입니다. 세부 내용은 공식 공고 원문과 함께 확인해 주세요."
     : "공식 공고 내용을 확인해 작성한 답변입니다.";
@@ -683,15 +719,6 @@ elements.fullNoticeToggle.addEventListener("click", () => {
   const expanded = elements.fullNoticeToggle.getAttribute("aria-expanded") === "true";
   setFullNoticeExpanded(!expanded);
 });
-elements.fullNoticeImage.addEventListener("error", () => {
-  elements.fullNoticeImage.hidden = true;
-  elements.fullNoticeImageFallback.hidden = false;
-});
-elements.fullNoticeImage.addEventListener("load", () => {
-  elements.fullNoticeImage.hidden = false;
-  elements.fullNoticeImageFallback.hidden = true;
-});
-
 renderNotice();
 renderNoticeList();
 renderFaqs();

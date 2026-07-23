@@ -385,6 +385,25 @@ function renderAuthState() {
   if (adminPage.logoutButton) adminPage.logoutButton.disabled = !currentUser;
 }
 
+function renderDeniedAuthState(result) {
+  currentUser = result?.user || null;
+  currentRole = result?.role || "viewer";
+  renderAuthState();
+
+  const title = adminPage.authState?.querySelector("strong");
+  const subtitle = adminPage.authState?.querySelector("span");
+  if (!title || !subtitle) return;
+
+  if (result?.reason === "forbidden" && currentUser?.email) {
+    title.textContent = `${currentUser.email} · 관리자 권한 없음`;
+    subtitle.textContent = "등록된 관리자 계정이 아닙니다. 최고 관리자 계정으로 다시 로그인해 주세요.";
+    return;
+  }
+
+  title.textContent = "로그인 필요";
+  subtitle.textContent = "관리자 페이지는 Google 로그인 후 사용할 수 있습니다.";
+}
+
 function updateAccess() {
   const allowed = canEditAndPublish();
   renderMembers();
@@ -1324,7 +1343,10 @@ async function initAuth() {
   }
 
   const result = await access.ready;
-  if (!result.allowed) return;
+  if (!result.allowed) {
+    renderDeniedAuthState(result);
+    return;
+  }
   currentUser = result.user;
   currentRole = result.role;
   managedMembers = loadManagedMembers();

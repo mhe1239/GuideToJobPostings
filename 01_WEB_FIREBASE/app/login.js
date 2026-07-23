@@ -13,9 +13,22 @@ function setLoginState(title, message) {
   span.textContent = message;
 }
 
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
 function resolveLoginRole(email) {
-  if (email) return "관리자 관리 가능";
-  return "보기만 가능";
+  const normalized = normalizeEmail(email);
+  const primaryAdmin = normalizeEmail(window.KANGNAM_ADMIN_CONFIG?.primaryAdminEmail);
+  const owners = window.KANGNAM_FIREBASE?.roleLists?.owners || [];
+  const editors = window.KANGNAM_FIREBASE?.roleLists?.editors || [];
+  if (normalized && (normalized === primaryAdmin || owners.map(normalizeEmail).includes(normalized))) return "관리자 관리 가능";
+  if (normalized && editors.map(normalizeEmail).includes(normalized)) return "수정 및 공개 가능";
+  return "관리자 권한 없음";
+}
+
+function canOpenAdmin(email) {
+  return resolveLoginRole(email) !== "관리자 권한 없음";
 }
 
 function goToAdminPage() {
@@ -33,7 +46,7 @@ function initLoginAuth() {
     .then((result) => {
       if (result?.user) {
         setLoginState(`${result.user.email} · ${resolveLoginRole(result.user.email)}`, "로그인되었습니다. 관리자 메뉴로 이동합니다.");
-        goToAdminPage();
+        if (canOpenAdmin(result.user.email)) goToAdminPage();
       }
     })
     .catch((error) => {
@@ -48,7 +61,12 @@ function initLoginAuth() {
     }
 
     loginElements.logoutButton.disabled = false;
-    setLoginState(`${user.email} · ${resolveLoginRole(user.email)}`, "로그인되었습니다. 관리자 메뉴로 이동합니다.");
+    const role = resolveLoginRole(user.email);
+    if (!canOpenAdmin(user.email)) {
+      setLoginState(`${user.email} · ${role}`, "이 계정은 관리자 목록에 없습니다. 최고 관리자 계정으로 다시 로그인해 주세요.");
+      return;
+    }
+    setLoginState(`${user.email} · ${role}`, "로그인되었습니다. 관리자 메뉴로 이동합니다.");
     goToAdminPage();
   });
 }

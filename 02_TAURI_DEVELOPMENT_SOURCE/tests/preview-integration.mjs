@@ -6,6 +6,7 @@ const root = new URL("../", import.meta.url);
 const listHtml = await readFile(new URL("app/index.html", root), "utf8");
 const html = await readFile(new URL("app/notice.html", root), "utf8");
 const adminHtml = await readFile(new URL("app/admin.html", root), "utf8");
+const loginHtml = await readFile(new URL("app/login.html", root), "utf8");
 const membersHtml = await readFile(new URL("app/members.html", root), "utf8");
 const publishHtml = await readFile(new URL("app/publish.html", root), "utf8");
 const manageHtml = await readFile(new URL("app/manage.html", root), "utf8");
@@ -13,6 +14,7 @@ const styles = await readFile(new URL("app/styles.css", root), "utf8");
 const script = await readFile(new URL("app/main.js", root), "utf8");
 const answerServiceScript = await readFile(new URL("app/answer-service.js", root), "utf8");
 const listScript = await readFile(new URL("app/list.js", root), "utf8");
+const loginScript = await readFile(new URL("app/login.js", root), "utf8");
 const adminGuardScript = await readFile(new URL("app/admin-guard.js", root), "utf8");
 const adminScript = await readFile(new URL("app/admin.js", root), "utf8");
 const schoolNoticeMockJson = await readFile(new URL("app/school-notices.mock.json", root), "utf8");
@@ -188,6 +190,27 @@ async function bootSeededPrimaryWithStaleRole() {
   return window;
 }
 
+async function bootLogin(user, members = []) {
+  const window = new Window({ url: "http://127.0.0.1:4173/login.html" });
+  const page = loginHtml
+    .replace(/<script src="\.\/admin-config\.js[^"]*"><\/script>/, "")
+    .replace(/<script src="\.\/login\.js[^"]*" defer><\/script>/, "");
+  window.document.write(page);
+  window.document.close();
+  window.localStorage.setItem("kangnamManagedMembers", JSON.stringify(members));
+  window.KANGNAM_ADMIN_CONFIG = { primaryAdminEmail: "tee01202@gmail.com" };
+  window.KANGNAM_FIREBASE = {
+    auth: {},
+    roleLists: { owners: ["tee01202@gmail.com"], editors: ["editor@kangnam.ac.kr"] },
+    getRedirectResult: async () => null,
+    onAuthStateChanged: (_auth, callback) => callback(user),
+    signOut: async () => {},
+  };
+  window.eval(loginScript);
+  await new Promise((resolve) => window.setTimeout(resolve, 0));
+  return window;
+}
+
 function setValue(window, selector, value) {
   const element = window.document.querySelector(selector);
   element.value = value;
@@ -244,6 +267,10 @@ const seededPrimaryWindow = await bootAdminGuard(membersHtml, { email: "tee01202
   { email: "old-owner@kangnam.ac.kr", role: "owner", source: "최고 관리자" },
 ], "http://127.0.0.1:4173/members.html");
 const stalePrimaryWindow = await bootSeededPrimaryWithStaleRole();
+const signedOutLoginWindow = await bootLogin(null);
+const studentLoginWindow = await bootLogin({ email: "student@kangnam.ac.kr" });
+const editorLoginWindow = await bootLogin({ email: "editor@kangnam.ac.kr" });
+const ownerLoginWindow = await bootLogin({ email: "tee01202@gmail.com" });
 
 assert.equal(signedOutAdminWindow.document.body.dataset.adminGuard, "denied", "로그아웃 상태에서는 관리자 페이지 접근을 차단해야 합니다.");
 assert.equal(signedOutAdminWindow.document.querySelector("#admin-guard-message").textContent, "관리자만 접근 가능한 페이지입니다.", "로그아웃 차단 안내 문구가 정확해야 합니다.");
@@ -277,6 +304,13 @@ setValue(stalePrimaryWindow, "#member-email", "fixed-admin@kangnam.ac.kr");
 stalePrimaryWindow.document.querySelector("#member-role").value = "editor";
 stalePrimaryWindow.document.querySelector("#member-form").dispatchEvent(new stalePrimaryWindow.Event("submit", { bubbles: true, cancelable: true }));
 assert.equal(JSON.parse(stalePrimaryWindow.localStorage.getItem("kangnamManagedMembers")).some((member) => member.email === "fixed-admin@kangnam.ac.kr" && member.role === "editor"), true, "복구된 최고 관리자 계정에서도 관리자 추가가 저장되어야 합니다.");
+assert.equal(signedOutLoginWindow.document.querySelector('[href="./admin.html"]').hidden, true, "로그인 전에는 관리자 메뉴 버튼을 숨겨야 합니다.");
+assert.equal(studentLoginWindow.document.querySelector('[href="./admin.html"]').hidden, true, "학생 권한 계정에는 관리자 메뉴 버튼을 숨겨야 합니다.");
+assert.equal(studentLoginWindow.document.querySelector('[href="./members.html"]').hidden, true, "학생 권한 계정에는 관리자 관리 버튼을 숨겨야 합니다.");
+assert.equal(editorLoginWindow.document.querySelector('[href="./admin.html"]').hidden, false, "수정 및 공개 가능 계정에는 관리자 메뉴 버튼을 보여야 합니다.");
+assert.equal(editorLoginWindow.document.querySelector('[href="./members.html"]').hidden, true, "수정 및 공개 가능 계정에는 관리자 관리 버튼을 숨겨야 합니다.");
+assert.equal(editorLoginWindow.document.querySelector('[href="./publish.html"]').hidden, false, "수정 및 공개 가능 계정에는 AI 공고 생성 버튼을 보여야 합니다.");
+assert.equal(ownerLoginWindow.document.querySelector('[href="./members.html"]').hidden, false, "최고 관리자 계정에는 관리자 관리 버튼을 보여야 합니다.");
 
 assert.equal(listDocument.querySelector("#notice"), null, "공고 선택 화면에는 상세 공고 본문이 없어야 합니다.");
 assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 4, "공고 선택 화면에는 여러 공고가 4열 카드로 표시되어야 합니다.");
@@ -511,4 +545,4 @@ assert.match(styles, /\.source-image-link img,[\s\S]*\.full-notice-image-wrap im
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 
-console.log("preview integration: 150 checks passed");
+console.log("preview integration: 157 checks passed");

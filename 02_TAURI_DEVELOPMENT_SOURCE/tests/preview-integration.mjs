@@ -106,7 +106,9 @@ assert.doesNotMatch(html + listHtml + script + listScript, /(sk-[A-Za-z0-9_-]{20
 assert.match(document.querySelector("#feedback-title").textContent, /확인할 내용/, "부서 피드백 메모가 화면에 표시되어야 합니다.");
 assert.equal(document.querySelector('link[rel="preload"][as="font"]').getAttribute("href"), "./assets/fonts/PretendardVariable.woff2", "공통 글꼴을 렌더링 전에 불러와야 합니다.");
 assert.match(styles, /font-family:\s*"Pretendard Variable"/, "Mac, Windows, 웹에서 공통 글꼴을 우선 사용해야 합니다.");
+assert.match(styles, /\.notice-hero h1\s*\{[^}]*word-break:\s*keep-all/s, "상세 공고 제목은 한글 단어 중간에서 줄바꿈되지 않아야 합니다.");
+assert.match(styles, /\.notice-hero h1\s*\{[^}]*overflow-wrap:\s*anywhere/s, "매우 긴 공고 제목은 좁은 화면에서도 영역을 넘지 않아야 합니다.");
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 
-console.log("preview integration: 34 checks passed");
+console.log("preview integration: 36 checks passed");

@@ -11,9 +11,9 @@
     <link rel="icon" type="image/png" href="./assets/icons/32x32.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="./assets/icons/128x128.png" />
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260723-compact-hero" />
     <script type="module" src="./firebase-config.js?v=20260722-notice-list"></script>
-    <script src="./main.js?v=20260722-answer-label" defer></script>
+    <script src="./main.js?v=20260723-admin-login-label" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">본문으로 바로가기</a>
@@ -33,7 +33,7 @@
         </a>
         <a class="auth-nav" id="header-auth-link" href="./login.html">
           <span aria-hidden="true"></span>
-          Google 로그인
+          관리자 로그인
         </a>
       </div>
     </header>
@@ -41,9 +41,12 @@
     <main id="main-content">
       <div class="page-shell">
         <nav class="breadcrumb" aria-label="현재 위치">
-          <span>대학생활</span>
+          <a class="button secondary notice-list-back" href="./index.html">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+            공고 목록으로
+          </a>
           <svg aria-hidden="true" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5" /></svg>
-          <span id="breadcrumb-category">비교과 프로그램</span>
+          <span id="breadcrumb-category" aria-current="page">비교과 프로그램</span>
         </nav>
 
         <section class="notice-hero" id="notice" aria-labelledby="notice-title" tabindex="-1">

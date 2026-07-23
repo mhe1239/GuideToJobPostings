@@ -101,7 +101,7 @@ function initListAuth() {
   firebase.onAuthStateChanged(firebase.auth, (user) => {
     if (!listElements.authLink) return;
     listElements.authLink.href = user ? "./admin.html" : "./login.html";
-    listElements.authLink.lastChild.textContent = user ? "관리자 메뉴" : "Google 로그인";
+    listElements.authLink.lastChild.textContent = user ? "관리자 메뉴" : "관리자 로그인";
   });
 }
 

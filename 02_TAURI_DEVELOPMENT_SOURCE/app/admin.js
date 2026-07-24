@@ -11,7 +11,7 @@ const MAX_NOTICE_CHARS = 9000;
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
 const SCHOOL_NOTICE_MOCK_URL = "./school-notices.mock.json";
-const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
+const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감 임박", "마감"]);
 const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
 const LEGACY_DEFAULT_NOTICE_URL =
   "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9";
@@ -23,8 +23,8 @@ const ADMIN_DEFAULT_NOTICES = Object.freeze([
     category: "비교과 프로그램",
     department: "입학전형관리팀",
     date: "2026.07.20",
-    status: "모집 중",
-    recruitmentStatus: "모집 중",
+    status: "마감 임박",
+    recruitmentStatus: "마감 임박",
     eligibleEnrollmentStatus: ["재학생"],
     eligibleGrades: "",
     transferStudentEligible: true,

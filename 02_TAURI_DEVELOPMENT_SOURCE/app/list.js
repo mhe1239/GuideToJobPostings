@@ -4,7 +4,7 @@ const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
 const FIRESTORE_AUTHORITATIVE_KEY = "kangnamFirestoreAuthoritativeV2";
 const FILTER_ALL = "전체";
-const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
+const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감 임박", "마감"]);
 const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
 
 const DEFAULT_NOTICES = Object.freeze([
@@ -14,8 +14,8 @@ const DEFAULT_NOTICES = Object.freeze([
     category: "비교과 프로그램",
     department: "입학전형관리팀",
     date: "2026.07.20",
-    status: "모집 중",
-    recruitmentStatus: "모집 중",
+    status: "마감 임박",
+    recruitmentStatus: "마감 임박",
     eligibleEnrollmentStatus: ["재학생"],
     eligibleGrades: "",
     transferStudentEligible: true,
@@ -327,6 +327,7 @@ function createNoticeLink(notice) {
   const action = document.createElement("span");
   link.className = "notice-list-item";
   link.href = `./notice.html?notice=${encodeURIComponent(notice.id)}`;
+  link.dataset.status = getNoticeRecruitmentStatus(notice);
   top.className = "notice-card-top";
   category.className = "notice-card-category";
   status.className = "notice-card-status";

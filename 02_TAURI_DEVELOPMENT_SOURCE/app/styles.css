@@ -321,9 +321,15 @@ button:disabled {
   border-color: var(--status-warning-100);
 }
 
-.status-badge[data-status="마감"] {
+.status-badge[data-status="마감 임박"] {
   color: var(--status-danger-700);
   border-color: var(--status-danger-100);
+}
+
+.status-badge[data-status="마감"] {
+  color: var(--ink-soft);
+  background: var(--surface-muted);
+  border-color: var(--border-strong);
 }
 
 .virtual-badge {
@@ -941,6 +947,18 @@ button:disabled {
   border-style: solid;
 }
 
+.status-filter-chip[data-filter-value="마감 임박"].active {
+  color: var(--status-danger-700);
+  background: var(--surface);
+  border-color: var(--status-danger-700);
+}
+
+.status-filter-chip[data-filter-value="마감"].active {
+  color: var(--ink-soft);
+  background: var(--surface-muted);
+  border-color: var(--border-strong);
+}
+
 .filter-reset-button {
   justify-self: end;
   padding: 7px 12px;
@@ -980,6 +998,22 @@ button:disabled {
   border-color: var(--primary-700);
   box-shadow: 0 8px 20px rgb(23 58 103 / 10%);
   transform: translateY(-1px);
+}
+
+.notice-list-item[data-status="마감"] {
+  opacity: 0.86;
+  background: var(--surface-muted);
+  border-color: var(--border);
+  box-shadow: none;
+  filter: grayscale(0.45);
+}
+
+.notice-list-item[data-status="마감"]:hover,
+.notice-list-item[data-status="마감"]:focus-visible {
+  opacity: 0.95;
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 12px rgb(23 58 103 / 8%);
+  transform: none;
 }
 
 .notice-card-top {
@@ -1033,10 +1067,21 @@ button:disabled {
   border-style: solid;
 }
 
-.notice-card-status[data-status="마감"] {
+.notice-card-status[data-status="마감 임박"] {
   color: var(--status-danger-700);
   background: var(--surface);
   border-color: var(--status-danger-700);
+}
+
+.notice-card-status[data-status="마감"] {
+  color: var(--ink-soft);
+  background: var(--surface-muted);
+  border-color: var(--border-strong);
+  border-style: solid;
+}
+
+.notice-list-item[data-status="마감"] small {
+  color: var(--ink-soft);
 }
 
 .notice-list-item strong {

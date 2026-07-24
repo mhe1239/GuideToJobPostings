@@ -283,7 +283,7 @@ function bootNoticeWithStaleStoredSource() {
   return window;
 }
 
-function bootPublish() {
+function bootPublish({ publishedNotices = [], deletedNoticeIds = [] } = {}) {
   const window = new Window({ url: "http://127.0.0.1:4173/publish.html" });
   const page = publishHtml
     .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
@@ -298,6 +298,8 @@ function bootPublish() {
   window.localStorage.setItem("kangnamManagedMembers", JSON.stringify([
     { email: "admin@kangnam.ac.kr", role: "owner" },
   ]));
+  window.localStorage.setItem("kangnamPublishedNotices", JSON.stringify(publishedNotices));
+  window.localStorage.setItem("kangnamDeletedNoticeIds", JSON.stringify(deletedNoticeIds));
   window.alert = () => {
     throw new Error("완료 안내는 브라우저 alert를 사용하지 않아야 합니다.");
   };
@@ -808,6 +810,55 @@ click(manageWindow, "#bulk-delete-published-button");
 await new Promise((resolve) => manageWindow.setTimeout(resolve, 0));
 assert.equal(manageDocument.querySelector(".publish-completion-toast").textContent, "6개 공고를 삭제했습니다.", "선택한 공개 공고를 한 번에 삭제할 수 있어야 합니다.");
 assert.equal(JSON.parse(manageWindow.localStorage.getItem("kangnamPublishedNotices")).length, 0, "일괄 삭제한 공고는 저장 목록에서 제거되어야 합니다.");
+const deletedNoticeIds = JSON.parse(manageWindow.localStorage.getItem("kangnamDeletedNoticeIds"));
+const republishWindow = bootPublish({ publishedNotices: [], deletedNoticeIds });
+const republishDocument = republishWindow.document;
+await new Promise((resolve) => republishWindow.setTimeout(resolve, 0));
+click(republishWindow, "input[value='list']");
+click(republishWindow, "#load-school-notices-button");
+await new Promise((resolve) => republishWindow.setTimeout(resolve, 500));
+const republishSourceMock = schoolNoticeMocks.find((notice) => notice.sourceUrl === approvedSchoolNotice.sourceUrl);
+assert.ok(republishSourceMock, "재등록 대상 공고는 학교 가져오기 목록에서 같은 원문 URL로 다시 찾을 수 있어야 합니다.");
+const republishItems = [...republishDocument.querySelectorAll(".school-notice-item")];
+assert.equal(republishItems.length, 10, "재등록 확인 시 학교 홈페이지 공고 목록을 다시 불러와야 합니다.");
+const republishItem = republishItems.find((item) => item.dataset.noticeId === republishSourceMock.id || item.textContent.includes(republishSourceMock.title));
+assert.ok(republishItem, "manage.html에서 삭제한 학교 공고는 publish.html 가져오기 목록에 다시 표시되어야 합니다.");
+assert.equal(republishItem.disabled, false, "manage.html에서 삭제한 학교 공고는 publish.html에서 다시 선택할 수 있어야 합니다.");
+republishItem.dispatchEvent(new republishWindow.MouseEvent("dblclick", { bubbles: true }));
+await new Promise((resolve) => republishWindow.setTimeout(resolve, 0));
+setValue(republishWindow, "#draft-title", "삭제 후 재등록 테스트 공고");
+click(republishWindow, "#sticky-approve-draft-button");
+await new Promise((resolve) => republishWindow.setTimeout(resolve, 0));
+const republishedNotices = JSON.parse(republishWindow.localStorage.getItem("kangnamPublishedNotices"));
+const republishedNotice = republishedNotices.find((notice) => notice.id === approvedSchoolNotice.id);
+assert.ok(republishedNotice, "삭제했던 공고를 다시 공개하면 같은 ID로 저장되어야 합니다.");
+assert.equal(republishedNotice.title, "삭제 후 재등록 테스트 공고", "삭제 후 재등록한 공고의 새 제목이 저장되어야 합니다.");
+assert.equal(JSON.parse(republishWindow.localStorage.getItem("kangnamDeletedNoticeIds")).includes(approvedSchoolNotice.id), false, "재등록한 공고 ID는 삭제 목록에서 제거되어야 합니다.");
+const republishedListWindow = bootListWithStorage(republishedNotices, JSON.parse(republishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
+assert.match(republishedListWindow.document.querySelector("#notice-list").textContent, /삭제 후 재등록 테스트 공고/, "삭제했던 공고도 다시 공개하면 학생 목록에 다시 표시되어야 합니다.");
+const duplicateSourceNotices = [
+  {
+    ...republishedNotice,
+    id: "duplicate-source-a",
+    title: "중복 출처 A 공고",
+    summary: "A 공고만의 상세 내용입니다.",
+    originalContent: "A 공고 전체 내용",
+  },
+  {
+    ...republishedNotice,
+    id: "duplicate-source-b",
+    title: "중복 출처 B 공고",
+    summary: "B 공고만의 상세 내용입니다.",
+    originalContent: "B 공고 전체 내용",
+  },
+];
+const duplicateSourceListWindow = bootListWithStorage(duplicateSourceNotices, []);
+assert.match(duplicateSourceListWindow.document.querySelector("#notice-list").textContent, /중복 출처 A 공고/, "같은 원문 URL을 가진 첫 번째 공고도 목록에 유지되어야 합니다.");
+assert.match(duplicateSourceListWindow.document.querySelector("#notice-list").textContent, /중복 출처 B 공고/, "같은 원문 URL을 가진 두 번째 공고도 목록에 유지되어야 합니다.");
+const duplicateSourceDetailWindow = bootNoticeWithStorage("duplicate-source-b", duplicateSourceNotices, []);
+assert.equal(duplicateSourceDetailWindow.document.querySelector("#notice-title").textContent, "중복 출처 B 공고", "상세 페이지는 sourceUrl이 같아도 notice ID에 맞는 공고 제목을 표시해야 합니다.");
+assert.match(duplicateSourceDetailWindow.document.querySelector("#program-overview").textContent, /B 공고만의 상세 내용/, "상세 페이지는 sourceUrl이 같아도 notice ID에 맞는 공고 내용을 표시해야 합니다.");
+assert.equal(duplicateSourceDetailWindow.document.querySelector("#source-original-link").href, republishedNotice.sourceUrl, "상세 페이지의 공식 원문 링크는 해당 공고의 sourceUrl을 유지해야 합니다.");
 assert.equal(document.querySelectorAll(".faq-item").length, 3, "P0 FAQ 3개가 표시되어야 합니다.");
 assert.equal(document.querySelectorAll(".key-facts > div").length, 6, "핵심 정보는 신청 기간, 지원 대상, 모집 분야, 제출 서류, 운영 기간, 담당 부서 6개 항목으로 표시되어야 합니다.");
 assert.equal(document.querySelector("#fact-documents").textContent, "지원서", "핵심 정보에 제출 서류가 표시되어야 합니다.");

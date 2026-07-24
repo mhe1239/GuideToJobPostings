@@ -173,25 +173,25 @@ const MOCK_SCHOOL_NOTICES = Object.freeze([
     eligibleGrades: "전체 학년",
     transferStudentEligible: null,
     graduateEligible: null,
-    summary: "학생 역량 강화를 위한 비교과 프로그램 참가자를 모집하는 예시 공고입니다.",
+    summary: "학생 역량 강화를 위한 비교과 프로그램 참가자를 모집하는 공고입니다.",
     facts: { period: "7월 23일 ~ 8월 5일", eligibility: "강남대학교 재학생", field: "비교과 프로그램", documents: "참가 신청서", operation: "2026학년도 2학기" },
   },
-  { id: "mock-school-02", title: "2026학년도 2학기 장학금 신청 안내", department: "장학복지팀", publishedAt: "2026.07.22", sourceType: "pdf", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "장학", status: "안내", recruitmentStatus: "모집 예정", eligibleEnrollmentStatus: ["재학생"], eligibleGrades: "2~4학년", transferStudentEligible: null, graduateEligible: false, summary: "2학기 장학금 신청 절차와 제출 서류를 안내하는 예시 공고입니다.", facts: { period: "7월 22일 ~ 8월 9일", eligibility: "장학금 신청 희망 재학생", field: "교내 장학", documents: "신청서, 증빙서류", operation: "2026학년도 2학기" } },
-  { id: "mock-school-03", title: "학생 상담 프로그램 참여자 모집", department: "학생상담센터", publishedAt: "2026.07.21", sourceType: "image", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "비교과 프로그램", status: "모집 중", recruitmentStatus: "모집 중", eligibleEnrollmentStatus: ["재학생", "휴학생"], eligibleGrades: "", transferStudentEligible: null, graduateEligible: null, summary: "학생 심리 지원을 위한 상담 프로그램 참여자를 모집하는 예시 공고입니다.", facts: { period: "7월 21일 ~ 7월 31일", eligibility: "상담 참여 희망 학생", field: "상담 프로그램", documents: "온라인 신청서", operation: "8월 중" } },
-  { id: "mock-school-04", title: "휴학 및 복학 신청 기간 안내", department: "학사관리팀", publishedAt: "2026.07.20", sourceType: "html", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "학사", status: "안내", recruitmentStatus: "모집 예정", eligibleEnrollmentStatus: ["재학생", "휴학생"], eligibleGrades: "전체 학년", transferStudentEligible: null, graduateEligible: false, summary: "휴학과 복학 신청 기간, 신청 경로를 안내하는 예시 공고입니다.", facts: { period: "7월 20일 ~ 8월 14일", eligibility: "휴학 또는 복학 예정 학생", field: "학적 변동", documents: "신청서 및 사유서", operation: "2026학년도 2학기" } },
-  { id: "mock-school-05", title: "진로 취업 특강 참가 신청 안내", department: "대학일자리플러스센터", publishedAt: "2026.07.19", sourceType: "image", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "취업", status: "모집 중", recruitmentStatus: "모집 중", eligibleEnrollmentStatus: ["재학생"], eligibleGrades: "3~4학년", transferStudentEligible: true, graduateEligible: true, summary: "진로 설계와 취업 준비를 돕는 특강 참가 신청 예시 공고입니다.", facts: { period: "7월 19일 ~ 7월 29일", eligibility: "강남대학교 재학생 및 졸업예정자", field: "진로 취업 특강", documents: "참가 신청서", operation: "8월 1일" } },
-  { id: "mock-school-06", title: "교내 봉사활동 모집 안내", department: "사회봉사센터", publishedAt: "2026.07.18", sourceType: "pdf", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "행사", status: "모집 중", recruitmentStatus: "모집 중", eligibleEnrollmentStatus: ["재학생"], eligibleGrades: "", transferStudentEligible: null, graduateEligible: null, summary: "교내 봉사활동 참여 인원과 활동 일정을 안내하는 예시 공고입니다.", facts: { period: "7월 18일 ~ 8월 1일", eligibility: "봉사활동 참여 희망 학생", field: "교내 봉사", documents: "활동 신청서", operation: "8월 중" } },
-  { id: "mock-school-07", title: "도서관 이용 교육 신청 안내", department: "중앙도서관", publishedAt: "2026.07.17", sourceType: "html", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "학사", status: "안내", recruitmentStatus: "마감", eligibleEnrollmentStatus: [], eligibleGrades: "", transferStudentEligible: null, graduateEligible: null, summary: "도서관 자료 검색과 전자자료 활용 교육 신청 예시 공고입니다.", facts: { period: "7월 17일 ~ 7월 30일", eligibility: "강남대학교 구성원", field: "도서관 이용 교육", documents: "온라인 신청", operation: "8월 첫째 주" } },
-  { id: "mock-school-08", title: "국제교류 프로그램 설명회 안내", department: "국제교류팀", publishedAt: "2026.07.16", sourceType: "image", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "행사", status: "안내", recruitmentStatus: "모집 예정", eligibleEnrollmentStatus: ["재학생"], eligibleGrades: "2~4학년", transferStudentEligible: true, graduateEligible: false, summary: "교환학생과 단기 연수 프로그램 설명회 일정을 안내하는 예시 공고입니다.", facts: { period: "7월 16일 ~ 7월 25일", eligibility: "국제교류 프로그램 관심 학생", field: "설명회", documents: "사전 신청서", operation: "7월 28일" } },
-  { id: "mock-school-09", title: "캡스톤디자인 팀 모집 안내", department: "교육혁신팀", publishedAt: "2026.07.15", sourceType: "pdf", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "비교과 프로그램", status: "모집 중", recruitmentStatus: "모집 중", eligibleEnrollmentStatus: ["재학생"], eligibleGrades: "3~4학년", transferStudentEligible: true, graduateEligible: false, summary: "캡스톤디자인 프로젝트 팀 구성과 신청 방법을 안내하는 예시 공고입니다.", facts: { period: "7월 15일 ~ 8월 7일", eligibility: "캡스톤디자인 참여 학생", field: "팀 프로젝트", documents: "팀 신청서, 계획서", operation: "2026학년도 2학기" } },
-  { id: "mock-school-10", title: "장애학생 지원 서비스 신청 안내", department: "장애학생지원센터", publishedAt: "2026.07.14", sourceType: "html", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "장학", status: "안내", recruitmentStatus: "마감", eligibleEnrollmentStatus: [], eligibleGrades: "", transferStudentEligible: null, graduateEligible: null, summary: "장애학생 학습 지원 서비스 신청 절차를 안내하는 예시 공고입니다.", facts: { period: "상시 신청", eligibility: "지원 서비스가 필요한 학생", field: "학습 지원 서비스", documents: "신청서, 관련 증빙", operation: "학기 중" } },
+  { id: "mock-school-02", title: "2026학년도 2학기 장학금 신청 안내", department: "장학복지팀", publishedAt: "2026.07.22", sourceType: "pdf", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "장학", status: "안내", recruitmentStatus: "모집 예정", eligibleEnrollmentStatus: ["재학생"], eligibleGrades: "2~4학년", transferStudentEligible: null, graduateEligible: false, summary: "2학기 장학금 신청 절차와 제출 서류를 안내하는 공고입니다.", facts: { period: "7월 22일 ~ 8월 9일", eligibility: "장학금 신청 희망 재학생", field: "교내 장학", documents: "신청서, 증빙서류", operation: "2026학년도 2학기" } },
+  { id: "mock-school-03", title: "학생 상담 프로그램 참여자 모집", department: "학생상담센터", publishedAt: "2026.07.21", sourceType: "image", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "비교과 프로그램", status: "모집 중", recruitmentStatus: "모집 중", eligibleEnrollmentStatus: ["재학생", "휴학생"], eligibleGrades: "", transferStudentEligible: null, graduateEligible: null, summary: "학생 심리 지원을 위한 상담 프로그램 참여자를 모집하는 공고입니다.", facts: { period: "7월 21일 ~ 7월 31일", eligibility: "상담 참여 희망 학생", field: "상담 프로그램", documents: "온라인 신청서", operation: "8월 중" } },
+  { id: "mock-school-04", title: "휴학 및 복학 신청 기간 안내", department: "학사관리팀", publishedAt: "2026.07.20", sourceType: "html", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "학사", status: "안내", recruitmentStatus: "모집 예정", eligibleEnrollmentStatus: ["재학생", "휴학생"], eligibleGrades: "전체 학년", transferStudentEligible: null, graduateEligible: false, summary: "휴학과 복학 신청 기간, 신청 경로를 안내하는 공고입니다.", facts: { period: "7월 20일 ~ 8월 14일", eligibility: "휴학 또는 복학 예정 학생", field: "학적 변동", documents: "신청서 및 사유서", operation: "2026학년도 2학기" } },
+  { id: "mock-school-05", title: "진로 취업 특강 참가 신청 안내", department: "대학일자리플러스센터", publishedAt: "2026.07.19", sourceType: "image", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "취업", status: "모집 중", recruitmentStatus: "모집 중", eligibleEnrollmentStatus: ["재학생"], eligibleGrades: "3~4학년", transferStudentEligible: true, graduateEligible: true, summary: "진로 설계와 취업 준비를 돕는 특강 참가 신청 공고입니다.", facts: { period: "7월 19일 ~ 7월 29일", eligibility: "강남대학교 재학생 및 졸업예정자", field: "진로 취업 특강", documents: "참가 신청서", operation: "8월 1일" } },
+  { id: "mock-school-06", title: "교내 봉사활동 모집 안내", department: "사회봉사센터", publishedAt: "2026.07.18", sourceType: "pdf", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "행사", status: "모집 중", recruitmentStatus: "모집 중", eligibleEnrollmentStatus: ["재학생"], eligibleGrades: "", transferStudentEligible: null, graduateEligible: null, summary: "교내 봉사활동 참여 인원과 활동 일정을 안내하는 공고입니다.", facts: { period: "7월 18일 ~ 8월 1일", eligibility: "봉사활동 참여 희망 학생", field: "교내 봉사", documents: "활동 신청서", operation: "8월 중" } },
+  { id: "mock-school-07", title: "도서관 이용 교육 신청 안내", department: "중앙도서관", publishedAt: "2026.07.17", sourceType: "html", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "학사", status: "안내", recruitmentStatus: "마감", eligibleEnrollmentStatus: [], eligibleGrades: "", transferStudentEligible: null, graduateEligible: null, summary: "도서관 자료 검색과 전자자료 활용 교육 신청 공고입니다.", facts: { period: "7월 17일 ~ 7월 30일", eligibility: "강남대학교 구성원", field: "도서관 이용 교육", documents: "온라인 신청", operation: "8월 첫째 주" } },
+  { id: "mock-school-08", title: "국제교류 프로그램 설명회 안내", department: "국제교류팀", publishedAt: "2026.07.16", sourceType: "image", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "행사", status: "안내", recruitmentStatus: "모집 예정", eligibleEnrollmentStatus: ["재학생"], eligibleGrades: "2~4학년", transferStudentEligible: true, graduateEligible: false, summary: "교환학생과 단기 연수 프로그램 설명회 일정을 안내하는 공고입니다.", facts: { period: "7월 16일 ~ 7월 25일", eligibility: "국제교류 프로그램 관심 학생", field: "설명회", documents: "사전 신청서", operation: "7월 28일" } },
+  { id: "mock-school-09", title: "캡스톤디자인 팀 모집 안내", department: "교육혁신팀", publishedAt: "2026.07.15", sourceType: "pdf", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "비교과 프로그램", status: "모집 중", recruitmentStatus: "모집 중", eligibleEnrollmentStatus: ["재학생"], eligibleGrades: "3~4학년", transferStudentEligible: true, graduateEligible: false, summary: "캡스톤디자인 프로젝트 팀 구성과 신청 방법을 안내하는 공고입니다.", facts: { period: "7월 15일 ~ 8월 7일", eligibility: "캡스톤디자인 참여 학생", field: "팀 프로젝트", documents: "팀 신청서, 계획서", operation: "2026학년도 2학기" } },
+  { id: "mock-school-10", title: "장애학생 지원 서비스 신청 안내", department: "장애학생지원센터", publishedAt: "2026.07.14", sourceType: "html", sourceUrl: LEGACY_DEFAULT_NOTICE_URL, category: "장학", status: "안내", recruitmentStatus: "마감", eligibleEnrollmentStatus: [], eligibleGrades: "", transferStudentEligible: null, graduateEligible: null, summary: "장애학생 학습 지원 서비스 신청 절차를 안내하는 공고입니다.", facts: { period: "상시 신청", eligibility: "지원 서비스가 필요한 학생", field: "학습 지원 서비스", documents: "신청서, 관련 증빙", operation: "학기 중" } },
 ]);
 
 const SOURCE_TYPE_LABELS = Object.freeze({
   image: "이미지",
   pdf: "PDF",
   html: "HTML",
-  mock: "가상 샘플",
+  mock: "공고 정보",
 });
 
 const APPROVAL_STATUS_LABELS = Object.freeze({
@@ -1184,9 +1184,9 @@ function createDraftNoticeFromMock(mockNotice) {
   return {
     ...mockNotice,
     sourceTitle: mockNotice.title,
-    sourcePrefix: "프로토타입 예시 공고",
+    sourcePrefix: "학교 홈페이지 공고",
     isMockChoice: true,
-    dataMethod: "가상 샘플",
+    dataMethod: "학교 공고 선택",
     date: mockNotice.publishedAt,
     sections,
     images: [],
@@ -1361,7 +1361,7 @@ function buildModeratedNotice(baseNotice, approvalStatus) {
     imageUrls: [...new Set([...(baseNotice.imageUrls || []), ...(baseNotice.images || []), baseNotice.sourceImageUrl || ""].filter(Boolean))],
     publishedAt: baseNotice.publishedAt || baseNotice.date || today,
     sourceType: baseNotice.sourceType || (baseNotice.images?.length > 0 ? "image" : "html"),
-    dataMethod: baseNotice.isMockChoice ? "가상 샘플" : "AI 초안",
+    dataMethod: baseNotice.isMockChoice ? "학교 공고 선택" : "AI 초안",
     reviewed: approvalStatus === "published",
     reviewedAt: approvalStatus === "published" ? today : "",
     summary: summary || `${title} 공고입니다. 공식 원문과 관리자 검수 내용을 함께 확인해 주세요.`,
@@ -1690,7 +1690,7 @@ async function generateDraft() {
   updatePublishActionBar();
   adminPage.note.textContent = noticeInputMode === "url"
     ? "공식 링크의 텍스트와 이미지 공고 후보를 수집하고 있습니다."
-    : "프로토타입용 예시 공고 데이터를 바탕으로 초안을 생성하고 있습니다.";
+    : "선택한 학교 공고를 바탕으로 초안을 생성하고 있습니다.";
 
   try {
     if (noticeInputMode === "list") {
@@ -1705,9 +1705,9 @@ async function generateDraft() {
       adminPage.title.value = notice.title;
       adminPage.summary.value = draft.summary;
       adminPage.faq.value = draft.faq;
-      adminPage.evidence.value = `${draft.evidence}\n\n현재 공고 목록은 프로토타입용 예시 데이터입니다.`;
+      adminPage.evidence.value = draft.evidence;
       setApprovalStatus("review");
-      adminPage.note.textContent = `${notice.title} 예시 공고 기준으로 생성했습니다. 현재 결과는 프로토타입용 예시 데이터입니다.`;
+      adminPage.note.textContent = `${notice.title} 공고 기준으로 생성했습니다. 원문과 세부 내용을 확인한 뒤 공개해 주세요.`;
       updateApprovalState();
       showPublishCompletionToast("초안 생성을 완료했습니다.");
       return;

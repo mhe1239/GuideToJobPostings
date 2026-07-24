@@ -198,7 +198,7 @@ const SOURCE_TYPE_LABELS = Object.freeze({
   image: "이미지",
   pdf: "PDF",
   html: "HTML",
-  mock: "가상 샘플",
+  mock: "공고 정보",
 });
 
 const DEFAULT_NOTICE_BY_ID = new Map(DEFAULT_NOTICES.map((notice) => [notice.id, notice]));
@@ -732,7 +732,7 @@ function selectNotice(noticeId) {
 function renderNotice() {
   const sourceUrl = getOfficialSourceUrl(activeNotice);
   const sourceType = activeNotice.sourceType || (sourceUrl ? "html" : "mock");
-  const dataMethod = activeNotice.dataMethod || (sourceType === "mock" ? "가상 샘플" : "실제 공고 기반 재구성");
+  const dataMethod = activeNotice.dataMethod || (sourceType === "mock" ? "공고 정보 기반" : "실제 공고 기반 재구성");
   const reviewed = activeNotice.reviewed === true;
   const period = getFact(activeNotice, "period");
   const eligibility = getFact(activeNotice, "eligibility");
@@ -779,7 +779,7 @@ function renderNotice() {
   elements.dataMethod.textContent = dataMethod;
   elements.reviewStatusText.textContent = reviewed ? "검수 완료" : "검수 전";
   elements.reviewedAt.textContent = reviewed ? formatNoticeDate(activeNotice.reviewedAt) : "검수 전";
-  elements.mockSourceNote.hidden = dataMethod !== "가상 샘플" && sourceType !== "mock";
+  elements.mockSourceNote.hidden = true;
   setSourceLink(elements.sourceOriginalLink, sourceUrl);
   setSourceLink(elements.answerSourceLink, sourceUrl);
   setSourceLink(elements.departmentSourceLink, sourceUrl);

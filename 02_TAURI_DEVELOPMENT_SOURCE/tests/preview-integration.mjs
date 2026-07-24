@@ -941,6 +941,8 @@ assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.admin-menu-card\s*\{[\
 assert.match(styles, /\.publish-action-bar\s*\{[^}]*position:\s*fixed[^}]*bottom:\s*18px/s, "AI 공고 공개 빠른 작업바는 스크롤 중에도 하단에 고정되어야 합니다.");
 assert.match(styles, /\.publish-action-close\s*\{[^}]*width:\s*44px[^}]*height:\s*44px/s, "빠른 작업바 닫기 버튼은 모바일에서도 누르기 쉬운 44px 터치 영역을 가져야 합니다.");
 assert.match(styles, /\.publish-action-close:focus-visible\s*\{[^}]*outline:/s, "빠른 작업바 닫기 버튼은 키보드 포커스를 명확히 표시해야 합니다.");
+assert.match(styles, /\.publish-grid\s*\{[^}]*align-items:\s*start/s, "공고 입력 카드와 생성 초안 카드는 각 콘텐츠 높이에 맞춰야 합니다.");
+assert.match(styles, /\.publish-grid \.draft-panel\s*\{[^}]*min-height:\s*0[^}]*align-self:\s*start/s, "생성 초안 카드에는 불필요한 최소 높이와 하단 여백이 없어야 합니다.");
 assert.match(styles, /\.publish-action-summary strong\s*\{[^}]*white-space:\s*normal/s, "빠른 작업바의 최종 확인 문구는 잘리지 않고 줄바꿈되어야 합니다.");
 assert.doesNotMatch(styles, /body\.notice-color-preview/, "상세 공고의 임시 색상 미리보기 스타일은 제거되어야 합니다.");
 assert.match(styles, /\.bulk-selection-toolbar\s*\{[^}]*flex-wrap:\s*wrap[^}]*background:\s*var\(--primary-50\)[^}]*border:\s*1px solid var\(--primary-100\)/s, "일괄 선택 도구는 기존 관리자 블루 톤과 맞는 구분 영역으로 표시되어야 합니다.");

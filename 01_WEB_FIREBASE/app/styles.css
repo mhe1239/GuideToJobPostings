@@ -2579,6 +2579,7 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 
 .publish-grid {
   grid-template-columns: minmax(320px, 0.82fr) minmax(460px, 1.38fr);
+  align-items: start;
 }
 
 .manage-grid {
@@ -2608,7 +2609,8 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 }
 
 .publish-grid .draft-panel {
-  min-height: 680px;
+  min-height: 0;
+  align-self: start;
 }
 
 .admin-panel {

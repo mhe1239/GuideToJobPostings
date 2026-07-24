@@ -34,7 +34,7 @@ function getStudentDestination() {
 function updateSignedOutState() {
   loginElements.googleButton.hidden = false;
   loginElements.logoutButton.disabled = true;
-  loginElements.studentLink.href = getStudentDestination();
+  loginElements.studentLink.href = new URL("./index.html", window.location.href).href;
   loginElements.studentLink.textContent = "로그인 없이 공고 보기";
   setLoginState("로그인 대기", "로그인 후 계정 권한을 자동으로 확인합니다.");
 }

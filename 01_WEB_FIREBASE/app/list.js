@@ -109,7 +109,8 @@ const listElements = {
   personalizedSummary: document.querySelector("#personalized-summary"),
   personalizedTitle: document.querySelector("#personalized-search-title"),
   personalizedPrivacyNote: document.querySelector("#personalized-privacy-note"),
-  personalizedProfileLink: document.querySelector("#personalized-profile-link"),
+  personalizationToggle: document.querySelector("#personalization-toggle"),
+  personalizationToggleState: document.querySelector("#personalization-toggle-state"),
 };
 
 const activeFilters = {
@@ -117,6 +118,8 @@ const activeFilters = {
   recruitmentStatus: FILTER_ALL,
 };
 let signedInStudent = null;
+let studentProfileFilterEnabled = true;
+let savedStudentProfile = null;
 
 function loadPublishedNotices() {
   try {
@@ -223,6 +226,10 @@ function getStudentProfile() {
   };
 }
 
+function getEffectiveStudentProfile() {
+  return getStudentProfile();
+}
+
 function fillStudentProfile(profile = {}) {
   const normalized = window.KANGNAM_STUDENT_PROFILE?.normalize(profile) || profile;
   listElements.enrollmentRadios.forEach((radio) => {
@@ -244,33 +251,62 @@ function resetStudentProfileControls() {
   });
 }
 
-function setStudentProfileMode(user) {
-  signedInStudent = user || null;
-  const isStudent = Boolean(signedInStudent);
-  const controls = [
+function updatePersonalizationToggle() {
+  if (!listElements.personalizationToggle) return;
+  listElements.personalizationToggle.setAttribute("aria-checked", String(studentProfileFilterEnabled));
+  listElements.personalizationToggle.dataset.enabled = String(studentProfileFilterEnabled);
+  if (listElements.personalizationToggleState) {
+    listElements.personalizationToggleState.textContent = studentProfileFilterEnabled ? "켬" : "끔";
+  }
+}
+
+function setProfileControlsDisabled(disabled) {
+  [
     ...listElements.enrollmentRadios,
     listElements.gradeSelect,
     listElements.transferCheckbox,
     ...listElements.interestCheckboxes,
-  ].filter(Boolean);
-  controls.forEach((control) => {
-    control.disabled = isStudent;
+  ].filter(Boolean).forEach((control) => {
+    control.disabled = disabled;
   });
+}
+
+function setStudentProfileMode(user, savedProfile = {}) {
+  signedInStudent = user || null;
+  const isStudent = Boolean(signedInStudent);
+  savedStudentProfile = isStudent
+    ? (window.KANGNAM_STUDENT_PROFILE?.normalize(savedProfile) || savedProfile)
+    : null;
+  const isConfigured = window.KANGNAM_STUDENT_PROFILE?.isConfigured(savedStudentProfile) === true;
+  studentProfileFilterEnabled = isStudent && isConfigured
+    ? savedStudentProfile.filterEnabled !== false
+    : false;
+
+  if (isStudent && studentProfileFilterEnabled) {
+    fillStudentProfile(savedStudentProfile);
+  } else if (isStudent) {
+    resetStudentProfileControls();
+  }
+  setProfileControlsDisabled(isStudent && studentProfileFilterEnabled);
 
   if (listElements.personalizedTitle) {
-    listElements.personalizedTitle.textContent = isStudent
+    listElements.personalizedTitle.textContent = isStudent && studentProfileFilterEnabled
       ? "저장된 내 정보로 공고를 골랐습니다"
-      : "로그인 없이 조건을 선택하세요";
+      : isStudent
+        ? "원하는 조건으로 공고를 골라보세요"
+        : "로그인 없이 조건을 선택하세요";
   }
   if (listElements.personalizedPrivacyNote) {
-    listElements.personalizedPrivacyNote.textContent = isStudent ? "이 기기에 저장" : "저장 안 함";
+    listElements.personalizedPrivacyNote.textContent = isStudent && studentProfileFilterEnabled
+      ? "이 기기에 저장"
+      : isStudent
+        ? "임시 선택"
+        : "저장 안 함";
   }
-  if (listElements.personalizedResetButton) listElements.personalizedResetButton.hidden = isStudent;
-  if (listElements.personalizedProfileLink) {
-    listElements.personalizedProfileLink.hidden = !isStudent;
-    listElements.personalizedProfileLink.textContent = window.KANGNAM_STUDENT_PROFILE?.isConfigured(getStudentProfile())
-      ? "내 정보 수정"
-      : "내 정보 설정";
+  if (listElements.personalizedResetButton) listElements.personalizedResetButton.hidden = false;
+  if (listElements.personalizationToggle) {
+    listElements.personalizationToggle.hidden = !isStudent || !isConfigured;
+    updatePersonalizationToggle();
   }
 }
 
@@ -332,7 +368,7 @@ function matchesStudentProfile(notice, profile) {
 }
 
 function getFilteredNotices(notices) {
-  const profile = getStudentProfile();
+  const profile = getEffectiveStudentProfile();
   return notices.filter((notice) => {
     const matchesCategory = activeFilters.category === FILTER_ALL || getNoticeCategory(notice) === activeFilters.category;
     const matchesStatus = activeFilters.recruitmentStatus === FILTER_ALL || getNoticeRecruitmentStatus(notice) === activeFilters.recruitmentStatus;
@@ -357,8 +393,17 @@ function setFilter(type, value) {
 function updatePersonalizedSummary(profile = getStudentProfile()) {
   if (!listElements.personalizedSummary) return;
   if (signedInStudent) {
-    if (!window.KANGNAM_STUDENT_PROFILE?.isConfigured(profile)) {
+    if (!window.KANGNAM_STUDENT_PROFILE?.isConfigured(savedStudentProfile)) {
       listElements.personalizedSummary.textContent = "저장된 내 정보가 없습니다. 내 정보를 설정하면 맞춤 공고가 자동으로 표시됩니다.";
+      return;
+    }
+    if (!studentProfileFilterEnabled) {
+      if (!hasPersonalizedConditions(profile)) {
+        listElements.personalizedSummary.textContent = "맞춤 조건을 껐습니다. 원하는 조건을 직접 선택하거나 전체 공고를 확인할 수 있습니다.";
+        return;
+      }
+      const manualSummary = window.KANGNAM_STUDENT_PROFILE.toSummary(profile);
+      listElements.personalizedSummary.textContent = `임시 선택 조건: ${manualSummary.join(" · ")}. 저장된 내 정보는 변경되지 않습니다.`;
       return;
     }
     const summary = window.KANGNAM_STUDENT_PROFILE.toSummary(profile);
@@ -380,7 +425,7 @@ function updatePersonalizedSummary(profile = getStudentProfile()) {
 }
 
 function createNoticeLink(notice) {
-  const profile = getStudentProfile();
+  const profile = getEffectiveStudentProfile();
   const link = document.createElement("a");
   const top = document.createElement("div");
   const category = document.createElement("span");
@@ -572,8 +617,7 @@ function initListAuth() {
     }
 
     const savedProfile = window.KANGNAM_STUDENT_PROFILE?.load(user) || {};
-    fillStudentProfile(savedProfile);
-    setStudentProfileMode(user);
+    setStudentProfileMode(user, savedProfile);
     renderNoticeList();
     renderAccountMenu(listElements.authLink, user, account.role);
   });
@@ -597,7 +641,22 @@ listElements.gradeSelect?.addEventListener("change", renderNoticeList);
 listElements.transferCheckbox?.addEventListener("change", renderNoticeList);
 
 listElements.personalizedResetButton?.addEventListener("click", () => {
+  if (signedInStudent && studentProfileFilterEnabled) {
+    const updatedProfile = window.KANGNAM_STUDENT_PROFILE?.setFilterEnabled(signedInStudent, false)
+      || { ...savedStudentProfile, filterEnabled: false };
+    setStudentProfileMode(signedInStudent, updatedProfile);
+  }
   resetStudentProfileControls();
+  renderNoticeList();
+});
+
+listElements.personalizationToggle?.addEventListener("click", () => {
+  if (!signedInStudent) return;
+  const updatedProfile = window.KANGNAM_STUDENT_PROFILE?.setFilterEnabled(
+    signedInStudent,
+    !studentProfileFilterEnabled,
+  ) || { ...savedStudentProfile, filterEnabled: !studentProfileFilterEnabled };
+  setStudentProfileMode(signedInStudent, updatedProfile);
   renderNoticeList();
 });
 

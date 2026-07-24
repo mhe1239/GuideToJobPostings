@@ -122,7 +122,11 @@ async function handleProfileSubmit(event) {
   try {
     profileElements.saveButton.disabled = true;
     profileElements.saveButton.textContent = "저장 중";
-    getProfileStore().save(currentStudent, profile);
+    const savedPreference = getProfileStore().load(currentStudent);
+    getProfileStore().save(currentStudent, {
+      ...profile,
+      filterEnabled: savedPreference.filterEnabled !== false,
+    });
     setFormStatus("내 정보를 저장했습니다. 맞춤 공고 목록으로 이동합니다.", "success");
     window.setTimeout(() => window.location.assign("./index.html"), 450);
   } catch (error) {

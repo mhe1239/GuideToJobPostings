@@ -17,6 +17,7 @@ const answerServiceScript = await readFile(new URL("app/answer-service.js", root
 const accountAccessScript = await readFile(new URL("app/account-access.js", root), "utf8");
 const studentProfileScript = await readFile(new URL("app/student-profile.js", root), "utf8");
 const profileScript = await readFile(new URL("app/profile.js", root), "utf8");
+const loginScript = await readFile(new URL("app/login.js", root), "utf8");
 const listScript = await readFile(new URL("app/list.js", root), "utf8");
 const adminGuardScript = await readFile(new URL("app/admin-guard.js", root), "utf8");
 const adminScript = await readFile(new URL("app/admin.js", root), "utf8");
@@ -89,6 +90,37 @@ function bootLoginMarkup() {
   const page = loginHtml.replace(/<script[^>]*><\/script>/g, "");
   window.document.write(page);
   window.document.close();
+  return window;
+}
+
+async function bootLogoutToGuestList() {
+  const window = new Window({ url: "http://127.0.0.1:4173/login.html?returnTo=profile.html&stay=1" });
+  const page = loginHtml.replace(/<script[^>]*><\/script>/g, "");
+  window.document.write(page);
+  window.document.close();
+  let authCallback = () => {};
+  const user = {
+    uid: "logout-student",
+    email: "student@kangnam.ac.kr",
+    displayName: "가상 학생",
+  };
+  window.KANGNAM_FIREBASE = {
+    auth: {},
+    getRedirectResult: async () => null,
+    onAuthStateChanged: (_auth, callback) => {
+      authCallback = callback;
+      callback(user);
+    },
+    signOut: async () => authCallback(null),
+  };
+  window.KANGNAM_ACCOUNT_ACCESS = {
+    resolveAccount: async () => ({ type: "student", role: "viewer", isAdmin: false }),
+    getSafeStudentReturnUrl: () => new URL("./profile.html", window.location.href).href,
+  };
+  window.eval(loginScript);
+  await new Promise((resolve) => window.setTimeout(resolve, 0));
+  click(window, "#login-logout-button");
+  await new Promise((resolve) => window.setTimeout(resolve, 0));
   return window;
 }
 
@@ -326,6 +358,8 @@ const listWindow = bootList();
 const listDocument = listWindow.document;
 const loginWindow = bootLoginMarkup();
 const loginDocument = loginWindow.document;
+const loggedOutLoginWindow = await bootLogoutToGuestList();
+const loggedOutLoginDocument = loggedOutLoginWindow.document;
 const profileWindow = await bootStudentProfilePage();
 const profileDocument = profileWindow.document;
 const personalizedListWindow = await bootListWithStudentProfile();
@@ -399,6 +433,7 @@ assert.equal(loginDocument.querySelectorAll(".login-route-guide > div").length, 
 assert.match(loginDocument.querySelector("#login-title").textContent, /학교 계정으로 로그인/, "통합 로그인 제목이 표시되어야 합니다.");
 assert.equal(loginDocument.querySelector("#login-state").getAttribute("aria-live"), "polite", "권한 확인 상태는 화면 읽기 프로그램에 안내되어야 합니다.");
 assert.equal(loginDocument.querySelectorAll('a[href="./admin.html"], a[href="./members.html"], a[href="./publish.html"], a[href="./manage.html"]').length, 0, "로그인 전에는 역할 선택처럼 보이는 관리자 직행 버튼을 노출하지 않아야 합니다.");
+assert.match(loggedOutLoginDocument.querySelector("#login-student-link").href, /\/index\.html$/, "로그아웃 후 로그인 없이 공고 보기는 내 정보가 아닌 공고 목록으로 이동해야 합니다.");
 const studentAccount = await accountWindow.KANGNAM_ACCOUNT_ACCESS.resolveAccount({ email: "student@kangnam.ac.kr" });
 const editorAccount = await accountWindow.KANGNAM_ACCOUNT_ACCESS.resolveAccount({ email: "editor@kangnam.ac.kr" });
 assert.equal(studentAccount.type, "student", "관리자 목록에 없는 로그인 계정은 학생으로 자동 구분해야 합니다.");
@@ -424,10 +459,35 @@ assert.match(profileDocument.querySelector("#profile-form-status").textContent, 
 assert.equal(personalizedListDocument.querySelectorAll(".notice-list-item").length, 2, "로그인한 학생의 관심 분야에 맞는 공고만 자동으로 표시해야 합니다.");
 assert.match(personalizedListDocument.querySelector("#personalized-summary").textContent, /내 정보 적용/, "공고 목록에 적용된 학생 조건이 표시되어야 합니다.");
 assert.equal(personalizedListDocument.querySelector("#student-grade").disabled, true, "로그인한 학생의 저장 조건은 목록 화면에서 임의로 바꾸지 못하게 해야 합니다.");
-assert.equal(personalizedListDocument.querySelector("#personalized-profile-link").hidden, false, "로그인한 학생에게 내 정보 수정 경로를 제공해야 합니다.");
+assert.equal(personalizedListDocument.querySelector("#personalized-profile-link"), null, "맞춤 공고 영역에는 중복되는 내 정보 수정 버튼을 표시하지 않아야 합니다.");
+assert.equal(personalizedListDocument.querySelector("#personalized-reset-button").hidden, false, "맞춤 공고 영역에는 조건 초기화 버튼을 표시해야 합니다.");
 assert.match(personalizedListDocument.querySelector("#header-auth-link").textContent, /내 계정/, "로그인한 학생의 상단 메뉴는 계정 토글로 표시되어야 합니다.");
 click(personalizedListWindow, "#header-auth-link");
 assert.match(personalizedListDocument.querySelector("#header-account-menu").textContent, /내 정보/, "로그인한 학생의 계정 메뉴에는 내 정보 경로가 있어야 합니다.");
+assert.equal(personalizedListDocument.querySelector("#personalization-toggle").hidden, false, "저장된 내 정보가 있으면 맞춤 공고 보기 토글을 표시해야 합니다.");
+assert.equal(personalizedListDocument.querySelector("#personalization-toggle").getAttribute("aria-checked"), "true", "맞춤 공고 보기는 기본으로 켜져 있어야 합니다.");
+assert.deepEqual(
+  [...personalizedListDocument.querySelector(".personalized-actions").querySelectorAll("button")].map((button) => button.id),
+  ["personalization-toggle", "personalized-reset-button"],
+  "맞춤 공고 보기 버튼 다음에 조건 초기화 버튼이 표시되어야 합니다.",
+);
+click(personalizedListWindow, "#personalization-toggle");
+assert.equal(personalizedListDocument.querySelectorAll(".notice-list-item").length, 4, "맞춤 공고 보기를 끄면 저장 정보를 지우지 않고 모든 공고를 표시해야 합니다.");
+assert.match(personalizedListDocument.querySelector("#personalized-summary").textContent, /맞춤 조건을 껐습니다/, "맞춤 공고 보기를 끈 상태를 문장으로 안내해야 합니다.");
+assert.equal(personalizedListDocument.querySelector("#personalization-toggle").getAttribute("aria-checked"), "false", "맞춤 공고 보기 끔 상태가 접근성 속성에 반영되어야 합니다.");
+assert.equal(personalizedListDocument.querySelector("#student-grade").disabled, false, "맞춤 공고 보기를 끄면 조건을 직접 선택할 수 있어야 합니다.");
+assert.equal(personalizedListDocument.querySelector("input[name='student-enrollment-status'][value='']").checked, true, "맞춤 공고 보기를 끄면 저장된 재학 상태 선택을 화면에서 해제해야 합니다.");
+assert.equal(personalizedListDocument.querySelectorAll("input[name='student-interest']:checked").length, 0, "맞춤 공고 보기를 끄면 저장된 관심 분야 선택을 화면에서 해제해야 합니다.");
+click(personalizedListWindow, "input[name='student-interest'][value='행사']");
+assert.equal(personalizedListDocument.querySelectorAll(".notice-list-item").length, 1, "맞춤 공고 보기를 끈 뒤 선택한 임시 조건이 공고 목록에 반영되어야 합니다.");
+assert.match(personalizedListDocument.querySelector("#personalized-summary").textContent, /임시 선택 조건/, "저장 정보와 구분되는 임시 조건임을 안내해야 합니다.");
+click(personalizedListWindow, "#personalized-reset-button");
+assert.equal(personalizedListDocument.querySelectorAll(".notice-list-item").length, 4, "조건 초기화 시 임시 선택을 해제하고 모든 공고를 표시해야 합니다.");
+click(personalizedListWindow, "#personalization-toggle");
+assert.equal(personalizedListDocument.querySelectorAll(".notice-list-item").length, 2, "맞춤 공고 보기를 다시 켜면 저장 조건을 즉시 재적용해야 합니다.");
+assert.equal(personalizedListDocument.querySelector("#student-grade").disabled, true, "맞춤 공고 보기를 다시 켜면 저장 조건 입력을 잠가야 합니다.");
+assert.equal(personalizedListDocument.querySelector("input[name='student-enrollment-status'][value='재학생']").checked, true, "맞춤 공고 보기를 다시 켜면 저장된 재학 상태를 복원해야 합니다.");
+assert.equal(personalizedListDocument.querySelector("input[name='student-interest'][value='비교과 프로그램']").checked, true, "맞춤 공고 보기를 다시 켜면 저장된 관심 분야를 복원해야 합니다.");
 assert.deepEqual([...listDocument.querySelectorAll(".user-flow-list strong")].map((item) => item.textContent), ["공고 선택", "핵심 정보 확인", "FAQ 확인", "질문하기", "출처 또는 담당 부서 확인"], "학생 흐름은 공고 선택부터 출처 확인까지 순서대로 표시되어야 합니다.");
 assert.match(listDocument.querySelector("#personalized-search-title").textContent, /로그인 없이 조건을 선택/, "학생 맞춤형 공고 찾기는 로그인 없이 조건을 선택하게 안내해야 합니다.");
 assert.equal(listDocument.querySelectorAll("input[name='student-enrollment-status']").length, 4, "맞춤형 탐색에는 재학 상태 선택지가 있어야 합니다.");
@@ -691,6 +751,7 @@ assert.match(styles, /\.notice-card-status\[data-status="마감 임박"\]\s*\{[^
 assert.match(styles, /\.notice-list-item\[data-status="마감"\]\s*\{[^}]*opacity:\s*0\.86[^}]*filter:\s*grayscale/s, "마감된 공고 카드는 읽을 수 있는 수준으로 흐리게 구분해야 합니다.");
 assert.match(styles, /\.login-route-guide\s*\{[^}]*grid-template-columns:\s*1fr 1fr/s, "통합 로그인 화면은 학생·관리자 이동 안내를 나란히 보여야 합니다.");
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.login-route-guide\s*\{[\s\S]*grid-template-columns:\s*1fr/s, "모바일에서는 학생·관리자 이동 안내가 한 열로 정렬되어야 합니다.");
+assert.match(styles, /\.personalization-toggle\s*\{[^}]*min-height:\s*44px/s, "맞춤 공고 토글은 모바일에서도 누르기 쉬운 최소 높이를 가져야 합니다.");
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");
 

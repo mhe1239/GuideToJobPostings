@@ -2887,36 +2887,9 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   font-size: 12px;
 }
 
-.school-bulk-toolbar small {
-  flex-basis: 100%;
-  color: var(--ink-faint);
-  font-size: 12px;
-  font-weight: 750;
-  line-height: 1.5;
-}
-
-.school-notice-row,
-.published-row {
+.school-notice-row {
   min-width: 0;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px;
-  align-items: stretch;
-}
-
-.school-notice-row[data-processed="true"] .bulk-item-check {
-  color: var(--ink-faint);
-}
-
-.school-notice-row .bulk-item-check,
-.published-row .bulk-item-check {
-  align-self: stretch;
-  justify-content: center;
-  min-width: 72px;
-  padding: 0 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  display: block;
 }
 
 .school-notice-item {
@@ -3185,7 +3158,8 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 }
 
 .published-row {
-  align-items: stretch;
+  position: relative;
+  min-width: 0;
 }
 
 .published-item {
@@ -3193,13 +3167,33 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   min-width: 0;
   display: grid;
   gap: 5px;
-  padding: 14px;
+  padding: 14px 86px 14px 14px;
   text-align: left;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
+}
+
+.published-row .bulk-item-check {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  min-height: 36px;
+  min-width: 64px;
+  justify-content: center;
+  padding: 6px 8px;
+  color: var(--primary-900);
+  background: var(--primary-50);
+  border: 1px solid var(--primary-100);
+  border-radius: 999px;
+  box-shadow: 0 6px 14px rgb(23 58 103 / 8%);
+}
+
+.published-row .bulk-item-check input {
+  width: 16px;
+  height: 16px;
 }
 
 .published-item[aria-current="true"],
@@ -4542,16 +4536,8 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
     grid-template-columns: 1fr;
   }
 
-  .school-notice-row,
-  .published-row {
-    grid-template-columns: 1fr;
-  }
-
-  .school-notice-row .bulk-item-check,
-  .published-row .bulk-item-check {
-    justify-content: flex-start;
-    min-width: 0;
-    padding: 10px 12px;
+  .published-item {
+    padding-right: 78px;
   }
 
   .school-notice-item small {

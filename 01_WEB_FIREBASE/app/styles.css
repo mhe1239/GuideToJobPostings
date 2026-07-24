@@ -205,6 +205,89 @@ button:disabled {
   border-color: rgb(255 255 255 / 36%);
 }
 
+.account-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.account-menu .auth-nav {
+  cursor: pointer;
+}
+
+.account-menu .auth-nav::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-left: 2px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.account-menu .auth-nav[aria-expanded="true"] {
+  color: var(--surface);
+  background: rgb(255 255 255 / 12%);
+  border-color: rgb(255 255 255 / 42%);
+}
+
+.account-menu-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 30;
+  width: min(280px, calc(100vw - 32px));
+  padding: 10px;
+  color: var(--text-900);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
+}
+
+.account-menu-email {
+  margin: 0 0 8px;
+  padding: 8px 10px 10px;
+  color: var(--text-600);
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.account-menu-popover a,
+.account-menu-popover button {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 9px 10px;
+  color: var(--text-800);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.account-menu-popover a:hover,
+.account-menu-popover button:hover,
+.account-menu-popover a:focus-visible,
+.account-menu-popover button:focus-visible {
+  color: var(--primary-900);
+  background: var(--primary-50);
+  outline: none;
+}
+
+.account-menu-divider {
+  height: 1px;
+  margin: 8px 0;
+  background: var(--border-subtle);
+}
+
 .admin-nav {
   display: flex;
   flex-wrap: wrap;

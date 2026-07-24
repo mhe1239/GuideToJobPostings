@@ -238,12 +238,12 @@ const adminPage = {
   chip: document.querySelector("#draft-chip"),
   empty: document.querySelector("#draft-empty"),
   fields: document.querySelector("#draft-fields"),
+  title: document.querySelector("#draft-title"),
   summary: document.querySelector("#draft-summary"),
   faq: document.querySelector("#draft-faq"),
   evidence: document.querySelector("#draft-evidence"),
   checkboxes: [...document.querySelectorAll(".approval-checkbox")],
   approvalStatusChip: document.querySelector("#approval-status-chip"),
-  editButton: document.querySelector("#edit-draft-button"),
   approveButton: document.querySelector("#approve-draft-button"),
   declineButton: document.querySelector("#decline-draft-button"),
   note: document.querySelector("#approval-note"),
@@ -509,7 +509,7 @@ async function loadSchoolNoticeList({ simulateError = false } = {}) {
     if (!response.ok) throw new Error(`mock list load failed: ${response.status}`);
     const notices = await response.json();
     importedSchoolNotices = notices.slice(0, 10).map(normalizeImportedSchoolNotice);
-    setSchoolImportState("success", "최근 공고 10개를 불러왔습니다.");
+    setSchoolImportState("success", "최근 공고 10개를 불러왔습니다. 한 번 클릭하면 선택하고, 두 번 클릭하면 바로 초안을 생성합니다.");
   } catch (error) {
     console.error("학교 공고 목록 가져오기 실패", error);
     importedSchoolNotices = [];
@@ -565,11 +565,31 @@ function renderMockSchoolNotices() {
       type.textContent = SOURCE_TYPE_LABELS[notice.sourceType] || "확인 필요";
       state.className = "school-notice-state-label";
       state.textContent = processed ? "처리 완료" : "선택 가능";
+      button.title = processed
+        ? "이미 처리한 공고입니다."
+        : "한 번 클릭하면 선택하고, 두 번 클릭하면 바로 초안을 생성합니다.";
       button.append(title, meta, type, state);
       button.addEventListener("click", () => selectMockSchoolNotice(notice.id));
+      button.addEventListener("dblclick", () => {
+        if (selectedMockNoticeId !== notice.id) selectMockSchoolNotice(notice.id);
+        void generateDraft();
+      });
       return button;
     }),
   );
+  updateSelectedNoticeSummary();
+}
+
+function updateMockSchoolNoticeSelection() {
+  adminPage.schoolNoticeList?.querySelectorAll(".school-notice-item").forEach((button) => {
+    const isSelected = button.dataset.noticeId === selectedMockNoticeId;
+    button.setAttribute("aria-pressed", String(isSelected));
+    if (isSelected) {
+      button.setAttribute("aria-current", "true");
+    } else {
+      button.removeAttribute("aria-current");
+    }
+  });
   updateSelectedNoticeSummary();
 }
 
@@ -578,7 +598,7 @@ function selectMockSchoolNotice(noticeId) {
   if (!notice || isProcessedSchoolNotice(notice)) return;
   selectedMockNoticeId = noticeId;
   resetDraftSelectionState("학교 홈페이지 공고가 선택되었습니다. 초안을 생성해 주세요.");
-  renderMockSchoolNotices();
+  updateMockSchoolNoticeSelection();
   updateApprovalState();
 }
 
@@ -596,6 +616,7 @@ function resetDraftSelectionState(message) {
   currentDraftNotice = null;
   if (adminPage.fields) adminPage.fields.hidden = true;
   if (adminPage.empty) adminPage.empty.hidden = false;
+  if (adminPage.title) adminPage.title.value = "";
   if (adminPage.summary) adminPage.summary.value = "";
   if (adminPage.faq) adminPage.faq.value = "";
   if (adminPage.evidence) adminPage.evidence.value = "";
@@ -1110,10 +1131,10 @@ function getManageableNotices() {
 
 function buildModeratedNotice(baseNotice, approvalStatus) {
   if (!baseNotice) return null;
+  const title = adminPage.title?.value.trim() || baseNotice.title;
   const summary = adminPage.summary.value.trim();
   const faq = adminPage.faq.value.trim();
   const sourceUrl = baseNotice.sourceUrl;
-  const title = baseNotice.title;
   const today = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, ".").replace(/\.$/, "");
 
   return {
@@ -1234,6 +1255,7 @@ function selectPublishedNotice(noticeId) {
   adminPage.urlInput.value = notice.sourceUrl;
   adminPage.empty.hidden = true;
   adminPage.fields.hidden = false;
+  if (adminPage.title) adminPage.title.value = notice.title;
   adminPage.summary.value = notice.summary;
   adminPage.faq.value = formatFaqDraft(notice.faqs || []);
   adminPage.evidence.value = `출처 URL: ${notice.sourceUrl}\n근거. 신청 기간: ${notice.facts?.period || "공식 공고 원문 확인"}\n근거. 지원 자격: ${notice.facts?.eligibility || "공식 공고 원문 확인"}\n근거. 신청/지원: ${notice.facts?.field || "공식 공고 원문 확인"}`;
@@ -1299,6 +1321,7 @@ async function handlePublishedDelete() {
   adminPage.urlInput.value = "";
   adminPage.empty.hidden = false;
   adminPage.fields.hidden = true;
+  if (adminPage.title) adminPage.title.value = "";
   adminPage.summary.value = "";
   adminPage.faq.value = "";
   adminPage.evidence.value = "";
@@ -1323,8 +1346,7 @@ async function fetchNoticeMarkdown(url) {
   return response.text();
 }
 
-async function handleDraftGeneration(event) {
-  event.preventDefault();
+async function generateDraft() {
   if (!canEditAndPublish()) return;
 
   if (noticeInputMode === "url" && !adminPage.urlInput?.value.trim()) {
@@ -1355,6 +1377,7 @@ async function handleDraftGeneration(event) {
 
       adminPage.empty.hidden = true;
       adminPage.fields.hidden = false;
+      adminPage.title.value = notice.title;
       adminPage.summary.value = draft.summary;
       adminPage.faq.value = draft.faq;
       adminPage.evidence.value = `${draft.evidence}\n\n현재 공고 목록은 프로토타입용 예시 데이터입니다.`;
@@ -1374,6 +1397,7 @@ async function handleDraftGeneration(event) {
 
     adminPage.empty.hidden = true;
     adminPage.fields.hidden = false;
+    adminPage.title.value = notice.title;
     adminPage.summary.value = draft.summary;
     adminPage.faq.value = draft.faq;
     adminPage.evidence.value = draft.evidence;
@@ -1387,6 +1411,11 @@ async function handleDraftGeneration(event) {
   } finally {
     adminPage.generateButton.disabled = false;
   }
+}
+
+async function handleDraftGeneration(event) {
+  event.preventDefault();
+  await generateDraft();
 }
 
 async function handleDraftApproval() {
@@ -1404,13 +1433,6 @@ async function handleDraftDecline() {
   if (!notice) return;
   setApprovalStatus("declined");
   adminPage.note.textContent = "공고가 보류되었습니다.";
-}
-
-function handleDraftEdit() {
-  if (!canEditAndPublish() || !adminPage.fields || adminPage.fields.hidden) return;
-  setApprovalStatus("draft");
-  adminPage.summary.focus();
-  setAdminNote("초안을 수정할 수 있습니다. 수정 후 공개 승인 또는 보류를 선택해 주세요.");
 }
 
 async function handleLogout() {
@@ -1453,7 +1475,6 @@ adminPage.deletePublishedButton?.addEventListener("click", handlePublishedDelete
 clearLegacyDefaultNoticeUrl();
 renderMockSchoolNotices();
 adminPage.checkboxes.forEach((checkbox) => checkbox.addEventListener("change", updateApprovalState));
-adminPage.editButton?.addEventListener("click", handleDraftEdit);
 adminPage.approveButton?.addEventListener("click", handleDraftApproval);
 adminPage.declineButton?.addEventListener("click", handleDraftDecline);
 window.addEventListener("kangnam-firebase-ready", initAuth, { once: true });

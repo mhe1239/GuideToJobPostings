@@ -124,7 +124,8 @@
     if (!candidate && !required) return "";
     try {
       const parsed = new global.URL(candidate);
-      if (parsed.protocol === "https:" && parsed.hostname === "web.kangnam.ac.kr") {
+      const boardSeq = parsed.searchParams.get("encMenuBoardSeq") || "";
+      if (parsed.protocol === "https:" && parsed.hostname === "web.kangnam.ac.kr" && !/^schoolnotice\d+$/i.test(boardSeq)) {
         return parsed.toString();
       }
     } catch {

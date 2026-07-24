@@ -11,6 +11,7 @@ const MAX_NOTICE_CHARS = 9000;
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
 const SCHOOL_NOTICE_MOCK_URL = "./school-notices.mock.json";
+const PLACEHOLDER_BOARD_SEQ_PATTERN = /^schoolnotice\d+$/i;
 const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감 임박", "마감"]);
 const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
 const LEGACY_DEFAULT_NOTICE_URL =
@@ -561,14 +562,18 @@ function setSchoolImportState(state, message) {
 
 function normalizeImportedSchoolNotice(item) {
   const detail = MOCK_SCHOOL_NOTICES.find((notice) => notice.id === item.id || notice.sourceUrl === item.sourceUrl);
-  return { ...detail, ...item };
+  const merged = { ...detail, ...item };
+  merged.sourceUrl = getOfficialNoticeSourceUrl(item.sourceUrl) || getOfficialNoticeSourceUrl(detail?.sourceUrl);
+  return merged;
 }
 
 function getOfficialNoticeSourceUrl(value) {
   try {
     const parsed = new URL(String(value || "").trim());
     const path = parsed.pathname.toLowerCase();
+    const boardSeq = parsed.searchParams.get("encMenuBoardSeq") || "";
     if (parsed.protocol !== "https:" || parsed.hostname !== "web.kangnam.ac.kr") return "";
+    if (PLACEHOLDER_BOARD_SEQ_PATTERN.test(boardSeq)) return "";
     if (path.includes("/mock/") || path.includes("/common/")) return "";
     if (/\.(png|jpe?g|webp|gif|svg|ico)$/i.test(path)) return "";
     return parsed.toString();

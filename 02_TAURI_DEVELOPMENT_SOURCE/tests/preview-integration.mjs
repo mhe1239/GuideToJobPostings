@@ -23,9 +23,18 @@ const listScript = await readFile(new URL("app/list.js", root), "utf8");
 const adminGuardScript = await readFile(new URL("app/admin-guard.js", root), "utf8");
 const adminScript = await readFile(new URL("app/admin.js", root), "utf8");
 const schoolNoticeMockJson = await readFile(new URL("app/school-notices.mock.json", root), "utf8");
+const schoolNoticeMocks = JSON.parse(schoolNoticeMockJson);
 const font = await readFile(new URL("app/assets/fonts/PretendardVariable.woff2", root));
 const fontLicense = await readFile(new URL("app/assets/fonts/Pretendard-LICENSE.txt", root), "utf8");
 const officialNoticeUrl = "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=a7b3df1e7d8db98470571c15d25c72a9";
+
+assert.equal(schoolNoticeMocks.length, 10, "학교 홈페이지 가져오기 샘플은 최근 공고 10개를 유지해야 합니다.");
+assert.equal(
+  schoolNoticeMocks.every((notice) => /^https:\/\/web\.kangnam\.ac\.kr\/menu\/board\/info\//.test(notice.sourceUrl)),
+  true,
+  "학교 홈페이지 가져오기 샘플은 공식 공고 상세 URL을 출처로 가져야 합니다.",
+);
+assert.doesNotMatch(schoolNoticeMockJson, /encMenuBoardSeq=schoolnotice\d+/i, "학교 홈페이지 가져오기 샘플에는 가짜 게시글 번호를 저장하지 않아야 합니다.");
 
 function boot() {
   const window = new Window({ url: "http://127.0.0.1:4173/notice.html?notice=neulpum-2026" });
@@ -767,6 +776,7 @@ const approvedSchoolNotice = approvedNotices.find((notice) => notice.title === "
 assert.ok(approvedSchoolNotice, "학교 공고 선택으로 공개 승인한 공고가 저장되어야 합니다.");
 assert.match(approvedSchoolNotice.sourceUrl, /^https:\/\/web\.kangnam\.ac\.kr\/menu\/board\/info\//, "학교 공고 선택 초안은 공식 공고 상세 URL을 출처로 저장해야 합니다.");
 assert.doesNotMatch(approvedSchoolNotice.sourceUrl, /\/mock\/|\/common\//, "학교 공고 선택 초안의 출처 URL에는 예시 또는 공통 파일 URL을 저장하지 않아야 합니다.");
+assert.doesNotMatch(approvedSchoolNotice.sourceUrl, /encMenuBoardSeq=schoolnotice\d+/i, "학교 공고 선택 초안은 샘플 게시글 번호를 공식 출처 URL로 저장하지 않아야 합니다.");
 const approvedDetailWindow = bootNoticeWithStorage(approvedSchoolNotice.id, approvedNotices, JSON.parse(publishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
 click(approvedDetailWindow, "#full-notice-toggle");
 assert.equal(approvedDetailWindow.document.querySelector("#full-notice-source-link").hidden, false, "공개된 상세 화면 전체 공고 영역에는 원문 링크가 보여야 합니다.");

@@ -117,7 +117,9 @@ function isOfficialNoticeUrl(value) {
   try {
     const parsed = new URL(String(value || "").trim());
     const path = parsed.pathname.toLowerCase();
+    const boardSeq = parsed.searchParams.get("encMenuBoardSeq") || "";
     if (parsed.protocol !== "https:" || parsed.hostname !== "web.kangnam.ac.kr") return false;
+    if (/^schoolnotice\d+$/i.test(boardSeq)) return false;
     if (path.includes("/mock/") || path.includes("/common/")) return false;
     return !/\.(png|jpe?g|webp|gif|svg|ico)$/i.test(path);
   } catch {

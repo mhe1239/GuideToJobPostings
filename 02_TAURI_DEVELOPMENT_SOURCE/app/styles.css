@@ -3196,21 +3196,6 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   width: auto;
 }
 
-.draft-review-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
-.draft-review-button {
-  min-width: 180px;
-  min-height: 48px;
-}
-
-.draft-review-button[hidden] {
-  display: none;
-}
-
 .has-publish-action-bar {
   padding-bottom: 112px;
 }
@@ -3280,7 +3265,7 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 
 .publish-completion-toast {
   position: fixed;
-  bottom: 24px;
+  top: 50%;
   left: 50%;
   z-index: 60;
   max-width: min(420px, calc(100vw - 36px));
@@ -3294,12 +3279,13 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   font-weight: 900;
   line-height: 1.45;
   overflow-wrap: anywhere;
-  transform-origin: left center;
+  transform-origin: center;
   animation: publish-toast-grow 260ms ease-out both;
 }
 
-.has-publish-action-bar .publish-completion-toast {
-  bottom: 112px;
+.publish-completion-toast[data-tone="danger"] {
+  background: var(--status-danger-700);
+  box-shadow: 0 18px 40px rgb(176 44 44 / 24%);
 }
 
 .publish-completion-toast.is-hiding {
@@ -3309,24 +3295,24 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 @keyframes publish-toast-grow {
   from {
     opacity: 0;
-    transform: translateX(calc(-50% - 18px)) scaleX(0.72);
+    transform: translate(-50%, -50%) scale(0.88);
   }
 
   to {
     opacity: 1;
-    transform: translateX(-50%) scaleX(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
 @keyframes publish-toast-hide {
   from {
     opacity: 1;
-    transform: translateX(-50%) scaleX(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 
   to {
     opacity: 0;
-    transform: translateX(calc(-50% - 10px)) scaleX(0.92);
+    transform: translate(-50%, -50%) scale(0.92);
   }
 }
 
@@ -4441,13 +4427,8 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   }
 
   .publish-completion-toast {
-    bottom: 18px;
     max-width: calc(100vw - 24px);
     padding: 13px 15px;
-  }
-
-  .has-publish-action-bar .publish-completion-toast {
-    bottom: 232px;
   }
 
   .notice-list-section,

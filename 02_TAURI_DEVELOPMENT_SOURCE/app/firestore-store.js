@@ -13,6 +13,8 @@
   });
   const MAX_RESERVATION = Object.freeze({ reads: 21, writes: 2, deletes: 1 });
   const ALLOWED_ROLES = Object.freeze(["viewer", "editor", "owner"]);
+  const PUBLISHED_CACHE_KEY = "kangnamFirestorePublishedCacheV2";
+  const PUBLISHED_CACHE_TTL_MS = 5 * 60 * 1000;
 
   class FirestoreBudgetError extends Error {
     constructor(message, code = "FREE_TIER_LIMIT") {
@@ -113,16 +115,127 @@
     return JSON.parse(JSON.stringify(value));
   }
 
+  function trimText(value, maxLength) {
+    return String(value || "").trim().slice(0, maxLength);
+  }
+
+  function normalizeOfficialUrl(value, { required = false } = {}) {
+    const candidate = trimText(value, 1500);
+    if (!candidate && !required) return "";
+    try {
+      const parsed = new global.URL(candidate);
+      if (parsed.protocol === "https:" && parsed.hostname === "web.kangnam.ac.kr") {
+        return parsed.toString();
+      }
+    } catch {
+      // A consistent validation error is returned below.
+    }
+    throw new FirestoreBudgetError("강남대학교 공식 공고 URL을 확인해 주세요.", "INVALID_NOTICE");
+  }
+
+  function clearPublishedCache() {
+    try {
+      global.sessionStorage?.removeItem(PUBLISHED_CACHE_KEY);
+    } catch {
+      // Cache failures must never block Firestore operations.
+    }
+  }
+
+  function readPublishedCache() {
+    try {
+      const cached = JSON.parse(global.sessionStorage?.getItem(PUBLISHED_CACHE_KEY) || "null");
+      if (!cached || !Array.isArray(cached.notices) || Date.now() >= Number(cached.expiresAt || 0)) {
+        clearPublishedCache();
+        return null;
+      }
+      return cached.notices;
+    } catch {
+      clearPublishedCache();
+      return null;
+    }
+  }
+
+  function writePublishedCache(notices) {
+    try {
+      global.sessionStorage?.setItem(PUBLISHED_CACHE_KEY, JSON.stringify({
+        expiresAt: Date.now() + PUBLISHED_CACHE_TTL_MS,
+        notices,
+      }));
+    } catch {
+      // Firestore data remains usable when browser storage is unavailable.
+    }
+  }
+
   function normalizeNotice(notice) {
     const cleaned = cleanDocument(notice || {});
     if (!cleaned.id || !cleaned.title) {
       throw new FirestoreBudgetError("공고 ID와 제목이 필요합니다.", "INVALID_NOTICE");
     }
+    const approvalStatus = ["draft", "review", "published", "declined"].includes(cleaned.approvalStatus)
+      ? cleaned.approvalStatus
+      : "draft";
+    const normalizeNullableBoolean = (value) => (typeof value === "boolean" ? value : null);
     return {
-      ...cleaned,
-      id: String(cleaned.id).slice(0, 120),
-      title: String(cleaned.title).slice(0, 240),
-      approvalStatus: cleaned.approvalStatus || "draft",
+      schemaVersion: 2,
+      id: trimText(cleaned.id, 120),
+      title: trimText(cleaned.title, 240),
+      category: trimText(cleaned.category, 80),
+      department: trimText(cleaned.department, 160),
+      date: trimText(cleaned.date, 40),
+      status: trimText(cleaned.status, 40),
+      recruitmentStatus: trimText(cleaned.recruitmentStatus, 40),
+      eligibleEnrollmentStatus: (Array.isArray(cleaned.eligibleEnrollmentStatus)
+        ? cleaned.eligibleEnrollmentStatus
+        : [])
+        .map((value) => trimText(value, 40))
+        .filter(Boolean)
+        .slice(0, 8),
+      eligibleGrades: trimText(cleaned.eligibleGrades, 80),
+      transferStudentEligible: normalizeNullableBoolean(cleaned.transferStudentEligible),
+      graduateEligible: normalizeNullableBoolean(cleaned.graduateEligible),
+      summary: trimText(cleaned.summary, 4000),
+      sourceUrl: normalizeOfficialUrl(cleaned.sourceUrl, { required: true }),
+      sourceTitle: trimText(cleaned.sourceTitle, 300),
+      sourcePrefix: trimText(cleaned.sourcePrefix, 80),
+      sourceImageUrl: (() => {
+        try {
+          return normalizeOfficialUrl(cleaned.sourceImageUrl);
+        } catch {
+          return "";
+        }
+      })(),
+      publishedAt: trimText(cleaned.publishedAt, 40),
+      sourceType: trimText(cleaned.sourceType, 40),
+      dataMethod: trimText(cleaned.dataMethod, 80),
+      reviewed: cleaned.reviewed === true,
+      reviewedAt: trimText(cleaned.reviewedAt, 40),
+      imageUrls: (Array.isArray(cleaned.imageUrls) ? cleaned.imageUrls : [])
+        .map((url) => {
+          try {
+            return normalizeOfficialUrl(url);
+          } catch {
+            return "";
+          }
+        })
+        .filter(Boolean)
+        .slice(0, 4),
+      faqs: (Array.isArray(cleaned.faqs) ? cleaned.faqs : [])
+        .slice(0, 10)
+        .map((faq, index) => ({
+          id: trimText(faq.id || `faq-${index + 1}`, 120),
+          question: trimText(faq.question, 300),
+          answer: trimText(faq.answer, 2000),
+          source: trimText(faq.source, 300),
+        })),
+      facts: {
+        period: trimText(cleaned.facts?.period, 500),
+        eligibility: trimText(cleaned.facts?.eligibility, 500),
+        field: trimText(cleaned.facts?.field, 500),
+        documents: trimText(cleaned.facts?.documents, 500),
+        operation: trimText(cleaned.facts?.operation, 500),
+      },
+      isPublished: approvalStatus === "published",
+      approvalStatus,
       updatedAt: Date.now(),
     };
   }
@@ -135,6 +248,11 @@
     const api = await ready;
     if (!api?.db) return { notices: [], source: "local", guarded: false };
 
+    const cachedNotices = readPublishedCache();
+    if (cachedNotices) {
+      return { notices: cachedNotices, source: "firestore-cache", guarded: true };
+    }
+
     await reserveUsage({ reads: LIMITS.noticesPerRequest + 1, writes: 1 });
     const publishedQuery = api.query(
       api.collection(api.db, "notices"),
@@ -144,6 +262,7 @@
     const snapshot = await api.getDocs(publishedQuery);
     const notices = mapDocuments(snapshot)
       .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
+    writePublishedCache(notices);
     return { notices, source: "firestore", guarded: true };
   }
 
@@ -170,6 +289,7 @@
     const normalized = normalizeNotice(notice);
     await reserveUsage({ reads: 1, writes: 2 });
     await api.setDoc(api.doc(api.db, "notices", normalized.id), normalized, { merge: true });
+    clearPublishedCache();
     return { saved: true, source: "firestore", notice: normalized };
   }
 
@@ -181,6 +301,7 @@
 
     await reserveUsage({ reads: 1, writes: 1, deletes: 1 });
     await api.deleteDoc(api.doc(api.db, "notices", String(noticeId).slice(0, 120)));
+    clearPublishedCache();
     return { deleted: true, source: "firestore" };
   }
 
@@ -227,6 +348,7 @@
 
     await reserveUsage({ reads: 1, writes: 2 });
     await api.setDoc(api.doc(api.db, "admins", email), {
+      schemaVersion: 2,
       email,
       role,
       updatedAt: Date.now(),

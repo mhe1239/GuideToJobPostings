@@ -76,10 +76,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = ${JSON.stringify(firebaseConfig, null, 2)};
-const roleLists = ${JSON.stringify({
-  owners: (env.FIREBASE_OWNER_EMAILS || "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean),
-  editors: (env.FIREBASE_EDITOR_EMAILS || "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean),
-}, null, 2)};
 const publicConfig = ${JSON.stringify({
   answerEndpoint: env.ANSWER_API_ENDPOINT || "",
 }, null, 2)};
@@ -98,7 +94,7 @@ isSupported()
 window.KANGNAM_FIREBASE = {
   app,
   auth,
-  roleLists,
+  roleLists: { owners: [], editors: [] },
   getRedirectResult: () => getRedirectResult(auth),
   onAuthStateChanged,
   signInWithPopup: () => signInWithPopup(auth, googleProvider),

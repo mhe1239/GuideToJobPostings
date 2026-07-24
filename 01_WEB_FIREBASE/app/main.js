@@ -274,7 +274,8 @@ function getPublishedNotices() {
     deletedIds = new Set();
   }
 
-  const merged = [...stored, ...DEFAULT_NOTICES];
+  const firestoreIsAuthoritative = window.localStorage.getItem("kangnamFirestoreAuthoritativeV2") === "true";
+  const merged = firestoreIsAuthoritative ? stored : [...stored, ...DEFAULT_NOTICES];
   return merged
     .filter((notice, index, list) => list.findIndex((item) => item.id === notice.id) === index)
     .filter((notice) => !deletedIds.has(notice.id))
@@ -728,8 +729,9 @@ async function hydratePublishedNotices() {
 
   try {
     const result = await store.loadPublishedNotices();
-    if (result.source !== "firestore") return;
+    if (!String(result.source || "").startsWith("firestore")) return;
     window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(result.notices));
+    window.localStorage.setItem("kangnamFirestoreAuthoritativeV2", "true");
     const selectedId = new URLSearchParams(window.location.search).get("notice");
     notices = getPublishedNotices();
     activeNotice = notices.find((notice) => notice.id === selectedId)
@@ -882,7 +884,7 @@ function saveManagedMembers() {
 }
 
 function resolveRole(email) {
-  if (email) return "owner";
+  if (!email) return "viewer";
   const normalized = normalizeEmail(email);
   const firebase = window.KANGNAM_FIREBASE;
   const roleLists = firebase?.roleLists ?? { owners: [], editors: [] };

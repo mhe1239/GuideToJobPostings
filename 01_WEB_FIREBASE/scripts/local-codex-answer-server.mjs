@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createReadStream, existsSync } from "node:fs";
-import { dirname, extname, join, normalize, resolve } from "node:path";
+import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
@@ -20,6 +20,11 @@ const maxBodyBytes = 128 * 1024;
 const maxNoticeTextChars = 12000;
 const readerEndpoint = "https://r.jina.ai/";
 const allowedNoticeHost = "web.kangnam.ac.kr";
+const allowedBrowserOrigins = new Set([
+  `http://${host}:${port}`,
+  `http://127.0.0.1:${port}`,
+  `http://localhost:${port}`,
+]);
 
 const contentTypes = new Map([
   [".html", "text/html; charset=utf-8"],
@@ -45,12 +50,23 @@ function getCodexSpawn() {
   return { command: codexCommand, prefixArgs: [], shell: process.platform === "win32" };
 }
 
-function jsonResponse(response, status, payload) {
+function getRequestOrigin(request) {
+  return String(request.headers.origin || "").trim();
+}
+
+function isAllowedApiOrigin(request) {
+  const origin = getRequestOrigin(request);
+  return !origin || allowedBrowserOrigins.has(origin);
+}
+
+function jsonResponse(request, response, status, payload) {
+  const origin = getRequestOrigin(request);
   response.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": "*",
+    ...(origin && allowedBrowserOrigins.has(origin) ? { "Access-Control-Allow-Origin": origin } : {}),
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
+    "Vary": "Origin",
   });
   response.end(JSON.stringify(payload));
 }
@@ -249,7 +265,7 @@ async function handleAskNotice(request, response) {
     const body = JSON.parse(await collectRequestBody(request) || "{}");
     const question = normalizeQuestion(body.question);
     if (!question) {
-      jsonResponse(response, 400, { status: "error", message: "Please enter a question." });
+      jsonResponse(request, response, 400, { status: "error", message: "Please enter a question." });
       return;
     }
 
@@ -261,7 +277,7 @@ async function handleAskNotice(request, response) {
     ]);
     const answer = await runCodex(buildPrompt({ question, sourceUrl, notice, noticeText, imageUrls }));
 
-    jsonResponse(response, 200, {
+    jsonResponse(request, response, 200, {
       status: "success",
       answer,
       source: "local Codex CLI",
@@ -270,7 +286,7 @@ async function handleAskNotice(request, response) {
     });
   } catch (error) {
     console.error("local Codex answer failed", error);
-    jsonResponse(response, 500, {
+    jsonResponse(request, response, 500, {
       status: "error",
       message: error.message || "Unable to generate an answer with local Codex.",
     });
@@ -282,7 +298,7 @@ async function serveStatic(request, response) {
   const pathname = decodeURIComponent(url.pathname === "/" ? "/index.html" : url.pathname);
   const filePath = resolve(appRoot, `.${normalize(pathname)}`);
 
-  if (!filePath.startsWith(appRoot)) {
+  if (filePath !== appRoot && !filePath.startsWith(`${appRoot}${sep}`)) {
     response.writeHead(403);
     response.end("Forbidden");
     return;
@@ -301,13 +317,23 @@ async function serveStatic(request, response) {
 }
 
 const server = createServer((request, response) => {
-  if (request.method === "OPTIONS") {
-    jsonResponse(response, 204, {});
+  const url = new URL(request.url || "/", `http://${host}:${port}`);
+  const isAnswerEndpoint = url.pathname === "/api/askNotice";
+
+  if (isAnswerEndpoint && !isAllowedApiOrigin(request)) {
+    jsonResponse(request, response, 403, {
+      status: "error",
+      message: "This local answer server only accepts requests from its own preview page.",
+    });
     return;
   }
 
-  const url = new URL(request.url || "/", `http://${host}:${port}`);
-  if (url.pathname === "/api/askNotice" && request.method === "POST") {
+  if (isAnswerEndpoint && request.method === "OPTIONS") {
+    jsonResponse(request, response, 204, {});
+    return;
+  }
+
+  if (isAnswerEndpoint && request.method === "POST") {
     handleAskNotice(request, response);
     return;
   }

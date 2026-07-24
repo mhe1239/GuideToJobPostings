@@ -7,7 +7,7 @@
     "build": "node scripts/generate-firebase-config.mjs",
     "dev:codex-answer": "node scripts/local-codex-answer-server.mjs",
     "test": "node --test tests/*.test.mjs",
-    "lint": "node --check app/firestore-store.js && node --check app/list.js && node --check app/main.js && node --check app/admin.js && node --check app/admin-guard.js && node --check scripts/generate-firebase-config.mjs && node --check scripts/local-codex-answer-server.mjs && node --check tests/firestore-spark-guard.test.mjs && npm --prefix worker run lint",
+    "lint": "node --check app/firestore-store.js && node --check app/list.js && node --check app/main.js && node --check app/admin.js && node --check app/admin-guard.js && node --check scripts/generate-firebase-config.mjs && node --check scripts/local-codex-answer-server.mjs && node --check tests/firestore-spark-guard.test.mjs && node --check tests/security-regression.test.mjs && npm --prefix worker run lint",
     "deploy": "npm run build && firebase deploy --only hosting,firestore:rules,firestore:indexes --project guide-to-job-postings",
     "deploy:worker": "npm --prefix worker run deploy"
   }

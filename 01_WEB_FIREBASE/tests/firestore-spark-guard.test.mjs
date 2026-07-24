@@ -20,6 +20,7 @@ function createHarness({
   const writes = [];
   const deletes = [];
   const queries = [];
+  const sessionValues = new Map();
 
   const api = {
     db: {},
@@ -87,12 +88,25 @@ function createHarness({
     Object,
     Promise,
     String,
+    URL,
     console,
     setTimeout,
     window: {
       KANGNAM_FIRESTORE: api,
+      URL,
       addEventListener() {},
       setTimeout,
+      sessionStorage: {
+        getItem(key) {
+          return sessionValues.has(key) ? sessionValues.get(key) : null;
+        },
+        setItem(key, value) {
+          sessionValues.set(key, String(value));
+        },
+        removeItem(key) {
+          sessionValues.delete(key);
+        },
+      },
     },
   };
   vm.createContext(sandbox);
@@ -151,6 +165,58 @@ test("Firestore Spark guard", async (t) => {
     assert.equal(harness.queries[0].constraints.find((item) => item.type === "limit").value, 20);
   });
 
+  await t.test("reuses the five-minute session cache without another Firestore read", async () => {
+    const harness = createHarness({
+      notices: [{
+        id: "cached-notice",
+        title: "캐시 테스트 공고",
+        approvalStatus: "published",
+      }],
+    });
+
+    const first = await harness.store.loadPublishedNotices();
+    const usageAfterFirstLoad = harness.getUsage();
+    const second = await harness.store.loadPublishedNotices();
+
+    assert.equal(first.source, "firestore");
+    assert.equal(second.source, "firestore-cache");
+    assert.equal(harness.queries.length, 1);
+    assert.deepEqual(harness.getUsage(), usageAfterFirstLoad);
+  });
+
+  await t.test("normalizes notice size and rejects non-official source URLs", async () => {
+    const harness = createHarness();
+    const sourceUrl = "https://web.kangnam.ac.kr/menu/board/info/example.do";
+    await harness.store.saveNotice({
+      id: "normalized-notice",
+      title: "정규화 테스트",
+      sourceUrl,
+      approvalStatus: "published",
+      imageUrls: [
+        ...Array.from({ length: 6 }, (_, index) => `${sourceUrl}?image=${index}`),
+        "https://example.com/not-allowed.png",
+      ],
+      faqs: Array.from({ length: 12 }, (_, index) => ({
+        question: `질문 ${index + 1}`,
+        answer: `답변 ${index + 1}`,
+      })),
+      unexpectedLargeField: "x".repeat(10000),
+    });
+
+    assert.equal(harness.writes[0].data.schemaVersion, 2);
+    assert.equal(harness.writes[0].data.imageUrls.length, 4);
+    assert.equal(harness.writes[0].data.faqs.length, 10);
+    assert.equal("unexpectedLargeField" in harness.writes[0].data, false);
+    await assert.rejects(
+      harness.store.saveNotice({
+        id: "external-source",
+        title: "외부 출처",
+        sourceUrl: "https://example.com/notice",
+      }),
+      (error) => error.code === "INVALID_NOTICE",
+    );
+  });
+
   await t.test("does not write a notice when the write safety budget is exhausted", async () => {
     const harness = createHarness({
       usage: { reads: 100, writes: 7999, deletes: 0 },
@@ -160,6 +226,7 @@ test("Firestore Spark guard", async (t) => {
       harness.store.saveNotice({
         id: "budget-test",
         title: "예산 보호 테스트",
+        sourceUrl: "https://web.kangnam.ac.kr/menu/board/info/budget-test.do",
         approvalStatus: "published",
       }),
       (error) => error.code === "FREE_TIER_LIMIT",

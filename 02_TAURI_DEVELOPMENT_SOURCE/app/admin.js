@@ -242,19 +242,13 @@ const adminPage = {
   summary: document.querySelector("#draft-summary"),
   faq: document.querySelector("#draft-faq"),
   evidence: document.querySelector("#draft-evidence"),
-  checkboxes: [...document.querySelectorAll(".approval-checkbox")],
-  approvalStatusChip: document.querySelector("#approval-status-chip"),
-  approveButton: document.querySelector("#approve-draft-button"),
-  declineButton: document.querySelector("#decline-draft-button"),
+  reviewButton: document.querySelector("#review-draft-button"),
+  approveButton: document.querySelector("#sticky-approve-draft-button"),
+  declineButton: document.querySelector("#sticky-decline-draft-button"),
   note: document.querySelector("#approval-note"),
   publishActionBar: document.querySelector("#publish-action-bar"),
-  publishStepSummary: document.querySelector("#publish-step-summary"),
   publishSelectionSummary: document.querySelector("#publish-selection-summary"),
   publishCheckSummary: document.querySelector("#publish-check-summary"),
-  stickyGenerateButton: document.querySelector("#sticky-generate-draft-button"),
-  stickyEditButton: document.querySelector("#sticky-edit-draft-button"),
-  stickyApproveButton: document.querySelector("#sticky-approve-draft-button"),
-  stickyDeclineButton: document.querySelector("#sticky-decline-draft-button"),
   publishedList: document.querySelector("#published-list"),
   publishedCountChip: document.querySelector("#published-count-chip"),
   publishedNote: document.querySelector("#published-note"),
@@ -285,10 +279,6 @@ function setApprovalStatus(status) {
   if (adminPage.chip) {
     adminPage.chip.textContent = label;
     adminPage.chip.dataset.status = status;
-  }
-  if (adminPage.approvalStatusChip) {
-    adminPage.approvalStatusChip.textContent = label;
-    adminPage.approvalStatusChip.dataset.status = status;
   }
 }
 
@@ -628,11 +618,9 @@ function resetDraftSelectionState(message) {
   if (adminPage.summary) adminPage.summary.value = "";
   if (adminPage.faq) adminPage.faq.value = "";
   if (adminPage.evidence) adminPage.evidence.value = "";
+  if (adminPage.reviewButton) adminPage.reviewButton.hidden = true;
   setApprovalStatus("draft");
   if (adminPage.note) adminPage.note.textContent = message;
-  adminPage.checkboxes.forEach((checkbox) => {
-    checkbox.checked = false;
-  });
 }
 
 function renderMembers() {
@@ -691,16 +679,20 @@ function renderMembers() {
 }
 
 function updateApprovalState() {
-  const ready = adminPage.fields && !adminPage.fields.hidden;
-  const checked = adminPage.checkboxes.every((checkbox) => checkbox.checked);
+  const ready = Boolean(adminPage.fields && !adminPage.fields.hidden);
+  const allowed = canEditAndPublish();
+  if (adminPage.reviewButton) {
+    adminPage.reviewButton.hidden = !ready;
+    adminPage.reviewButton.disabled = !(allowed && ready);
+  }
   if (adminPage.approveButton) {
-    adminPage.approveButton.disabled = !(canEditAndPublish() && ready && checked);
+    adminPage.approveButton.disabled = !(allowed && ready);
   }
   if (adminPage.declineButton) {
-    adminPage.declineButton.disabled = !(canEditAndPublish() && ready);
+    adminPage.declineButton.disabled = !(allowed && ready);
   }
 
-  const canManagePublished = canEditAndPublish() && Boolean(selectedPublishedId);
+  const canManagePublished = allowed && Boolean(selectedPublishedId);
   if (adminPage.savePublishedButton) adminPage.savePublishedButton.disabled = !canManagePublished;
   if (adminPage.deletePublishedButton) adminPage.deletePublishedButton.disabled = !canManagePublished;
   updatePublishActionBar();
@@ -717,27 +709,14 @@ function updatePublishActionBar() {
 
   const allowed = canEditAndPublish();
   const ready = Boolean(adminPage.fields && !adminPage.fields.hidden);
-  const checkedCount = adminPage.checkboxes.filter((checkbox) => checkbox.checked).length;
-  const totalChecks = adminPage.checkboxes.length;
-  const allChecked = totalChecks > 0 && checkedCount === totalChecks;
 
-  adminPage.publishActionBar.hidden = !allowed;
-  document.body.classList.toggle("has-publish-action-bar", allowed);
+  adminPage.publishActionBar.hidden = !(allowed && ready);
+  document.body.classList.toggle("has-publish-action-bar", allowed && ready);
 
-  if (adminPage.publishStepSummary) {
-    adminPage.publishStepSummary.textContent = ready
-      ? allChecked ? "공개 승인 가능" : "검수 체크 필요"
-      : "초안 생성 대기";
+  if (adminPage.publishSelectionSummary && ready) {
+    adminPage.publishSelectionSummary.textContent = `${getPublishSelectionLabel()} · 제목, 일정, 지원 자격과 답변 근거를 확인해 주세요.`;
   }
-  if (adminPage.publishSelectionSummary) adminPage.publishSelectionSummary.textContent = getPublishSelectionLabel();
-  if (adminPage.publishCheckSummary) adminPage.publishCheckSummary.textContent = `검수 체크 ${checkedCount}/${totalChecks}`;
-
-  if (adminPage.stickyGenerateButton) {
-    adminPage.stickyGenerateButton.disabled = !allowed || adminPage.generateButton?.disabled;
-  }
-  if (adminPage.stickyEditButton) adminPage.stickyEditButton.disabled = !(allowed && ready);
-  if (adminPage.stickyApproveButton) adminPage.stickyApproveButton.disabled = !adminPage.approveButton || adminPage.approveButton.disabled;
-  if (adminPage.stickyDeclineButton) adminPage.stickyDeclineButton.disabled = !adminPage.declineButton || adminPage.declineButton.disabled;
+  if (adminPage.publishCheckSummary) adminPage.publishCheckSummary.textContent = "마지막으로 확인하셨나요?";
 }
 
 let publishCompletionToastTimer = 0;
@@ -1321,9 +1300,6 @@ function selectPublishedNotice(noticeId) {
   adminPage.evidence.value = `출처 URL: ${notice.sourceUrl}\n근거. 신청 기간: ${notice.facts?.period || "공식 공고 원문 확인"}\n근거. 지원 자격: ${notice.facts?.eligibility || "공식 공고 원문 확인"}\n근거. 신청/지원: ${notice.facts?.field || "공식 공고 원문 확인"}`;
   setApprovalStatus(notice.approvalStatus || "published");
   setAdminNote("공개된 공고를 불러왔습니다. 수정 후 저장하거나 삭제할 수 있습니다.");
-  adminPage.checkboxes.forEach((checkbox) => {
-    checkbox.checked = true;
-  });
   renderPublishedNotices();
   updateApprovalState();
 }
@@ -1387,9 +1363,7 @@ async function handlePublishedDelete() {
   adminPage.evidence.value = "";
   setApprovalStatus("draft");
   setAdminNote("공개된 공고를 삭제했습니다.");
-  adminPage.checkboxes.forEach((checkbox) => {
-    checkbox.checked = false;
-  });
+  if (adminPage.reviewButton) adminPage.reviewButton.hidden = true;
   renderPublishedNotices();
   updateApprovalState();
 }
@@ -1500,11 +1474,10 @@ async function handleDraftDecline() {
   adminPage.note.textContent = "공고가 보류되었습니다.";
 }
 
-function handleDraftEdit() {
+function handleDraftReview() {
   if (!canEditAndPublish() || !adminPage.fields || adminPage.fields.hidden) return;
-  setApprovalStatus("draft");
-  adminPage.title?.focus();
-  setAdminNote("초안을 수정할 수 있습니다. 수정 후 공개 승인 또는 보류를 선택해 주세요.");
+  setAdminNote("마지막으로 확인하셨나요? 공고 제목, 일정, 지원 자격과 답변 근거를 확인해 주세요.");
+  adminPage.publishActionBar?.focus();
 }
 
 async function handleLogout() {
@@ -1546,11 +1519,8 @@ adminPage.savePublishedButton?.addEventListener("click", handlePublishedSave);
 adminPage.deletePublishedButton?.addEventListener("click", handlePublishedDelete);
 clearLegacyDefaultNoticeUrl();
 renderMockSchoolNotices();
-adminPage.checkboxes.forEach((checkbox) => checkbox.addEventListener("change", updateApprovalState));
+adminPage.reviewButton?.addEventListener("click", handleDraftReview);
 adminPage.approveButton?.addEventListener("click", handleDraftApproval);
 adminPage.declineButton?.addEventListener("click", handleDraftDecline);
-adminPage.stickyEditButton?.addEventListener("click", handleDraftEdit);
-adminPage.stickyApproveButton?.addEventListener("click", () => adminPage.approveButton?.click());
-adminPage.stickyDeclineButton?.addEventListener("click", () => adminPage.declineButton?.click());
 window.addEventListener("kangnam-firebase-ready", initAuth, { once: true });
 initAuth();

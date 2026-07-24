@@ -237,7 +237,7 @@ button:disabled {
   z-index: 30;
   width: min(280px, calc(100vw - 32px));
   padding: 10px;
-  color: var(--text-900);
+  color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
@@ -247,7 +247,7 @@ button:disabled {
 .account-menu-email {
   margin: 0 0 8px;
   padding: 8px 10px 10px;
-  color: var(--text-600);
+  color: var(--ink-faint);
   font-size: 12px;
   font-weight: 700;
   overflow-wrap: anywhere;
@@ -261,7 +261,7 @@ button:disabled {
   display: flex;
   align-items: center;
   padding: 9px 10px;
-  color: var(--text-800);
+  color: var(--ink);
   background: transparent;
   border: 0;
   border-radius: 6px;

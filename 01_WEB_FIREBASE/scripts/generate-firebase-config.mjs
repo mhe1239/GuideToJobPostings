@@ -78,6 +78,7 @@ import {
 const firebaseConfig = ${JSON.stringify(firebaseConfig, null, 2)};
 const publicConfig = ${JSON.stringify({
   answerEndpoint: env.ANSWER_API_ENDPOINT || "",
+  adminRoleEndpoint: env.ADMIN_ROLE_API_ENDPOINT || env.ANSWER_API_ENDPOINT || "",
 }, null, 2)};
 
 const app = initializeApp(firebaseConfig);

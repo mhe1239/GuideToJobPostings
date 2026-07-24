@@ -5,6 +5,14 @@
   "compatibility_date": "2026-07-23",
   "vars": {
     "ALLOWED_ORIGINS": "https://guide-to-job-postings.web.app,http://127.0.0.1:4174,http://localhost:4174",
-    "GEMINI_MODEL": "gemini-2.0-flash"
-  }
+    "GEMINI_MODEL": "gemini-2.0-flash",
+    "FIREBASE_PROJECT_ID": "guide-to-job-postings"
+  },
+  "d1_databases": [
+    {
+      "binding": "ADMINS_DB",
+      "database_name": "kangnam-notice-admins",
+      "database_id": "29ad6a18-2a39-462f-895e-ec4a9cd0ce98"
+    }
+  ]
 }

@@ -245,8 +245,11 @@
   }
 
   async function loadPublishedNotices() {
+    const apiPayload = await requestPublicApi("/api/notices");
+    const d1Notices = Array.isArray(apiPayload?.notices) ? apiPayload.notices : [];
+
     const api = await ready;
-    if (!api?.db) return { notices: [], source: "local", guarded: false };
+    if (!api?.db) return { notices: d1Notices, source: d1Notices.length > 0 ? "cloudflare-d1" : "local", guarded: d1Notices.length > 0 };
 
     const cachedNotices = readPublishedCache();
     if (cachedNotices) {
@@ -260,13 +263,19 @@
       api.limit(LIMITS.noticesPerRequest),
     );
     const snapshot = await api.getDocs(publishedQuery);
-    const notices = mapDocuments(snapshot)
+    const notices = [...d1Notices, ...mapDocuments(snapshot)]
+      .filter((notice, index, list) => list.findIndex((item) => item.id === notice.id) === index)
       .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
     writePublishedCache(notices);
-    return { notices, source: "firestore", guarded: true };
+    return { notices, source: d1Notices.length > 0 ? "cloudflare-d1+firestore" : "firestore", guarded: true };
   }
 
   async function loadAllNotices() {
+    const apiPayload = await requestAdminApi("/api/admin/notices");
+    if (apiPayload?.notices) {
+      return { notices: apiPayload.notices, source: "cloudflare-d1", guarded: true };
+    }
+
     const api = await ready;
     if (!api?.db) return { notices: [], source: "local", guarded: false };
 
@@ -281,6 +290,15 @@
   }
 
   async function saveNotice(notice) {
+    const adminApiPayload = await requestAdminApi("/api/admin/notices", {
+      method: "POST",
+      body: JSON.stringify(notice || {}),
+    });
+    if (adminApiPayload?.saved) {
+      clearPublishedCache();
+      return { saved: true, source: "cloudflare-d1", notice: adminApiPayload.notice };
+    }
+
     const api = await ready;
     if (!api?.db) {
       return { saved: false, source: "local", reason: "Firestore가 연결되지 않았습니다." };
@@ -294,6 +312,14 @@
   }
 
   async function deleteNotice(noticeId) {
+    const adminApiPayload = await requestAdminApi(`/api/admin/notices/${encodeURIComponent(String(noticeId).slice(0, 120))}`, {
+      method: "DELETE",
+    });
+    if (adminApiPayload?.deleted) {
+      clearPublishedCache();
+      return { deleted: true, source: "cloudflare-d1" };
+    }
+
     const api = await ready;
     if (!api?.db) {
       return { deleted: false, source: "local", reason: "Firestore가 연결되지 않았습니다." };
@@ -309,7 +335,62 @@
     return String(value || "").trim().toLowerCase();
   }
 
+  function getAdminApiBase() {
+    return String(global.KANGNAM_PUBLIC_CONFIG?.adminRoleEndpoint || "").replace(/\/$/, "");
+  }
+
+  async function getFirebaseIdToken() {
+    const user = global.KANGNAM_FIREBASE?.auth?.currentUser;
+    if (!user?.getIdToken) return "";
+    return user.getIdToken();
+  }
+
+  async function requestAdminApi(path, options = {}) {
+    const baseUrl = getAdminApiBase();
+    if (!baseUrl) return null;
+
+    const token = await getFirebaseIdToken();
+    if (!token) return null;
+
+    const response = await fetch(`${baseUrl}${path}`, {
+      ...options,
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new FirestoreBudgetError(payload.message || "관리자 권한 서버 요청에 실패했습니다.", payload.code || "ADMIN_API_ERROR");
+      error.status = response.status;
+      throw error;
+    }
+    return payload;
+  }
+
+  async function requestPublicApi(path) {
+    const baseUrl = getAdminApiBase();
+    if (!baseUrl) return null;
+
+    const response = await fetch(`${baseUrl}${path}`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new FirestoreBudgetError(payload.message || "공용 데이터 요청에 실패했습니다.", payload.code || "PUBLIC_API_ERROR");
+      error.status = response.status;
+      throw error;
+    }
+    return payload;
+  }
+
   async function getAdminRole(email) {
+    const apiPayload = await requestAdminApi("/api/admin/role");
+    if (apiPayload?.role && ALLOWED_ROLES.includes(apiPayload.role)) {
+      return apiPayload.role;
+    }
+
     const api = await ready;
     const normalizedEmail = normalizeEmail(email);
     if (!api?.db || !normalizedEmail) return null;
@@ -321,6 +402,18 @@
   }
 
   async function loadAdmins() {
+    const apiPayload = await requestAdminApi("/api/admin/members");
+    if (apiPayload?.members) {
+      return {
+        admins: apiPayload.members.map((admin) => ({
+          ...admin,
+          email: normalizeEmail(admin.email),
+        })),
+        source: "cloudflare-d1",
+        guarded: true,
+      };
+    }
+
     const api = await ready;
     if (!api?.db) return { admins: [], source: "local", guarded: false };
 
@@ -340,6 +433,14 @@
   }
 
   async function saveAdmin(admin) {
+    const adminApiPayload = await requestAdminApi("/api/admin/members", {
+      method: "POST",
+      body: JSON.stringify(admin || {}),
+    });
+    if (adminApiPayload?.saved) {
+      return { saved: true, source: "cloudflare-d1" };
+    }
+
     const api = await ready;
     const email = normalizeEmail(admin?.email);
     const role = ALLOWED_ROLES.includes(admin?.role) ? admin.role : "viewer";
@@ -357,6 +458,13 @@
   }
 
   async function deleteAdmin(email) {
+    const adminApiPayload = await requestAdminApi(`/api/admin/members/${encodeURIComponent(normalizeEmail(email))}`, {
+      method: "DELETE",
+    });
+    if (adminApiPayload?.deleted) {
+      return { deleted: true, source: "cloudflare-d1" };
+    }
+
     const api = await ready;
     const normalizedEmail = normalizeEmail(email);
     if (!api?.db) return { deleted: false, source: "local" };

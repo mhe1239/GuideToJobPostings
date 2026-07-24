@@ -459,8 +459,8 @@ function renderAccountMenu(authLink, user, role) {
   if (!user) {
     closeAccountMenu(authLink);
     authLink.dataset.accountMenu = "disabled";
-    authLink.href = "./login.html";
-    authLink.lastChild.textContent = "계정";
+    authLink.href = window.KANGNAM_ACCOUNT_ACCESS?.getLoginUrl() || "./login.html";
+    authLink.lastChild.textContent = "로그인";
     menu.replaceChildren();
     return;
   }
@@ -468,7 +468,7 @@ function renderAccountMenu(authLink, user, role) {
   const canOpenAdmin = role === "owner" || role === "editor";
   authLink.dataset.accountMenu = "enabled";
   authLink.href = canOpenAdmin ? "./admin.html" : "./index.html";
-  authLink.lastChild.textContent = "계정";
+  authLink.lastChild.textContent = "내 계정";
 
   const email = document.createElement("p");
   email.className = "account-menu-email";
@@ -517,8 +517,7 @@ function initListAuth() {
     const accountAccess = window.KANGNAM_ACCOUNT_ACCESS;
 
     if (!user) {
-      listElements.authLink.href = accountAccess?.getLoginUrl() || "./login.html";
-      listElements.authLink.lastChild.textContent = "로그인";
+      renderAccountMenu(listElements.authLink, null, "viewer");
       return;
     }
 
@@ -526,10 +525,7 @@ function initListAuth() {
       || Promise.resolve({ type: "student", isAdmin: false }));
     if (updateId !== authUpdateId) return;
 
-    listElements.authLink.href = account.isAdmin
-      ? "./admin.html"
-      : (accountAccess?.getLoginUrl({ stay: true }) || "./login.html?stay=1");
-    listElements.authLink.lastChild.textContent = account.isAdmin ? "관리자 메뉴" : "학생 계정";
+    renderAccountMenu(listElements.authLink, user, account.role);
   });
 }
 

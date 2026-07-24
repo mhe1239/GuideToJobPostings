@@ -1031,8 +1031,8 @@ function renderAccountMenu(authLink, user, role) {
   if (!user) {
     closeAccountMenu(authLink);
     authLink.dataset.accountMenu = "disabled";
-    authLink.href = "./login.html";
-    authLink.lastChild.textContent = "계정";
+    authLink.href = window.KANGNAM_ACCOUNT_ACCESS?.getLoginUrl() || "./login.html";
+    authLink.lastChild.textContent = "로그인";
     menu.replaceChildren();
     return;
   }
@@ -1040,7 +1040,7 @@ function renderAccountMenu(authLink, user, role) {
   const canOpenAdmin = role === "owner" || role === "editor";
   authLink.dataset.accountMenu = "enabled";
   authLink.href = canOpenAdmin ? "./admin.html" : "./index.html";
-  authLink.lastChild.textContent = "계정";
+  authLink.lastChild.textContent = "내 계정";
 
   const email = document.createElement("p");
   email.className = "account-menu-email";
@@ -1088,8 +1088,7 @@ function renderAuthState() {
     title.textContent = "로그아웃 상태";
     subtitle.textContent = "로그인하지 않아도 공개된 공고와 FAQ를 볼 수 있습니다.";
     if (adminReview.headerAuthLink) {
-      adminReview.headerAuthLink.href = window.KANGNAM_ACCOUNT_ACCESS?.getLoginUrl() || "./login.html";
-      adminReview.headerAuthLink.lastChild.textContent = "로그인";
+      renderAccountMenu(adminReview.headerAuthLink, null, "viewer");
     }
   } else {
     title.textContent = currentAccountType === "admin"
@@ -1101,10 +1100,7 @@ function renderAuthState() {
         ? "초안 수정과 학생 공개를 사용할 수 있습니다."
         : "공개된 공고와 FAQ를 학생 권한으로 이용합니다.";
     if (adminReview.headerAuthLink) {
-      adminReview.headerAuthLink.href = currentAccountType === "admin"
-        ? "./admin.html"
-        : (window.KANGNAM_ACCOUNT_ACCESS?.getLoginUrl({ stay: true }) || "./login.html?stay=1");
-      adminReview.headerAuthLink.lastChild.textContent = currentAccountType === "admin" ? "관리자 메뉴" : "학생 계정";
+      renderAccountMenu(adminReview.headerAuthLink, currentUser, currentRole);
     }
   }
 

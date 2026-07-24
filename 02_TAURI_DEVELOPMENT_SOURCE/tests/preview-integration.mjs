@@ -44,6 +44,32 @@ function bootList() {
   return window;
 }
 
+async function bootListAsAccount(user, role = "owner") {
+  const window = new Window({ url: "http://127.0.0.1:4173/" });
+  const page = listHtml
+    .replace(/<script src="\.\/account-access\.js[^"]*" defer><\/script>/, "")
+    .replace(/<script src="\.\/list\.js[^"]*" defer><\/script>/, "");
+  let signedOut = false;
+  window.document.write(page);
+  window.document.close();
+  window.KANGNAM_FIREBASE = {
+    auth: {},
+    onAuthStateChanged: (_auth, callback) => callback(user),
+    signOut: async () => {
+      signedOut = true;
+    },
+  };
+  window.KANGNAM_NOTICE_STORE = {
+    ready: Promise.resolve({ db: {} }),
+    getAdminRole: async () => role,
+    getFriendlyError: () => "권한 확인 실패",
+  };
+  window.eval(accountAccessScript);
+  window.eval(listScript);
+  await new Promise((resolve) => window.setTimeout(resolve, 0));
+  return { window, get signedOut() { return signedOut; } };
+}
+
 function bootListWithStorage(publishedNotices, deletedIds = []) {
   const window = new Window({ url: "http://127.0.0.1:4173/" });
   const page = listHtml.replace(/<script src="\.\/list\.js[^"]*" defer><\/script>/, "");
@@ -203,6 +229,8 @@ const listDocument = listWindow.document;
 const loginWindow = bootLoginMarkup();
 const loginDocument = loginWindow.document;
 const accountWindow = bootAccountAccess();
+const accountMenu = await bootListAsAccount({ email: "owner@kangnam.ac.kr" }, "owner");
+const accountMenuDocument = accountMenu.window.document;
 const mockWindow = bootMockNoticeWithoutSourceUrl();
 const mockDocument = mockWindow.document;
 const publishWindow = bootPublish();
@@ -239,6 +267,14 @@ assert.equal(listDocument.querySelector("#notice"), null, "공고 선택 화면�
 assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 4, "공고 선택 화면에는 여러 공고가 4열 카드로 표시되어야 합니다.");
 assert.match(listDocument.querySelector(".notice-list-item").href, /notice\.html\?notice=/, "공고 선택 시 별도 상세 페이지로 이동해야 합니다.");
 assert.match(listDocument.querySelector("#header-auth-link").textContent, /^\s*로그인\s*$/, "학생용 공고 목록의 상단 진입점은 학생·관리자 공용 로그인으로 표시되어야 합니다.");
+assert.match(accountMenuDocument.querySelector("#header-auth-link").textContent, /내 계정/, "로그인 상태에서는 헤더가 계정 메뉴 토글로 바뀌어야 합니다.");
+click(accountMenu.window, "#header-auth-link");
+assert.equal(accountMenuDocument.querySelector("#header-auth-link").getAttribute("aria-expanded"), "true", "계정 메뉴 토글은 열린 상태를 접근성 속성으로 알려야 합니다.");
+assert.equal(accountMenuDocument.querySelector("#header-account-menu").hidden, false, "계정 메뉴가 펼쳐져야 합니다.");
+assert.match(accountMenuDocument.querySelector("#header-account-menu").textContent, /관리자 메뉴/, "관리자 권한 계정에는 관리자 메뉴 항목이 보여야 합니다.");
+assert.match(accountMenuDocument.querySelector("#header-account-menu").textContent, /로그아웃/, "계정 메뉴에는 로그아웃 항목이 있어야 합니다.");
+accountMenuDocument.querySelector("#header-account-menu button").click();
+assert.equal(accountMenu.signedOut, true, "계정 메뉴의 로그아웃 항목은 로그아웃을 실행해야 합니다.");
 assert.match(listDocument.querySelector("#student-flow-title").textContent, /로그인 없이 공고를 확인/, "학생 화면은 로그인 없이 공고를 볼 수 있음을 알려야 합니다.");
 assert.match(listDocument.querySelector(".user-flow-note").textContent, /하나의 학교 계정/, "학생·관리자 통합 로그인 안내가 표시되어야 합니다.");
 assert.match(listDocument.querySelector(".user-flow-note").textContent, /학생은 로그인하지 않아도 공개된 공고를 볼 수 있습니다/, "학생 로그인 불필요 안내가 표시되어야 합니다.");

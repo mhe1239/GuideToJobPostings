@@ -11,13 +11,13 @@
     <link rel="icon" type="image/png" href="./assets/icons/32x32.png?v=20260724-official-symbol-cutout-v3" sizes="32x32" />
     <link rel="apple-touch-icon" href="./assets/icons/128x128.png?v=20260724-official-symbol-cutout-v3" />
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=20260724-admin-workspace" />
+    <link rel="stylesheet" href="./styles.css?v=20260724-actionbar-close" />
     <script type="module" src="./firebase-config.js?v=20260722-url-reset"></script>
     <script src="./firestore-store.js?v=20260724-spark-guard" defer></script>
     <script src="./account-access.js?v=20260724-unified-login" defer></script>
     <script src="./header-account.js?v=20260724-account-menu-all-pages" defer></script>
     <script src="./admin-guard.js?v=20260724-unified-login" defer></script>
-    <script src="./admin.js?v=20260724-admin-add-fix" defer></script>
+    <script src="./admin.js?v=20260724-actionbar-close" defer></script>
   </head>
   <body class="admin-guarded-page" data-admin-guard="pending" data-admin-roles="owner editor">
     <div class="admin-guard-message" id="admin-guard-message" role="alert" aria-live="assertive">관리자 권한을 확인하고 있습니다.</div>
@@ -65,7 +65,7 @@
               <h2>공개된 공고 목록</h2>
               <span class="draft-chip" id="published-count-chip">0개</span>
             </div>
-            <div class="published-list" id="published-list" aria-live="polite"></div>
+            <div class="published-list" id="published-list" aria-label="공개된 공고 목록" aria-live="polite"></div>
             <p class="approval-note" id="published-note">수정하거나 삭제할 공고를 선택하세요. 삭제할 때는 한 번 더 확인합니다.</p>
           </section>
 

@@ -130,7 +130,32 @@
     } catch {
       // A consistent validation error is returned below.
     }
-    throw new FirestoreBudgetError("강남대학교 공식 공고 URL을 확인해 주세요.", "INVALID_NOTICE");
+    throw new FirestoreBudgetError("\uAC15\uB0A8\uB300\uD559\uAD50 \uACF5\uC2DD \uACF5\uACE0 URL\uC744 \uD655\uC778\uD574 \uC8FC\uC138\uC694.", "INVALID_NOTICE");
+  }
+
+  function normalizeOriginalSections(value) {
+    if (!Array.isArray(value)) return [];
+    return value
+      .slice(0, 20)
+      .map((section, index) => {
+        const type = ["paragraph", "list", "notice", "table"].includes(section?.type) ? section.type : "paragraph";
+        return {
+          id: trimText(section?.id || `section-${index + 1}`, 120),
+          title: trimText(section?.title, 160),
+          type,
+          content: trimText(section?.content, 5000),
+          items: (Array.isArray(section?.items) ? section.items : [])
+            .map((item) => trimText(item, 1000))
+            .filter(Boolean)
+            .slice(0, 30),
+          rows: (Array.isArray(section?.rows) ? section.rows : [])
+            .slice(0, 20)
+            .map((row) => (Array.isArray(row) ? row : [])
+              .slice(0, 6)
+              .map((cell) => trimText(cell, 800))),
+        };
+      })
+      .filter((section) => section.title || section.content || section.items.length || section.rows.length);
   }
 
   function clearPublishedCache() {
@@ -194,6 +219,8 @@
       transferStudentEligible: normalizeNullableBoolean(cleaned.transferStudentEligible),
       graduateEligible: normalizeNullableBoolean(cleaned.graduateEligible),
       summary: trimText(cleaned.summary, 4000),
+      originalContent: trimText(cleaned.originalContent, 20000),
+      originalSections: normalizeOriginalSections(cleaned.originalSections),
       sourceUrl: normalizeOfficialUrl(cleaned.sourceUrl, { required: true }),
       sourceTitle: trimText(cleaned.sourceTitle, 300),
       sourcePrefix: trimText(cleaned.sourcePrefix, 80),

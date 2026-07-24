@@ -585,7 +585,7 @@ assert.equal(mockDocument.querySelector(".source-image-link").href, "https://exa
 assert.match(mockDocument.querySelector(".source-image-link img").alt, /가상 샘플 원문 원문 이미지 1/, "각 원문 이미지에는 대체 텍스트가 있어야 합니다.");
 mockDocument.querySelector(".source-image-link img").dispatchEvent(new mockWindow.Event("error"));
 assert.equal(mockDocument.querySelector(".image-fallback").hidden, false, "원문 이미지가 깨지면 대체 안내 문구를 보여야 합니다.");
-assert.equal(mockDocument.querySelector(".image-fallback").textContent, "원문 이미지를 불러오지 못했습니다. 원문 링크에서 확인해 주세요.", "이미지 오류 안내 문구가 정확해야 합니다.");
+assert.equal(mockDocument.querySelector(".image-fallback").textContent, "원문 이미지를 불러오지 못했습니다. 공식 원문 링크에서 확인해 주세요.", "이미지 오류 안내 문구가 정확해야 합니다.");
 assert.equal(document.querySelector("#source-contact-department").textContent, "입학전형관리팀", "출처 및 담당 부서 섹션에 담당 부서가 표시되어야 합니다.");
 assert.match(document.querySelector(".example-notice").textContent, /공고 기반 답변/, "입력 화면에 공고 기반 답변임을 알려야 합니다.");
 assert.match(document.querySelector(".source-line").textContent, /공식 공고 내용을 확인해 작성한 답변/, "공식 공고 기반 답변임을 알려야 합니다.");

@@ -3460,3 +3460,28 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
     animation-iteration-count: 1 !important;
   }
 }
+
+.data-sync-status {
+  width: min(100% - 32px, 1320px);
+  margin: 16px auto 0;
+  padding: 12px 16px;
+  border: 1px solid #cbd9e8;
+  border-radius: 12px;
+  background: #f4f8fc;
+  color: #29445f;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.data-sync-status[data-state="success"] {
+  border-color: #b8dfcf;
+  background: #effaf5;
+  color: #176247;
+}
+
+.data-sync-status[data-state="limit"],
+.data-sync-status[data-state="error"] {
+  border-color: #e8c98d;
+  background: #fff8e9;
+  color: #7b4e08;
+}

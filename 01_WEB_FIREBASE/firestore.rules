@@ -1,0 +1,73 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    function adminPath() {
+      return /databases/$(database)/documents/admins/$(request.auth.token.email);
+    }
+
+    function adminRole() {
+      return signedIn() && exists(adminPath())
+        ? get(adminPath()).data.role
+        : "viewer";
+    }
+
+    function isEditor() {
+      return adminRole() == "editor" || adminRole() == "owner";
+    }
+
+    function isOwner() {
+      return adminRole() == "owner";
+    }
+
+    function validUsage(data, dateId) {
+      return data.keys().hasOnly(["date", "reads", "writes", "deletes", "updatedAt"])
+        && data.date == dateId
+        && data.reads is int
+        && data.writes is int
+        && data.deletes is int
+        && data.updatedAt is int
+        && data.reads >= 0
+        && data.writes >= 0
+        && data.deletes >= 0
+        && data.reads <= 38000
+        && data.writes <= 8000
+        && data.deletes <= 8000;
+    }
+
+    match /systemUsage/{dateId} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if validUsage(request.resource.data, dateId)
+        && request.resource.data.reads <= 21
+        && request.resource.data.writes <= 2
+        && request.resource.data.deletes <= 1;
+      allow update: if validUsage(request.resource.data, dateId)
+        && request.resource.data.reads >= resource.data.reads
+        && request.resource.data.writes >= resource.data.writes
+        && request.resource.data.deletes >= resource.data.deletes
+        && request.resource.data.reads <= resource.data.reads + 21
+        && request.resource.data.writes <= resource.data.writes + 2
+        && request.resource.data.deletes <= resource.data.deletes + 1;
+      allow delete: if false;
+    }
+
+    match /notices/{noticeId} {
+      allow get, list: if resource.data.approvalStatus == "published" || isEditor();
+      allow create, update, delete: if isEditor();
+    }
+
+    match /admins/{email} {
+      allow get: if signedIn() && (request.auth.token.email == email || isOwner());
+      allow list, create, update, delete: if isOwner();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

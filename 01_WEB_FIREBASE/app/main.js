@@ -708,6 +708,45 @@ function returnToNotice() {
   }
 }
 
+function setDataSyncStatus(message, state = "info") {
+  let status = document.querySelector("#data-sync-status");
+  if (!status) {
+    status = document.createElement("p");
+    status.id = "data-sync-status";
+    status.className = "data-sync-status";
+    status.setAttribute("role", "status");
+    document.querySelector("main")?.prepend(status);
+  }
+  status.dataset.state = state;
+  status.textContent = message;
+  status.hidden = !message;
+}
+
+async function hydratePublishedNotices() {
+  const store = window.KANGNAM_NOTICE_STORE;
+  if (!store?.loadPublishedNotices) return;
+
+  try {
+    const result = await store.loadPublishedNotices();
+    if (result.source !== "firestore") return;
+    window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(result.notices));
+    const selectedId = new URLSearchParams(window.location.search).get("notice");
+    notices = getPublishedNotices();
+    activeNotice = notices.find((notice) => notice.id === selectedId)
+      || notices.find((notice) => notice.id === activeNotice.id)
+      || notices[0];
+    FAQS = activeNotice.faqs || [];
+    renderNotice();
+    renderNoticeList();
+    renderFaqs();
+    setDataSyncStatus("공용 공고 데이터를 최신 상태로 불러왔습니다.", "success");
+  } catch (error) {
+    const message = store.getFriendlyError(error);
+    const state = error?.code === "FREE_TIER_LIMIT" ? "limit" : "error";
+    setDataSyncStatus(`${message} 저장된 공고를 대신 표시합니다.`, state);
+  }
+}
+
 elements.questionForm.addEventListener("submit", handleQuestionSubmit);
 elements.questionInput.addEventListener("input", () => {
   updateQuestionCount();
@@ -724,6 +763,7 @@ renderNotice();
 renderNoticeList();
 renderFaqs();
 updateQuestionCount();
+hydratePublishedNotices();
 
 const adminReview = {
   headerAuthLink: document.querySelector("#header-auth-link"),

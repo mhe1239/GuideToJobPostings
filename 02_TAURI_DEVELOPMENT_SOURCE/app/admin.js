@@ -6,7 +6,7 @@ const ROLE_LABELS = Object.freeze({
   viewer: "보기만 가능",
 });
 
-const READER_ENDPOINT = "https://r.jina.ai/http://r.jina.ai/http://";
+const READER_ENDPOINT = "https://r.jina.ai/";
 const MAX_NOTICE_CHARS = 9000;
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
@@ -680,21 +680,31 @@ function clearLegacyDefaultNoticeUrl() {
   }
 }
 
-function handleMemberSubmit(event) {
+async function handleMemberSubmit(event) {
   event.preventDefault();
   if (!canManageMembers()) return;
 
   const email = normalizeMemberEmail(adminPage.memberEmail.value);
   if (!email) return;
 
+  try {
+    await window.KANGNAM_NOTICE_STORE?.saveAdmin({
+      email,
+      role: adminPage.memberRole.value,
+    });
+  } catch (error) {
+    setAdminNote(window.KANGNAM_NOTICE_STORE?.getFriendlyError(error) || error.message);
+    return;
+  }
+
   managedMembers = managedMembers.filter((member) => normalizeMemberEmail(member.email) !== email);
-  managedMembers.push({ email, role: adminPage.memberRole.value });
+  managedMembers.push({ email, role: adminPage.memberRole.value, source: "Firestore" });
   saveManagedMembers();
   adminPage.memberEmail.value = "";
   renderMembers();
 }
 
-function handleMemberDelete(email) {
+async function handleMemberDelete(email) {
   if (!canManageMembers()) return;
   const normalizedEmail = normalizeMemberEmail(email);
   const member = getRenderableMembers().find((item) => item.email === normalizedEmail);
@@ -707,12 +717,19 @@ function handleMemberDelete(email) {
   const confirmed = window.confirm(`${normalizedEmail} 관리자 권한을 삭제할까요?`);
   if (!confirmed) return;
 
+  try {
+    await window.KANGNAM_NOTICE_STORE?.deleteAdmin(normalizedEmail);
+  } catch (error) {
+    setAdminNote(window.KANGNAM_NOTICE_STORE?.getFriendlyError(error) || error.message);
+    return;
+  }
+
   managedMembers = managedMembers.filter((item) => normalizeMemberEmail(item.email) !== normalizedEmail);
   saveManagedMembers();
   renderMembers();
 }
 
-function handleBootstrapTransfer(email) {
+async function handleBootstrapTransfer(email) {
   if (!canManageMembers()) return;
   const targetEmail = normalizeMemberEmail(email);
   if (!targetEmail || targetEmail === normalizeMemberEmail(currentUser?.email)) return;
@@ -720,6 +737,13 @@ function handleBootstrapTransfer(email) {
 
   const confirmed = window.confirm(`${targetEmail} 계정에 초기 관리자 권한을 넘길까요?\n위임 후 해당 계정은 관리자 관리 권한을 갖습니다.`);
   if (!confirmed) return;
+
+  try {
+    await window.KANGNAM_NOTICE_STORE?.saveAdmin({ email: targetEmail, role: "owner" });
+  } catch (error) {
+    setAdminNote(window.KANGNAM_NOTICE_STORE?.getFriendlyError(error) || error.message);
+    return;
+  }
 
   managedMembers = managedMembers.filter((member) => normalizeMemberEmail(member.email) !== targetEmail);
   managedMembers.push({ ...targetMember, email: targetEmail, role: "owner", source: "초기 관리자 위임" });
@@ -953,6 +977,49 @@ function savePublishedNotices(notices) {
   window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(notices));
 }
 
+async function hydrateFirestoreAdminData() {
+  const store = window.KANGNAM_NOTICE_STORE;
+  if (!store) return;
+
+  try {
+    const [noticeResult, adminResult] = await Promise.all([
+      store.loadAllNotices(),
+      currentRole === "owner"
+        ? store.loadAdmins()
+        : Promise.resolve({ admins: [], source: "local" }),
+    ]);
+
+    if (noticeResult.source === "firestore") {
+      savePublishedNotices(noticeResult.notices);
+    }
+    if (adminResult.source === "firestore") {
+      managedMembers = adminResult.admins.map((admin) => ({
+        email: admin.email,
+        role: admin.role,
+        source: "Firestore",
+      }));
+      saveManagedMembers();
+    }
+    renderPublishedNotices();
+    renderMembers();
+    setAdminNote("Firestore 공용 데이터를 최신 상태로 불러왔습니다.");
+  } catch (error) {
+    setAdminNote(`${store.getFriendlyError(error)} 저장된 관리자 화면 데이터를 대신 표시합니다.`);
+  }
+}
+
+async function saveNoticeToSharedStore(notice) {
+  const store = window.KANGNAM_NOTICE_STORE;
+  if (!store?.saveNotice) return { saved: false, source: "local" };
+  return store.saveNotice(notice);
+}
+
+async function deleteNoticeFromSharedStore(noticeId) {
+  const store = window.KANGNAM_NOTICE_STORE;
+  if (!store?.deleteNotice) return { deleted: false, source: "local" };
+  return store.deleteNotice(noticeId);
+}
+
 function normalizeRecruitmentStatus(status) {
   if (RECRUITMENT_STATUSES.includes(status)) return status;
   if (!status) return "모집 중";
@@ -1021,9 +1088,16 @@ function buildModeratedNotice(baseNotice, approvalStatus) {
   };
 }
 
-function saveModeratedNotice(approvalStatus) {
+async function saveModeratedNotice(approvalStatus) {
   const moderatedNotice = buildModeratedNotice(currentDraftNotice, approvalStatus);
   if (!moderatedNotice) return null;
+
+  try {
+    await saveNoticeToSharedStore(moderatedNotice);
+  } catch (error) {
+    setAdminNote(window.KANGNAM_NOTICE_STORE?.getFriendlyError(error) || error.message);
+    return null;
+  }
 
   const notices = loadPublishedNotices().filter((notice) => notice.id !== moderatedNotice.id && notice.sourceUrl !== moderatedNotice.sourceUrl);
   notices.unshift(moderatedNotice);
@@ -1108,10 +1182,17 @@ function selectPublishedNotice(noticeId) {
   updateApprovalState();
 }
 
-function handlePublishedSave() {
+async function handlePublishedSave() {
   if (!canEditAndPublish() || !selectedPublishedId || !currentDraftNotice) return;
   const updatedNotice = buildModeratedNotice(currentDraftNotice, currentDraftNotice.approvalStatus || currentApprovalStatus);
   if (!updatedNotice) return;
+
+  try {
+    await saveNoticeToSharedStore(updatedNotice);
+  } catch (error) {
+    setAdminNote(window.KANGNAM_NOTICE_STORE?.getFriendlyError(error) || error.message);
+    return;
+  }
 
   const notices = loadPublishedNotices().filter((notice) => notice.id !== selectedPublishedId);
   notices.unshift(updatedNotice);
@@ -1129,12 +1210,19 @@ function handlePublishedSave() {
   updateApprovalState();
 }
 
-function handlePublishedDelete() {
+async function handlePublishedDelete() {
   if (!canEditAndPublish() || !selectedPublishedId) return;
   const notice = getManageableNotices().find((item) => item.id === selectedPublishedId);
   const title = notice?.title || "선택한 공고";
   const confirmed = window.confirm(`"${title}" 공고를 삭제할까요?\n삭제하면 학생 페이지 목록과 상세 페이지에서 보이지 않습니다.`);
   if (!confirmed) return;
+
+  try {
+    await deleteNoticeFromSharedStore(selectedPublishedId);
+  } catch (error) {
+    setAdminNote(window.KANGNAM_NOTICE_STORE?.getFriendlyError(error) || error.message);
+    return;
+  }
 
   const notices = loadPublishedNotices().filter((notice) => notice.id !== selectedPublishedId);
   savePublishedNotices(notices);
@@ -1237,18 +1325,18 @@ async function handleDraftGeneration(event) {
   }
 }
 
-function handleDraftApproval() {
+async function handleDraftApproval() {
   if (!canEditAndPublish()) return;
-  const notice = saveModeratedNotice("published");
+  const notice = await saveModeratedNotice("published");
   if (!notice) return;
   setApprovalStatus("published");
   adminPage.note.textContent = "공고가 학생에게 공개되었습니다.";
   adminPage.approveButton.textContent = "공개 승인";
 }
 
-function handleDraftDecline() {
+async function handleDraftDecline() {
   if (!canEditAndPublish()) return;
-  const notice = saveModeratedNotice("declined");
+  const notice = await saveModeratedNotice("declined");
   if (!notice) return;
   setApprovalStatus("declined");
   adminPage.note.textContent = "공고가 보류되었습니다.";
@@ -1282,6 +1370,7 @@ async function initAuth() {
   currentRole = result.role;
   managedMembers = loadManagedMembers();
   updateAccess();
+  await hydrateFirestoreAdminData();
 }
 
 adminPage.logoutButton?.addEventListener("click", handleLogout);

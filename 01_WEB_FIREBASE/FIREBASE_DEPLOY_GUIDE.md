@@ -1,6 +1,6 @@
 # 강남대 공고 길잡이 배포 안내
 
-이 프로젝트는 Firebase Hosting으로 정적 앱을 배포하고, 상세 공고 질문 답변만 Cloudflare Worker를 통해 Gemini API로 처리합니다.
+이 프로젝트는 Firebase Hosting으로 정적 앱을 배포하고, Cloud Firestore에 검수 공고와 관리자 역할을 저장합니다. 상세 공고 질문 답변만 Cloudflare Worker를 통해 Gemini API로 처리합니다.
 
 Firebase는 계속 사용합니다. Cloudflare Worker는 브라우저에 Gemini API 키가 노출되지 않도록 중간 서버 역할만 합니다.
 
@@ -36,18 +36,51 @@ Google API 키가 HTTP referrer 제한만 걸린 브라우저용 키이면 Cloud
 
 ## Firebase Hosting 배포
 
+Firebase 콘솔에서 Cloud Firestore 데이터베이스를 Standard 모드로 하나만 생성합니다. Spark 무료 요금제를 유지하고 TTL, 백업, 복원, 추가 데이터베이스는 사용하지 않습니다.
+
+첫 번째 관리자 로그인 전에 Firebase 콘솔의 Firestore에서 다음 문서를 직접 한 번 생성합니다. 실제 이메일은 저장소나 `.env.local`에 넣지 않고 콘솔에서만 입력합니다.
+
+```text
+컬렉션: admins
+문서 ID: Google 로그인에 사용할 관리자 이메일
+필드:
+  email: 같은 관리자 이메일
+  role: owner
+  updatedAt: 현재 시각을 숫자로 입력
+```
+
+이 최초 문서가 없으면 모든 로그인 사용자는 학생 권한으로 처리됩니다. 이후 owner가 관리자 화면에서 editor 또는 owner를 추가할 수 있습니다.
+
 ```bash
 npm run build
 npm run deploy
 ```
 
-Firebase Hosting은 Spark 무료 요금제로 유지할 수 있습니다. Firebase Functions는 사용하지 않습니다.
+`npm run deploy`는 Hosting과 Firestore 보안 규칙을 함께 배포합니다. Firebase Functions는 사용하지 않습니다.
+
+## Spark 무료 한도 보호
+
+Firestore 공식 무료 한도보다 낮은 앱 내부 보호 한도를 사용합니다.
+
+| 항목 | Firestore 무료 한도 | 앱 차단 기준 |
+| --- | ---: | ---: |
+| 문서 읽기 | 50,000회/일 | 38,000회/일 |
+| 문서 쓰기 | 20,000회/일 | 8,000회/일 |
+| 문서 삭제 | 20,000회/일 | 8,000회/일 |
+
+- 학생 공고 목록은 요청당 최대 20개만 읽습니다.
+- 모든 Firestore 작업은 `systemUsage/{미국 태평양 날짜}` 문서에 사용 예정량을 먼저 예약합니다.
+- 앱 차단 기준을 넘는 작업은 실제 조회·저장·삭제 전에 중단됩니다.
+- 한도에 도달하면 학생에게 저장된 공고를 대신 보여주고, 관리자는 저장·삭제를 진행할 수 없습니다.
+- 이 카운터는 앱에서 발생시키는 정상 요청을 위한 보수적 보호 장치입니다. Firebase 콘솔 작업이나 외부 스크립트 사용량까지 정확히 측정하는 결제 시스템은 아니므로 Firebase 콘솔의 Firestore Usage도 함께 확인합니다.
+- Spark 요금제 자체가 무료 한도를 넘은 유료 사용을 허용하지 않는 마지막 안전장치입니다.
 
 ## 검증 명령
 
 ```bash
 npm run build
 npm run lint
+npm test
 ```
 
 데스크톱 앱 변경이 함께 있을 때는 `02_TAURI_DEVELOPMENT_SOURCE`에서 제공되는 검증 명령도 실행합니다.

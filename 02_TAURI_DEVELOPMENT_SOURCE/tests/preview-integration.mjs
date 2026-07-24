@@ -300,6 +300,7 @@ assert.equal(publishDocument.querySelector("#edit-draft-button").disabled, false
 click(publishWindow, "#edit-draft-button");
 assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "초안", "수정 버튼을 누르면 상태가 초안으로 바뀌어야 합니다.");
 click(publishWindow, "#decline-draft-button");
+await new Promise((resolve) => publishWindow.setTimeout(resolve, 0));
 assert.equal(publishDocument.querySelector("#approval-note").textContent, "공고가 보류되었습니다.", "보류 시 안내 문구가 표시되어야 합니다.");
 assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "보류", "보류 시 관리자 화면 상태가 구분되어야 합니다.");
 assert.equal(publishDocument.querySelector(".published-item").dataset.approvalStatus, "declined", "관리자 목록에서 보류 상태가 표시되어야 합니다.");
@@ -314,6 +315,7 @@ publishDocument.querySelectorAll(".approval-checkbox").forEach((checkbox) => {
   checkbox.dispatchEvent(new publishWindow.Event("change", { bubbles: true }));
 });
 click(publishWindow, "#approve-draft-button");
+await new Promise((resolve) => publishWindow.setTimeout(resolve, 0));
 assert.equal(publishDocument.querySelector("#approval-note").textContent, "공고가 학생에게 공개되었습니다.", "공개 승인 시 안내 문구가 표시되어야 합니다.");
 assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "공개", "공개 승인 시 관리자 화면 상태가 공개로 바뀌어야 합니다.");
 const approvedNotices = JSON.parse(publishWindow.localStorage.getItem("kangnamPublishedNotices"));

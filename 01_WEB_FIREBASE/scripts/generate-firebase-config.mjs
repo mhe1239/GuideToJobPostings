@@ -61,6 +61,19 @@ import {
   signInWithRedirect,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  getFirestore,
+  limit,
+  query,
+  runTransaction,
+  setDoc,
+  where
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = ${JSON.stringify(firebaseConfig, null, 2)};
 const roleLists = ${JSON.stringify({
@@ -73,6 +86,7 @@ const publicConfig = ${JSON.stringify({
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
 isSupported()
@@ -94,9 +108,23 @@ window.KANGNAM_FIREBASE = {
 
 window.KANGNAM_PUBLIC_CONFIG = publicConfig;
 
+window.KANGNAM_FIRESTORE = {
+  db,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  query,
+  runTransaction,
+  setDoc,
+  where
+};
+
 window.dispatchEvent(new CustomEvent("kangnam-firebase-ready"));
 
-export { app, auth };
+export { app, auth, db };
 `;
 
 mkdirSync(resolve(root, "app"), { recursive: true });

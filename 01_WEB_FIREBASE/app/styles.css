@@ -2790,9 +2790,14 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 
 .school-import-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
   margin-bottom: 10px;
+}
+
+.school-import-actions .button {
+  width: 100%;
+  white-space: nowrap;
 }
 
 .school-import-status,

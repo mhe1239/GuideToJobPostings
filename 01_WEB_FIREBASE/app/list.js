@@ -551,11 +551,16 @@ function ensureAccountMenu(authLink) {
     menu.hidden = true;
     menu.setAttribute("role", "menu");
     wrapper.append(menu);
+  }
 
-    authLink.setAttribute("aria-haspopup", "menu");
-    authLink.setAttribute("aria-controls", menu.id);
+  authLink.setAttribute("aria-haspopup", "menu");
+  authLink.setAttribute("aria-controls", menu.id);
+  if (!authLink.hasAttribute("aria-expanded")) {
     authLink.setAttribute("aria-expanded", "false");
+  }
 
+  if (authLink.dataset.accountMenuBound !== "true") {
+    authLink.dataset.accountMenuBound = "true";
     authLink.addEventListener("click", (event) => {
       if (authLink.dataset.accountMenu !== "enabled") return;
       event.preventDefault();

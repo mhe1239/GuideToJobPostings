@@ -8,6 +8,7 @@ const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const ALLOWED_ROLES = new Set(["owner", "editor", "viewer"]);
 const ROLE_RANK = Object.freeze({ viewer: 0, editor: 1, owner: 2 });
 const GOOGLE_CERTS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
+const MAX_NOTICE_JSON_CHARS = 24000;
 
 let cachedFirebaseKeys = null;
 let cachedFirebaseKeysExpiresAt = 0;
@@ -57,6 +58,42 @@ function normalizeEmail(value) {
 function normalizeRole(value) {
   const role = String(value || "").trim().toLowerCase();
   return ALLOWED_ROLES.has(role) ? role : "viewer";
+}
+
+function cleanJson(value) {
+  return JSON.parse(JSON.stringify(value || {}));
+}
+
+function normalizeNoticeForD1(value) {
+  const notice = cleanJson(value);
+  const id = String(notice.id || "").trim().slice(0, 120);
+  const title = String(notice.title || "").trim().slice(0, 240);
+  if (!id || !title) {
+    const error = new Error("공고 ID와 제목이 필요합니다.");
+    error.status = 400;
+    error.code = "INVALID_NOTICE";
+    throw error;
+  }
+
+  const approvalStatus = ["draft", "review", "published", "declined"].includes(notice.approvalStatus)
+    ? notice.approvalStatus
+    : "draft";
+  const normalized = {
+    ...notice,
+    id,
+    title,
+    approvalStatus,
+    isPublished: approvalStatus === "published",
+    updatedAt: Number.isInteger(notice.updatedAt) ? notice.updatedAt : Date.now(),
+  };
+  const serialized = JSON.stringify(normalized);
+  if (serialized.length > MAX_NOTICE_JSON_CHARS) {
+    const error = new Error("공고 데이터가 너무 큽니다.");
+    error.status = 400;
+    error.code = "NOTICE_TOO_LARGE";
+    throw error;
+  }
+  return { notice: normalized, serialized };
 }
 
 function assertD1(env) {
@@ -251,6 +288,85 @@ async function handleDeleteAdmin(request, env, email) {
   });
 }
 
+function parseNoticeRows(rows = []) {
+  return rows
+    .map((row) => {
+      try {
+        return JSON.parse(row.notice_json);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
+}
+
+async function handleListPublishedNotices(request, env) {
+  const rows = await assertD1(env).prepare(`
+    SELECT notice_json FROM notices
+    WHERE approval_status = 'published'
+    ORDER BY updated_at DESC
+    LIMIT 50
+  `).all();
+  return jsonResponse(request, env, 200, {
+    status: "success",
+    notices: parseNoticeRows(rows.results || []),
+    source: "cloudflare-d1",
+  });
+}
+
+async function handleListAllNotices(request, env) {
+  await requireAdmin(request, env, "editor");
+  const rows = await assertD1(env).prepare(`
+    SELECT notice_json FROM notices
+    ORDER BY updated_at DESC
+    LIMIT 50
+  `).all();
+  return jsonResponse(request, env, 200, {
+    status: "success",
+    notices: parseNoticeRows(rows.results || []),
+    source: "cloudflare-d1",
+  });
+}
+
+async function handleSaveNotice(request, env) {
+  await requireAdmin(request, env, "editor");
+  const { notice, serialized } = normalizeNoticeForD1(await request.json().catch(() => ({})));
+  await assertD1(env).prepare(`
+    INSERT INTO notices (id, approval_status, notice_json, updated_at)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      approval_status = excluded.approval_status,
+      notice_json = excluded.notice_json,
+      updated_at = excluded.updated_at
+  `).bind(notice.id, notice.approvalStatus, serialized, notice.updatedAt).run();
+
+  return jsonResponse(request, env, 200, {
+    status: "success",
+    saved: true,
+    source: "cloudflare-d1",
+    notice,
+  });
+}
+
+async function handleDeleteNotice(request, env, noticeId) {
+  await requireAdmin(request, env, "editor");
+  const id = String(noticeId || "").trim().slice(0, 120);
+  if (!id) {
+    return jsonResponse(request, env, 400, {
+      status: "error",
+      code: "INVALID_NOTICE",
+      message: "삭제할 공고 ID가 필요합니다.",
+    });
+  }
+  await assertD1(env).prepare("DELETE FROM notices WHERE id = ?").bind(id).run();
+  return jsonResponse(request, env, 200, {
+    status: "success",
+    deleted: true,
+    source: "cloudflare-d1",
+  });
+}
+
 async function handleAdminRequest(request, env, url) {
   if (request.method === "GET" && url.pathname === "/api/admin/role") {
     return handleAdminRole(request, env);
@@ -263,6 +379,15 @@ async function handleAdminRequest(request, env, url) {
   }
   if (request.method === "DELETE" && url.pathname.startsWith("/api/admin/members/")) {
     return handleDeleteAdmin(request, env, decodeURIComponent(url.pathname.replace("/api/admin/members/", "")));
+  }
+  if (request.method === "GET" && url.pathname === "/api/admin/notices") {
+    return handleListAllNotices(request, env);
+  }
+  if (request.method === "POST" && url.pathname === "/api/admin/notices") {
+    return handleSaveNotice(request, env);
+  }
+  if (request.method === "DELETE" && url.pathname.startsWith("/api/admin/notices/")) {
+    return handleDeleteNotice(request, env, decodeURIComponent(url.pathname.replace("/api/admin/notices/", "")));
   }
   return jsonResponse(request, env, 404, {
     status: "error",
@@ -546,6 +671,9 @@ export default {
     }
 
     if (request.method === "OPTIONS") return optionsResponse(request, env);
+    if (request.method === "GET" && url.pathname === "/api/notices") {
+      return handleListPublishedNotices(request, env);
+    }
     if (url.pathname.startsWith("/api/admin/")) {
       try {
         return await handleAdminRequest(request, env, url);

@@ -825,8 +825,42 @@ function extractImageSources(markdown) {
   }
 
   return [...new Set(imageUrls)]
-    .filter((url) => !/blogger|youtube|flickr|logo|common\/.*images/i.test(url))
+    .filter(isNoticeContentImageUrl)
     .slice(0, 4);
+}
+
+function isNoticeContentImageUrl(url) {
+  const normalized = String(url || "").toLowerCase();
+  if (!normalized) return false;
+  const blocked = [
+    "blogger",
+    "youtube",
+    "flickr",
+    "logo",
+    "sns",
+    "icon",
+    "btn_",
+    "header",
+    "footer",
+    "common/",
+    "/common",
+    "site",
+    "symbol",
+    "emblem",
+    "kangnam_university",
+    "kangnamuniversity",
+  ];
+  if (blocked.some((word) => normalized.includes(word))) return false;
+
+  try {
+    const parsed = new URL(url);
+    const file = parsed.pathname.split("/").pop() || "";
+    if (/^(logo|sns|icon|btn|symbol|emblem)[._-]/i.test(file)) return false;
+  } catch {
+    return false;
+  }
+
+  return true;
 }
 
 function findSection(lines, keywords) {

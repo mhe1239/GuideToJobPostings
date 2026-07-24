@@ -350,7 +350,36 @@ function getSourceImageUrls(notice) {
     notice.sourceImageUrl || "",
     notice.imageUrl || "",
   ];
-  return [...new Set(imageUrls.filter(Boolean))];
+  return [...new Set(imageUrls.filter(isNoticeContentImageUrl))];
+}
+
+function isNoticeContentImageUrl(url) {
+  const normalized = String(url || "").toLowerCase();
+  if (!normalized) return false;
+  const blocked = [
+    "logo",
+    "sns",
+    "icon",
+    "btn_",
+    "header",
+    "footer",
+    "common/",
+    "/common",
+    "site",
+    "symbol",
+    "emblem",
+    "kangnam_university",
+    "kangnamuniversity",
+  ];
+  if (blocked.some((word) => normalized.includes(word))) return false;
+
+  try {
+    const parsed = new URL(url);
+    const file = parsed.pathname.split("/").pop() || "";
+    return !/^(logo|sns|icon|btn|symbol|emblem)[._-]/i.test(file);
+  } catch {
+    return false;
+  }
 }
 
 function createSourceImageFigure(imageUrl, index) {

@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" href="./assets/icons/32x32.png?v=20260724-official-symbol-cutout-v3" sizes="32x32" />
     <link rel="apple-touch-icon" href="./assets/icons/128x128.png?v=20260724-official-symbol-cutout-v3" />
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=20260724-brand-align-v4" />
+    <link rel="stylesheet" href="./styles.css?v=20260724-admin-workspace" />
     <script type="module" src="./firebase-config.js?v=20260722-url-reset"></script>
     <script src="./firestore-store.js?v=20260724-spark-guard" defer></script>
     <script src="./account-access.js?v=20260724-unified-login" defer></script>
@@ -59,22 +59,7 @@
           <span class="review-status" id="admin-auth-badge">보기만 가능</span>
         </div>
 
-        <section class="auth-panel">
-          <div>
-            <p class="section-label">로그인 상태</p>
-            <h3>등록된 관리자 계정으로 로그인 후 기능 사용</h3>
-            <p class="auth-copy">통합 로그인에서 관리자 관리 권한이 확인된 계정만 이 화면에서 역할을 관리할 수 있습니다.</p>
-          </div>
-          <div class="auth-actions">
-            <a class="button primary" href="./login.html">학교 계정으로 로그인</a>
-          </div>
-          <div class="auth-state" id="admin-auth-state">
-            <strong>로그아웃 상태</strong>
-            <span>학생 보기 권한입니다.</span>
-          </div>
-        </section>
-
-        <div class="admin-grid admin-grid-single">
+        <div class="admin-grid admin-grid-single admin-workspace-grid">
           <section class="admin-panel member-panel" data-requires-admin>
             <div class="panel-title-row">
               <h2>관리자 목록</h2>

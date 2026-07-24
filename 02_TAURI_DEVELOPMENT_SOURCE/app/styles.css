@@ -2520,7 +2520,7 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 }
 
 .publish-grid {
-  grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.25fr);
+  grid-template-columns: minmax(320px, 0.82fr) minmax(460px, 1.38fr);
 }
 
 .manage-grid {
@@ -2548,6 +2548,10 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 .publish-grid .approval-panel,
 .publish-grid .published-panel {
   grid-column: 1 / -1;
+}
+
+.publish-grid .draft-panel {
+  min-height: 680px;
 }
 
 .admin-panel {
@@ -2991,6 +2995,30 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   resize: vertical;
 }
 
+.publish-grid .draft-fields {
+  gap: 16px;
+}
+
+.publish-grid .draft-fields input,
+.publish-grid .draft-fields textarea {
+  padding: 14px;
+  font-size: 14px;
+}
+
+#draft-title {
+  min-height: 50px;
+  font-weight: 850;
+}
+
+#draft-summary,
+#draft-evidence {
+  min-height: 150px;
+}
+
+#draft-faq {
+  min-height: 210px;
+}
+
 .published-panel {
   grid-column: 1 / -1;
 }
@@ -3102,7 +3130,7 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 
 .approval-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-top: 16px;
 }

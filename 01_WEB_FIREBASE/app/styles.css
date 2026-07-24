@@ -3196,6 +3196,54 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   padding-inline: 14px;
 }
 
+.publish-completion-toast {
+  position: fixed;
+  top: 92px;
+  left: 18px;
+  z-index: 60;
+  max-width: min(420px, calc(100vw - 36px));
+  padding: 14px 18px;
+  color: var(--surface);
+  background: var(--status-success-700);
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 8px;
+  box-shadow: 0 18px 40px rgb(23 99 69 / 24%);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  transform-origin: left center;
+  animation: publish-toast-grow 260ms ease-out both;
+}
+
+.publish-completion-toast.is-hiding {
+  animation: publish-toast-hide 200ms ease-in both;
+}
+
+@keyframes publish-toast-grow {
+  from {
+    opacity: 0;
+    transform: translateX(-14px) scaleX(0.72);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@keyframes publish-toast-hide {
+  from {
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-10px) scaleX(0.92);
+  }
+}
+
 .login-page {
   min-height: 100vh;
   display: grid;
@@ -4304,6 +4352,13 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 
   .publish-action-buttons .button {
     width: 100%;
+  }
+
+  .publish-completion-toast {
+    top: 78px;
+    left: 12px;
+    max-width: calc(100vw - 24px);
+    padding: 13px 15px;
   }
 
   .notice-list-section,

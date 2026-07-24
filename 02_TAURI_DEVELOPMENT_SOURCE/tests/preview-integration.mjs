@@ -274,9 +274,8 @@ function bootPublish() {
   window.localStorage.setItem("kangnamManagedMembers", JSON.stringify([
     { email: "admin@kangnam.ac.kr", role: "owner" },
   ]));
-  window.__publishAlerts = [];
-  window.alert = (message) => {
-    window.__publishAlerts.push(message);
+  window.alert = () => {
+    throw new Error("완료 안내는 브라우저 alert를 사용하지 않아야 합니다.");
   };
   window.fetch = async (url) => {
     if (String(url).includes("school-notices.mock.json")) {
@@ -620,7 +619,7 @@ await new Promise((resolve) => publishWindow.setTimeout(resolve, 0));
 assert.equal(publishDocument.querySelector("#draft-fields").hidden, false, "URL 직접 입력으로 초안을 생성할 수 있어야 합니다.");
 assert.match(publishDocument.querySelector("#draft-title").value, /URL 입력 테스트 공고/, "URL 입력 초안의 제목이 편집 필드에 표시되어야 합니다.");
 assert.match(publishDocument.querySelector("#draft-summary").value, /URL 입력 테스트 공고/, "URL 입력 초안은 읽은 공고 제목을 반영해야 합니다.");
-assert.deepEqual(publishWindow.__publishAlerts, ["초안 생성을 완료했습니다."], "URL 입력 초안 생성 완료 시 확인 알림을 표시해야 합니다.");
+assert.equal(publishDocument.querySelector(".publish-completion-toast").textContent, "초안 생성을 완료했습니다.", "URL 입력 초안 생성 완료 시 비차단 완료 박스를 표시해야 합니다.");
 click(publishWindow, "input[value='list']");
 assert.equal(publishDocument.querySelector("#url-input-panel").hidden, true, "목록 선택 모드에서는 URL 입력 영역을 숨겨야 합니다.");
 assert.equal(publishDocument.querySelector("#notice-list-panel").hidden, false, "목록 선택 모드에서는 학교 공고 목록을 보여야 합니다.");
@@ -640,7 +639,7 @@ schoolNoticeItems[1].dispatchEvent(new publishWindow.MouseEvent("dblclick", { bu
 await new Promise((resolve) => publishWindow.setTimeout(resolve, 0));
 assert.match(publishDocument.querySelector("#draft-title").value, /장학금 신청 안내/, "학교 공고를 더블클릭하면 선택과 동시에 초안을 생성해야 합니다.");
 assert.equal(publishDocument.querySelector("#draft-chip").textContent, "검수 필요", "더블클릭으로 생성한 초안도 검수 필요 상태로 표시되어야 합니다.");
-assert.equal(publishWindow.__publishAlerts.filter((message) => message === "초안 생성을 완료했습니다.").length, 2, "학교 공고 초안 생성 완료 시에도 확인 알림을 표시해야 합니다.");
+assert.equal(publishDocument.querySelector(".publish-completion-toast").textContent, "초안 생성을 완료했습니다.", "학교 공고 초안 생성 완료 시에도 비차단 완료 박스를 표시해야 합니다.");
 click(publishWindow, ".school-notice-item");
 assert.equal(publishDocument.querySelector(".school-notice-item").getAttribute("aria-current"), "true", "공고를 선택하면 선택 상태가 명확히 표시되어야 합니다.");
 assert.match(publishDocument.querySelector("#selected-notice-title").textContent, /2026학년도 비교과 프로그램 참가자 모집/, "선택한 공고 제목이 표시되어야 합니다.");
@@ -679,7 +678,7 @@ click(publishWindow, "#approve-draft-button");
 await new Promise((resolve) => publishWindow.setTimeout(resolve, 0));
 assert.equal(publishDocument.querySelector("#approval-note").textContent, "공고가 학생에게 공개되었습니다.", "공개 승인 시 안내 문구가 표시되어야 합니다.");
 assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "공개", "공개 승인 시 관리자 화면 상태가 공개로 바뀌어야 합니다.");
-assert.equal(publishWindow.__publishAlerts.at(-1), "공개 승인을 완료했습니다.", "공개 승인 완료 시 확인 알림을 표시해야 합니다.");
+assert.equal(publishDocument.querySelector(".publish-completion-toast").textContent, "공고 공개 승인을 완료했습니다.", "공개 승인 완료 시 비차단 완료 박스를 표시해야 합니다.");
 const approvedNotices = JSON.parse(publishWindow.localStorage.getItem("kangnamPublishedNotices"));
 const approvedListWindow = bootListWithStorage(approvedNotices, JSON.parse(publishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
 assert.match(approvedListWindow.document.querySelector("#notice-list").textContent, /관리자가 수정한 비교과 프로그램 공고/, "수정한 제목으로 공개 승인된 공고가 학생 목록에 표시되어야 합니다.");
@@ -831,6 +830,8 @@ assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.admin-menu-card\s*\{[\
 assert.match(styles, /\.publish-action-bar\s*\{[^}]*position:\s*fixed[^}]*bottom:\s*18px/s, "AI 공고 공개 빠른 작업바는 스크롤 중에도 하단에 고정되어야 합니다.");
 assert.match(styles, /\.publish-action-summary strong\s*\{[^}]*text-overflow:\s*ellipsis/s, "빠른 작업바의 긴 공고 제목은 화면 밖으로 밀리지 않아야 합니다.");
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.publish-action-buttons\s*\{[\s\S]*grid-template-columns:\s*1fr 1fr/s, "모바일 빠른 작업바 버튼은 두 열로 정돈되어야 합니다.");
+assert.match(styles, /\.publish-completion-toast\s*\{[^}]*background:\s*var\(--status-success-700\)[^}]*transform-origin:\s*left center[^}]*animation:\s*publish-toast-grow/s, "완료 안내는 왼쪽에서 커지는 초록색 박스로 표시되어야 합니다.");
+assert.match(styles, /@keyframes publish-toast-grow[\s\S]*scaleX\(0\.72\)[\s\S]*scaleX\(1\)/, "완료 안내 박스는 가로로 커지는 애니메이션을 사용해야 합니다.");
 assert.match(styles, /\.full-notice-text\s*\{[^}]*overflow-wrap:\s*anywhere/s, "긴 전체 공고 텍스트는 화면 밖으로 넘치지 않아야 합니다.");
 assert.match(styles, /\.source-image-link img,[\s\S]*\.full-notice-image-wrap img\s*\{[^}]*max-width:\s*100%/s, "원문 이미지는 모바일 폭을 넘지 않아야 합니다.");
 assert.match(styles, /\.notice-card-status\[data-status="마감 임박"\]\s*\{[^}]*status-danger-700/s, "마감 임박 공고는 기존 위험 강조 디자인을 사용해야 합니다.");

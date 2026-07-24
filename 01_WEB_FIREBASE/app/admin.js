@@ -740,8 +740,24 @@ function updatePublishActionBar() {
   if (adminPage.stickyDeclineButton) adminPage.stickyDeclineButton.disabled = !adminPage.declineButton || adminPage.declineButton.disabled;
 }
 
-function showPublishCompletionAlert(message) {
-  if (typeof window.alert === "function") window.alert(message);
+let publishCompletionToastTimer = 0;
+
+function showPublishCompletionToast(message) {
+  const existingToast = document.querySelector(".publish-completion-toast");
+  if (existingToast) existingToast.remove();
+  window.clearTimeout(publishCompletionToastTimer);
+
+  const toast = document.createElement("div");
+  toast.className = "publish-completion-toast";
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
+  toast.textContent = message;
+  document.body.append(toast);
+
+  publishCompletionToastTimer = window.setTimeout(() => {
+    toast.classList.add("is-hiding");
+    window.setTimeout(() => toast.remove(), 220);
+  }, 2600);
 }
 
 function resetDraftForUrlChange() {
@@ -1429,7 +1445,7 @@ async function generateDraft() {
       setApprovalStatus("review");
       adminPage.note.textContent = `${notice.title} 예시 공고 기준으로 생성했습니다. 현재 결과는 프로토타입용 예시 데이터입니다.`;
       updateApprovalState();
-      showPublishCompletionAlert("초안 생성을 완료했습니다.");
+      showPublishCompletionToast("초안 생성을 완료했습니다.");
       return;
     }
 
@@ -1451,7 +1467,7 @@ async function generateDraft() {
     generatedDraftUrl = sourceUrl;
     adminPage.note.textContent = `${notice.title} 기준으로 생성했습니다. 이미지 공고가 포함된 경우 원문 이미지와 함께 검수해 주세요.`;
     updateApprovalState();
-    showPublishCompletionAlert("초안 생성을 완료했습니다.");
+    showPublishCompletionToast("초안 생성을 완료했습니다.");
   } catch (error) {
     if (adminPage.chip) adminPage.chip.textContent = "생성 실패";
     adminPage.note.textContent = `${error.message} Firebase Functions 없이 Hosting만 쓰는 현재 배포에서는 일부 링크가 브라우저 보안 정책에 막힐 수 있습니다.`;
@@ -1473,7 +1489,7 @@ async function handleDraftApproval() {
   setApprovalStatus("published");
   adminPage.note.textContent = "공고가 학생에게 공개되었습니다.";
   adminPage.approveButton.textContent = "공개 승인";
-  showPublishCompletionAlert("공개 승인을 완료했습니다.");
+  showPublishCompletionToast("공고 공개 승인을 완료했습니다.");
 }
 
 async function handleDraftDecline() {

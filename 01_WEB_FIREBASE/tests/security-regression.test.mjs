@@ -32,6 +32,16 @@ test("security regression checks", async (t) => {
     assert.match(worker, /The original notice redirected to an untrusted URL/);
   });
 
+  await t.test("school notice import is fetched server-side and mapped per notice", () => {
+    assert.match(worker, /\/api\/admin\/school-notices/);
+    assert.match(worker, /requireAdmin\(request,\s*env,\s*"editor"\)/);
+    assert.match(worker, /parseSchoolNoticeList/);
+    assert.match(worker, /detailLink/);
+    assert.match(worker, /data-params/);
+    assert.match(worker, /encMenuBoardSeq/);
+    assert.match(worker, /encMenuSeq/);
+  });
+
   await t.test("browser config does not expose administrator email lists", () => {
     assert.doesNotMatch(configGenerator, /FIREBASE_OWNER_EMAILS|FIREBASE_EDITOR_EMAILS/);
     assert.match(configGenerator, /owners:\s*\[\]/);

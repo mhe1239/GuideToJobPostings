@@ -317,6 +317,18 @@
     return { notices, source: "firestore", guarded: true };
   }
 
+  async function loadSchoolNotices() {
+    const apiPayload = await requestAdminApi("/api/admin/school-notices");
+    if (Array.isArray(apiPayload?.notices)) {
+      return {
+        notices: apiPayload.notices,
+        source: apiPayload.source || "cloudflare-d1",
+        fetchedAt: apiPayload.fetchedAt || Date.now(),
+      };
+    }
+    return { notices: [], source: "local" };
+  }
+
   async function saveNotice(notice) {
     const adminApiPayload = await requestAdminApi("/api/admin/notices", {
       method: "POST",
@@ -515,6 +527,7 @@
     reserveUsage,
     loadPublishedNotices,
     loadAllNotices,
+    loadSchoolNotices,
     saveNotice,
     deleteNotice,
     getAdminRole,

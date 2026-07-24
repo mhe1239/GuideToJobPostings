@@ -11,12 +11,12 @@
     <link rel="icon" type="image/png" href="./assets/icons/32x32.png?v=20260724-official-symbol-cutout-v3" sizes="32x32" />
     <link rel="apple-touch-icon" href="./assets/icons/128x128.png?v=20260724-official-symbol-cutout-v3" />
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=20260724-brand-profile-merge" />
+    <link rel="stylesheet" href="./styles.css?v=20260724-login-toggle-restore" />
     <script type="module" src="./firebase-config.js?v=20260722-list-page"></script>
     <script src="./firestore-store.js?v=20260724-spark-guard" defer></script>
     <script src="./account-access.js?v=20260724-unified-login" defer></script>
     <script src="./student-profile.js?v=20260724-manual-personalization" defer></script>
-    <script src="./list.js?v=20260724-brand-profile-merge" defer></script>
+    <script src="./list.js?v=20260724-login-toggle-restore" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">본문으로 바로가기</a>
@@ -30,10 +30,13 @@
             <span>공고 길잡이</span>
           </span>
         </a>
-        <a class="auth-nav" id="header-auth-link" href="./login.html">
-          <span aria-hidden="true"></span>
-          로그인
-        </a>
+        <div class="account-menu">
+          <a class="auth-nav" id="header-auth-link" href="./login.html" aria-haspopup="menu" aria-controls="header-account-menu" aria-expanded="false" data-account-menu="disabled">
+            <span aria-hidden="true"></span>
+            로그인
+          </a>
+          <div class="account-menu-popover" id="header-account-menu" role="menu" hidden></div>
+        </div>
       </div>
     </header>
 

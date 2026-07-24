@@ -54,6 +54,8 @@ service cloud.firestore {
           "transferStudentEligible",
           "graduateEligible",
           "summary",
+          "originalContent",
+          "originalSections",
           "sourceTitle",
           "sourcePrefix",
           "approvalStatus",
@@ -95,6 +97,8 @@ service cloud.firestore {
         && (data.transferStudentEligible == null || data.transferStudentEligible is bool)
         && (data.graduateEligible == null || data.graduateEligible is bool)
         && data.summary is string && data.summary.size() <= 4000
+        && data.originalContent is string && data.originalContent.size() <= 20000
+        && data.originalSections is list && data.originalSections.size() <= 20
         && data.sourceTitle is string && data.sourceTitle.size() <= 300
         && data.sourcePrefix is string && data.sourcePrefix.size() <= 80
         && data.publishedAt is string && data.publishedAt.size() <= 40

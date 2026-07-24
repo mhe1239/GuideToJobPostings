@@ -34,6 +34,38 @@ const DEFAULT_NOTICES = Object.freeze([
       documents: "지원서",
       operation: "2026학년도 2학기",
     },
+    originalSections: [
+      {
+        id: "overview",
+        title: "\uD504\uB85C\uADF8\uB7A8 \uAC1C\uC694",
+        type: "paragraph",
+        content: "\uAC15\uB0A8\uB300\uD559\uAD50 \uC785\uD559\uCC98 \uACF5\uC2DD \uD64D\uBCF4\uB300\uC0AC \uB298\uD488 12\uAE30 2\uD559\uAE30 \uC218\uC2B5 \uC784\uC6D0\uC744 \uBAA8\uC9D1\uD569\uB2C8\uB2E4.",
+      },
+      {
+        id: "schedule",
+        title: "\uBAA8\uC9D1 \uC77C\uC815",
+        type: "list",
+        items: ["\uC2E0\uCCAD \uAE30\uAC04: 7\uC6D4 20\uC77C(\uC6D4)\uBD80\uD130 8\uC6D4 2\uC77C(\uC77C) 17:00\uAE4C\uC9C0", "\uD65C\uB3D9 \uAE30\uAC04: 2026\uD559\uB144\uB3C4 2\uD559\uAE30"],
+      },
+      {
+        id: "eligibility",
+        title: "\uC9C0\uC6D0 \uB300\uC0C1",
+        type: "paragraph",
+        content: "\uAC15\uB0A8\uB300\uD559\uAD50 \uC7AC\uD559\uC0DD \uBC0F \uD3B8\uC785\uC0DD\uC774 \uC9C0\uC6D0\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.",
+      },
+      {
+        id: "fields",
+        title: "\uBAA8\uC9D1 \uBD84\uC57C",
+        type: "list",
+        items: ["\uAE30\uD68D\uAD6D", "\uB300\uC678\uD64D\uBCF4\uAD6D", "\uCF58\uD150\uCE20\uB514\uC790\uC778\uAD6D"],
+      },
+      {
+        id: "notice",
+        title: "\uC720\uC758 \uC0AC\uD56D",
+        type: "notice",
+        content: "\uC544\uB798 \uB0B4\uC6A9\uC740 \uB4F1\uB85D\uB41C \uC6D0\uBCF8 \uACF5\uACE0 \uB0B4\uC6A9\uC744 \uC77D\uAE30 \uC27D\uAC8C \uC815\uB9AC\uD574 \uD45C\uC2DC\uD55C \uC601\uC5ED\uC785\uB2C8\uB2E4. \uC815\uD655\uD55C \uB0B4\uC6A9\uC740 \uACF5\uC2DD \uC6D0\uBB38\uC744 \uD568\uAED8 \uD655\uC778\uD574 \uC8FC\uC138\uC694.",
+      },
+    ],
     faqs: [
       {
         id: "application-period",
@@ -217,6 +249,11 @@ const elements = {
   fullNoticeToggle: document.querySelector("#full-notice-toggle"),
   fullNoticePanel: document.querySelector("#full-notice-panel"),
   fullNoticeText: document.querySelector("#full-notice-text"),
+  fullNoticeDocumentTitle: document.querySelector("#full-notice-document-title"),
+  fullSourceDepartment: document.querySelector("#full-source-department"),
+  fullSourcePublishedAt: document.querySelector("#full-source-published-at"),
+  fullSourceType: document.querySelector("#full-source-type"),
+  fullSourceReviewed: document.querySelector("#full-source-reviewed"),
   fullPeriod: document.querySelector("#full-period"),
   fullEligibility: document.querySelector("#full-eligibility"),
   fullField: document.querySelector("#full-field"),
@@ -410,14 +447,14 @@ function createSourceImageFigure(imageUrl, index) {
   link.href = imageUrl;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
-  link.setAttribute("aria-label", `원문 이미지 ${index + 1} 새 창에서 보기`);
+  link.setAttribute("aria-label", `\uC6D0\uBB38 \uC774\uBBF8\uC9C0 ${index + 1} \uC0C8 \uD0ED\uC5D0\uC11C \uBCF4\uAE30`);
   image.src = imageUrl;
-  image.alt = `${activeNotice.sourceTitle || activeNotice.title} 원문 이미지 ${index + 1}`;
+  image.alt = `${activeNotice.sourceTitle || activeNotice.title} \uC6D0\uBB38 \uC774\uBBF8\uC9C0 ${index + 1}`;
   image.loading = "lazy";
-  caption.textContent = `원문 이미지 ${index + 1} - 클릭하면 새 창에서 원본을 확인할 수 있습니다.`;
+  caption.textContent = `\uC6D0\uBB38 \uC774\uBBF8\uC9C0 ${index + 1} - \uC120\uD0DD\uD558\uBA74 \uC0C8 \uD0ED\uC5D0\uC11C \uC6D0\uBCF8\uC744 \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.`;
   fallback.className = "image-fallback";
   fallback.hidden = true;
-  fallback.textContent = "원문 이미지를 불러오지 못했습니다. 원문 링크에서 확인해 주세요.";
+  fallback.textContent = "\uC6D0\uBB38 \uC774\uBBF8\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uACF5\uC2DD \uC6D0\uBB38 \uB9C1\uD06C\uC5D0\uC11C \uD655\uC778\uD574 \uC8FC\uC138\uC694.";
   image.addEventListener("error", () => {
     link.hidden = true;
     fallback.hidden = false;
@@ -437,32 +474,164 @@ function renderSourceImages(notice) {
   elements.fullNoticeImageList.replaceChildren(...imageUrls.map(createSourceImageFigure));
 }
 
-function buildFullNoticeText(notice, facts) {
-  const lines = [
-    notice.title,
-    "",
-    notice.summary,
-    "",
-    "[핵심 정보]",
-    `신청 기간: ${facts.period}`,
-    `지원 대상: ${facts.eligibility}`,
-    `모집 분야: ${facts.field}`,
-    `제출 서류: ${facts.documents}`,
-    `운영 기간: ${facts.operation}`,
-    `담당 부서: ${notice.department || "확인 필요"}`,
-    "",
-    "[FAQ]",
-    ...notice.faqs.map((faq, index) => `${index + 1}. Q. ${faq.question}\n   A. ${faq.answer}\n   출처: ${faq.source}`),
-  ];
+function normalizeOriginalText(value) {
+  return String(value || "")
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
-  return lines.join("\n").trim();
+function isOrderedLine(line) {
+  return /^\s*(?:\d+[\.)]|[\uAC00-\uD7A3][\.)])\s+/.test(line);
+}
+
+function isBulletLine(line) {
+  return /^\s*(?:[-*\u2022\u318D]|[\u25CB\u25E6\u25AA\u25AB])\s*/.test(line);
+}
+
+function cleanListMarker(line) {
+  return line.replace(/^\s*(?:\d+[\.)]|[\uAC00-\uD7A3][\.)]|[-*\u2022\u318D\u25CB\u25E6\u25AA\u25AB])\s*/, "").trim();
+}
+
+function createNoticeParagraph(text) {
+  return createElement("p", "full-notice-paragraph", text);
+}
+
+function createNoticeList(items, ordered = false) {
+  const list = document.createElement(ordered ? "ol" : "ul");
+  list.className = "full-notice-list";
+  list.replaceChildren(...items.map((item) => createElement("li", "", item)));
+  return list;
+}
+
+function createNoticeCallout(text) {
+  const note = createElement("p", "full-notice-callout", text);
+  note.setAttribute("role", "note");
+  return note;
+}
+
+function createNoticeTable(section) {
+  const wrap = createElement("div", "full-notice-table-wrap");
+  const table = document.createElement("table");
+  const rows = Array.isArray(section.rows) ? section.rows : [];
+  rows.forEach((row) => {
+    const tr = document.createElement("tr");
+    (Array.isArray(row) ? row : []).forEach((cell, index) => {
+      const tag = index === 0 ? "th" : "td";
+      const node = createElement(tag, "", String(cell || ""));
+      if (tag === "th") node.scope = "row";
+      tr.append(node);
+    });
+    table.append(tr);
+  });
+  if (!rows.length && Array.isArray(section.items)) {
+    section.items.forEach((item) => {
+      const tr = document.createElement("tr");
+      tr.append(createElement("td", "", item));
+      table.append(tr);
+    });
+  }
+  wrap.append(table);
+  return wrap;
+}
+
+function renderTextBlocks(text) {
+  const lines = normalizeOriginalText(text).split("\n");
+  const nodes = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index].trim();
+    if (!line) {
+      index += 1;
+      continue;
+    }
+
+    if (isBulletLine(line) || isOrderedLine(line)) {
+      const ordered = isOrderedLine(line);
+      const items = [];
+      while (index < lines.length) {
+        const current = lines[index].trim();
+        if (!current || (ordered ? !isOrderedLine(current) : !isBulletLine(current))) break;
+        items.push(cleanListMarker(current));
+        index += 1;
+      }
+      nodes.push(createNoticeList(items, ordered));
+      continue;
+    }
+
+    nodes.push(createNoticeParagraph(line));
+    index += 1;
+  }
+
+  return nodes;
+}
+
+function createSectionNode(section, index) {
+  const article = document.createElement("section");
+  article.className = `full-notice-content-section ${section.type === "notice" ? "is-notice" : ""}`.trim();
+  article.id = section.id || `full-notice-section-${index + 1}`;
+
+  if (section.title) {
+    article.append(createElement("h4", "", section.title));
+  }
+
+  if (section.type === "list") {
+    article.append(createNoticeList(Array.isArray(section.items) ? section.items : [], false));
+  } else if (section.type === "notice") {
+    article.append(createNoticeCallout(section.content || (Array.isArray(section.items) ? section.items.join("\n") : "")));
+  } else if (section.type === "table") {
+    article.append(createNoticeTable(section));
+  } else {
+    article.append(...renderTextBlocks(section.content || ""));
+  }
+
+  return article;
+}
+
+function getOriginalSections(notice) {
+  return Array.isArray(notice.originalSections)
+    ? notice.originalSections.filter((section) => section && typeof section === "object")
+    : [];
+}
+
+function renderFullNoticeContent(notice) {
+  try {
+    const sections = getOriginalSections(notice);
+    const content = normalizeOriginalText(notice.originalContent);
+    const nodes = sections.length
+      ? sections.map(createSectionNode)
+      : content
+        ? renderTextBlocks(content)
+        : [createNoticeCallout("\uB4F1\uB85D\uB41C \uC804\uCCB4 \uACF5\uACE0 \uB0B4\uC6A9\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uACF5\uC2DD \uC6D0\uBB38\uC5D0\uC11C \uC138\uBD80 \uB0B4\uC6A9\uC744 \uD655\uC778\uD574 \uC8FC\uC138\uC694.")];
+    elements.fullNoticeText.replaceChildren(...nodes);
+  } catch (error) {
+    console.error("full notice render failed", error);
+    elements.fullNoticeText.replaceChildren(createNoticeCallout("\uC804\uCCB4 \uACF5\uACE0 \uB0B4\uC6A9\uC744 \uD45C\uC2DC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uACF5\uC2DD \uC6D0\uBB38\uC744 \uD655\uC778\uD574 \uC8FC\uC138\uC694."));
+  }
+}
+
+function createChevronIcon(expanded) {
+  const namespace = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(namespace, "svg");
+  const path = document.createElementNS(namespace, "path");
+  svg.setAttribute("class", "toggle-icon");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  path.setAttribute("d", expanded ? "m18 15-6-6-6 6" : "m6 9 6 6 6-6");
+  svg.append(path);
+  return svg;
 }
 
 function setFullNoticeExpanded(expanded) {
   if (!elements.fullNoticeToggle || !elements.fullNoticePanel) return;
+  const label = expanded ? "\uC804\uCCB4 \uACF5\uACE0 \uB0B4\uC6A9 \uB2EB\uAE30" : "\uC804\uCCB4 \uACF5\uACE0 \uB0B4\uC6A9 \uBCF4\uAE30";
   elements.fullNoticePanel.hidden = !expanded;
   elements.fullNoticeToggle.setAttribute("aria-expanded", String(expanded));
-  elements.fullNoticeToggle.textContent = expanded ? "전체 공고 내용 닫기" : "전체 공고 내용 보기";
+  elements.fullNoticeToggle.replaceChildren(createElement("span", "", label), createChevronIcon(expanded));
 }
 
 function renderNoticeList() {
@@ -526,8 +695,13 @@ function renderNotice() {
   elements.factOperation.textContent = operation;
   elements.factDepartment.textContent = department;
   renderEligibilityTargets();
-  elements.fullNoticeSummary.textContent = activeNotice.summary;
-  elements.fullNoticeText.textContent = buildFullNoticeText(activeNotice, { period, eligibility, field, documents, operation });
+  elements.fullNoticeSummary.textContent = "아래 내용은 등록된 원본 공고 내용을 읽기 쉽게 정리해 표시한 영역입니다. 정확한 내용은 공식 원문을 함께 확인해 주세요.";
+  elements.fullNoticeDocumentTitle.textContent = activeNotice.sourceTitle || activeNotice.title;
+  elements.fullSourceDepartment.textContent = department;
+  elements.fullSourcePublishedAt.textContent = formatNoticeDate(activeNotice.publishedAt || activeNotice.date, "");
+  elements.fullSourceType.textContent = getSourceTypeLabel(sourceType);
+  elements.fullSourceReviewed.textContent = reviewed ? "검수 완료" : "검수 필요";
+  renderFullNoticeContent(activeNotice);
   elements.fullPeriod.textContent = period;
   elements.fullEligibility.textContent = eligibility;
   elements.fullField.textContent = field;
@@ -802,9 +976,16 @@ elements.questionInput.addEventListener("input", () => {
 elements.retryButton.addEventListener("click", resetQuestion);
 elements.departmentButton.addEventListener("click", showDepartment);
 elements.departmentBackButton.addEventListener("click", returnToNotice);
-elements.fullNoticeToggle.addEventListener("click", () => {
+function toggleFullNotice() {
   const expanded = elements.fullNoticeToggle.getAttribute("aria-expanded") === "true";
   setFullNoticeExpanded(!expanded);
+}
+
+elements.fullNoticeToggle.addEventListener("click", toggleFullNotice);
+elements.fullNoticeToggle.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  toggleFullNotice();
 });
 renderNotice();
 renderNoticeList();

@@ -1137,6 +1137,8 @@ function buildModeratedNotice(baseNotice, approvalStatus) {
     reviewed: approvalStatus === "published",
     reviewedAt: approvalStatus === "published" ? today : "",
     summary: summary || `${title} 공고입니다. 공식 원문과 관리자 검수 내용을 함께 확인해 주세요.`,
+    originalContent: baseNotice.originalContent || summary || baseNotice.bodyPreview || "",
+    originalSections: Array.isArray(baseNotice.originalSections) ? baseNotice.originalSections : [],
     facts: {
       period: extractFactFromSummary(summary, "핵심 일정", "공식 공고 원문 확인"),
       eligibility: extractFactFromSummary(summary, "대상/자격", "공식 공고 원문 확인"),

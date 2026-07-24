@@ -309,7 +309,46 @@
     return String(value || "").trim().toLowerCase();
   }
 
+  function getAdminApiBase() {
+    return String(global.KANGNAM_PUBLIC_CONFIG?.adminRoleEndpoint || "").replace(/\/$/, "");
+  }
+
+  async function getFirebaseIdToken() {
+    const user = global.KANGNAM_FIREBASE?.auth?.currentUser;
+    if (!user?.getIdToken) return "";
+    return user.getIdToken();
+  }
+
+  async function requestAdminApi(path, options = {}) {
+    const baseUrl = getAdminApiBase();
+    if (!baseUrl) return null;
+
+    const token = await getFirebaseIdToken();
+    if (!token) return null;
+
+    const response = await fetch(`${baseUrl}${path}`, {
+      ...options,
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new FirestoreBudgetError(payload.message || "관리자 권한 서버 요청에 실패했습니다.", payload.code || "ADMIN_API_ERROR");
+      error.status = response.status;
+      throw error;
+    }
+    return payload;
+  }
+
   async function getAdminRole(email) {
+    const apiPayload = await requestAdminApi("/api/admin/role");
+    if (apiPayload?.role && ALLOWED_ROLES.includes(apiPayload.role)) {
+      return apiPayload.role;
+    }
+
     const api = await ready;
     const normalizedEmail = normalizeEmail(email);
     if (!api?.db || !normalizedEmail) return null;
@@ -321,6 +360,18 @@
   }
 
   async function loadAdmins() {
+    const apiPayload = await requestAdminApi("/api/admin/members");
+    if (apiPayload?.members) {
+      return {
+        admins: apiPayload.members.map((admin) => ({
+          ...admin,
+          email: normalizeEmail(admin.email),
+        })),
+        source: "cloudflare-d1",
+        guarded: true,
+      };
+    }
+
     const api = await ready;
     if (!api?.db) return { admins: [], source: "local", guarded: false };
 
@@ -340,6 +391,14 @@
   }
 
   async function saveAdmin(admin) {
+    const adminApiPayload = await requestAdminApi("/api/admin/members", {
+      method: "POST",
+      body: JSON.stringify(admin || {}),
+    });
+    if (adminApiPayload?.saved) {
+      return { saved: true, source: "cloudflare-d1" };
+    }
+
     const api = await ready;
     const email = normalizeEmail(admin?.email);
     const role = ALLOWED_ROLES.includes(admin?.role) ? admin.role : "viewer";
@@ -357,6 +416,13 @@
   }
 
   async function deleteAdmin(email) {
+    const adminApiPayload = await requestAdminApi(`/api/admin/members/${encodeURIComponent(normalizeEmail(email))}`, {
+      method: "DELETE",
+    });
+    if (adminApiPayload?.deleted) {
+      return { deleted: true, source: "cloudflare-d1" };
+    }
+
     const api = await ready;
     const normalizedEmail = normalizeEmail(email);
     if (!api?.db) return { deleted: false, source: "local" };

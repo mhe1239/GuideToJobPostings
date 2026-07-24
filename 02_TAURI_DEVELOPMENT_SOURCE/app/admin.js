@@ -688,7 +688,7 @@ async function handleMemberSubmit(event) {
   if (!email) return;
 
   try {
-    await window.KANGNAM_NOTICE_STORE?.saveAdmin({
+    const result = await window.KANGNAM_NOTICE_STORE?.saveAdmin({
       email,
       role: adminPage.memberRole.value,
     });
@@ -698,7 +698,7 @@ async function handleMemberSubmit(event) {
   }
 
   managedMembers = managedMembers.filter((member) => normalizeMemberEmail(member.email) !== email);
-  managedMembers.push({ email, role: adminPage.memberRole.value, source: "Firestore" });
+  managedMembers.push({ email, role: adminPage.memberRole.value, source: result?.source || "공용 저장소" });
   saveManagedMembers();
   adminPage.memberEmail.value = "";
   renderMembers();
@@ -992,11 +992,11 @@ async function hydrateFirestoreAdminData() {
     if (noticeResult.source === "firestore") {
       savePublishedNotices(noticeResult.notices);
     }
-    if (adminResult.source === "firestore") {
+    if (adminResult.source === "firestore" || adminResult.source === "cloudflare-d1") {
       managedMembers = adminResult.admins.map((admin) => ({
         email: admin.email,
         role: admin.role,
-        source: "Firestore",
+        source: adminResult.source === "cloudflare-d1" ? "Cloudflare D1" : "Firestore",
       }));
       saveManagedMembers();
     }

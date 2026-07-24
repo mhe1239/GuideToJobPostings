@@ -2,6 +2,19 @@
 
 이 저장소는 웹 배포와 Mac·Windows 설치앱 빌드에 필요한 파일을 구분해 제공합니다.
 
+## AI 협업 및 문서 운영
+
+이 저장소는 [Austin Docs Architecture](https://github.com/EunHyeokJung/austin-docs-architecture)의 한국어 워크플로를 프로젝트에 맞게 적용합니다. 기존 빌드·배포 문서는 유지하고, 프로젝트 운영 기준과 제품 맥락은 아래 문서에서 한곳에 관리합니다.
+
+- [AGENTS.md](AGENTS.md): 기능, 배포, PR 작업 전 확인할 공통 작업 규칙
+- [폴더 아키텍처](docs/01-folder-architecture.md): 웹·Tauri·문서 폴더의 책임
+- [기술 스펙](docs/02-specs.md): 기술 스택, 보안, 검증, 배포 기준
+- [제품 기획](docs/03-product-plan.md): 대상 사용자, 핵심 흐름, 기능 범위
+- [TODO 목록](docs/todo/00-todo-list.md): 바로 처리하지 못한 후속 작업
+- [작업 기록](docs/reports): 완료된 주요 변경과 검증 결과
+
+기능 구현, 배포, PR 또는 구조 변경을 시작할 때는 `AGENTS.md`와 위 핵심 문서를 먼저 확인합니다. 단순 질문이나 상태 확인은 관련 문서만 선택적으로 확인할 수 있습니다.
+
 ## 01_WEB_FIREBASE
 
 Windows 또는 Mac에서 HTML, CSS, JavaScript를 수정하고 Firebase Hosting에 배포할 수 있는 파일입니다.

@@ -3088,6 +3088,63 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   width: auto;
 }
 
+.has-publish-action-bar {
+  padding-bottom: 112px;
+}
+
+.publish-action-bar {
+  position: fixed;
+  right: max(16px, calc((100vw - 1180px) / 2));
+  bottom: 18px;
+  left: max(16px, calc((100vw - 1180px) / 2));
+  z-index: 25;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  color: var(--ink);
+  background: rgb(255 255 255 / 96%);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgb(16 40 70 / 16%);
+  backdrop-filter: blur(12px);
+}
+
+.publish-action-summary {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.publish-action-summary span,
+.publish-action-summary small {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.publish-action-summary strong {
+  color: var(--primary-950);
+  font-size: 14px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publish-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.publish-action-buttons .button {
+  min-height: 44px;
+  padding-inline: 14px;
+}
+
 .login-page {
   min-height: 100vh;
   display: grid;
@@ -4175,6 +4232,27 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 
   .approval-actions {
     grid-template-columns: 1fr;
+  }
+
+  .has-publish-action-bar {
+    padding-bottom: 246px;
+  }
+
+  .publish-action-bar {
+    grid-template-columns: 1fr;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    gap: 10px;
+  }
+
+  .publish-action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .publish-action-buttons .button {
+    width: 100%;
   }
 
   .notice-list-section,

@@ -176,6 +176,20 @@
           </section>
 
         </div>
+
+        <aside class="publish-action-bar" id="publish-action-bar" aria-label="공고 생성 및 공개 빠른 작업" hidden>
+          <div class="publish-action-summary" aria-live="polite">
+            <span id="publish-step-summary">초안 생성 대기</span>
+            <strong id="publish-selection-summary">공고 선택 전</strong>
+            <small id="publish-check-summary">검수 체크 0/3</small>
+          </div>
+          <div class="publish-action-buttons">
+            <button class="button primary" id="sticky-generate-draft-button" type="submit" form="admin-ingest-form">초안 생성</button>
+            <button class="button secondary" id="sticky-edit-draft-button" type="button" disabled>수정</button>
+            <button class="button primary" id="sticky-approve-draft-button" type="button" disabled>공개 승인</button>
+            <button class="button danger" id="sticky-decline-draft-button" type="button" disabled>보류</button>
+          </div>
+        </aside>
       </section>
     </main>
   </body>

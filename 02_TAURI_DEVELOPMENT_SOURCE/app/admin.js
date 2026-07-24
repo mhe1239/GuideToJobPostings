@@ -247,6 +247,14 @@ const adminPage = {
   approveButton: document.querySelector("#approve-draft-button"),
   declineButton: document.querySelector("#decline-draft-button"),
   note: document.querySelector("#approval-note"),
+  publishActionBar: document.querySelector("#publish-action-bar"),
+  publishStepSummary: document.querySelector("#publish-step-summary"),
+  publishSelectionSummary: document.querySelector("#publish-selection-summary"),
+  publishCheckSummary: document.querySelector("#publish-check-summary"),
+  stickyGenerateButton: document.querySelector("#sticky-generate-draft-button"),
+  stickyEditButton: document.querySelector("#sticky-edit-draft-button"),
+  stickyApproveButton: document.querySelector("#sticky-approve-draft-button"),
+  stickyDeclineButton: document.querySelector("#sticky-decline-draft-button"),
   publishedList: document.querySelector("#published-list"),
   publishedCountChip: document.querySelector("#published-count-chip"),
   publishedNote: document.querySelector("#published-note"),
@@ -677,6 +685,41 @@ function updateApprovalState() {
   const canManagePublished = canEditAndPublish() && Boolean(selectedPublishedId);
   if (adminPage.savePublishedButton) adminPage.savePublishedButton.disabled = !canManagePublished;
   if (adminPage.deletePublishedButton) adminPage.deletePublishedButton.disabled = !canManagePublished;
+  updatePublishActionBar();
+}
+
+function getPublishSelectionLabel() {
+  const selectedNotice = getSelectedMockNotice();
+  if (noticeInputMode === "list") return selectedNotice?.title || "공고 선택 전";
+  return adminPage.urlInput?.value.trim() ? "URL 입력됨" : "URL 입력 전";
+}
+
+function updatePublishActionBar() {
+  if (!adminPage.publishActionBar) return;
+
+  const allowed = canEditAndPublish();
+  const ready = Boolean(adminPage.fields && !adminPage.fields.hidden);
+  const checkedCount = adminPage.checkboxes.filter((checkbox) => checkbox.checked).length;
+  const totalChecks = adminPage.checkboxes.length;
+  const allChecked = totalChecks > 0 && checkedCount === totalChecks;
+
+  adminPage.publishActionBar.hidden = !allowed;
+  document.body.classList.toggle("has-publish-action-bar", allowed);
+
+  if (adminPage.publishStepSummary) {
+    adminPage.publishStepSummary.textContent = ready
+      ? allChecked ? "공개 승인 가능" : "검수 체크 필요"
+      : "초안 생성 대기";
+  }
+  if (adminPage.publishSelectionSummary) adminPage.publishSelectionSummary.textContent = getPublishSelectionLabel();
+  if (adminPage.publishCheckSummary) adminPage.publishCheckSummary.textContent = `검수 체크 ${checkedCount}/${totalChecks}`;
+
+  if (adminPage.stickyGenerateButton) {
+    adminPage.stickyGenerateButton.disabled = !allowed || adminPage.generateButton?.disabled;
+  }
+  if (adminPage.stickyEditButton) adminPage.stickyEditButton.disabled = !adminPage.editButton || adminPage.editButton.disabled;
+  if (adminPage.stickyApproveButton) adminPage.stickyApproveButton.disabled = !adminPage.approveButton || adminPage.approveButton.disabled;
+  if (adminPage.stickyDeclineButton) adminPage.stickyDeclineButton.disabled = !adminPage.declineButton || adminPage.declineButton.disabled;
 }
 
 function resetDraftForUrlChange() {
@@ -1341,6 +1384,7 @@ async function handleDraftGeneration(event) {
 
   if (adminPage.chip) adminPage.chip.textContent = "생성 중";
   adminPage.generateButton.disabled = true;
+  updatePublishActionBar();
   adminPage.note.textContent = noticeInputMode === "url"
     ? "공식 링크의 텍스트와 이미지 공고 후보를 수집하고 있습니다."
     : "프로토타입용 예시 공고 데이터를 바탕으로 초안을 생성하고 있습니다.";
@@ -1386,6 +1430,7 @@ async function handleDraftGeneration(event) {
     adminPage.note.textContent = `${error.message} Firebase Functions 없이 Hosting만 쓰는 현재 배포에서는 일부 링크가 브라우저 보안 정책에 막힐 수 있습니다.`;
   } finally {
     adminPage.generateButton.disabled = false;
+    updatePublishActionBar();
   }
 }
 
@@ -1456,5 +1501,8 @@ adminPage.checkboxes.forEach((checkbox) => checkbox.addEventListener("change", u
 adminPage.editButton?.addEventListener("click", handleDraftEdit);
 adminPage.approveButton?.addEventListener("click", handleDraftApproval);
 adminPage.declineButton?.addEventListener("click", handleDraftDecline);
+adminPage.stickyEditButton?.addEventListener("click", () => adminPage.editButton?.click());
+adminPage.stickyApproveButton?.addEventListener("click", () => adminPage.approveButton?.click());
+adminPage.stickyDeclineButton?.addEventListener("click", () => adminPage.declineButton?.click());
 window.addEventListener("kangnam-firebase-ready", initAuth, { once: true });
 initAuth();

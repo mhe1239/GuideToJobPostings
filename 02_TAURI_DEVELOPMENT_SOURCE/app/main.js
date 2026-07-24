@@ -1039,7 +1039,7 @@ function renderAccountMenu(authLink, user, role) {
 
   const canOpenAdmin = role === "owner" || role === "editor";
   authLink.dataset.accountMenu = "enabled";
-  authLink.href = canOpenAdmin ? "./admin.html" : "./index.html";
+  authLink.href = canOpenAdmin ? "./admin.html" : "./profile.html";
   authLink.lastChild.textContent = "내 계정";
 
   const email = document.createElement("p");
@@ -1053,6 +1053,12 @@ function renderAccountMenu(authLink, user, role) {
     adminLink.textContent = "관리자 메뉴";
     adminLink.setAttribute("role", "menuitem");
     items.push(adminLink);
+  } else {
+    const profileLink = document.createElement("a");
+    profileLink.href = "./profile.html";
+    profileLink.textContent = "내 정보";
+    profileLink.setAttribute("role", "menuitem");
+    items.push(profileLink);
   }
 
   const homeLink = document.createElement("a");

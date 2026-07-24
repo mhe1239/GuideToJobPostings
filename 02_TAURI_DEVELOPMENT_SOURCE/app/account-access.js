@@ -83,7 +83,7 @@
 
     try {
       const candidate = new global.URL(rawReturnTo, fallback);
-      const allowedPage = /\/(?:index|notice)\.html$/u.test(candidate.pathname);
+      const allowedPage = /\/(?:index|notice|profile)\.html$/u.test(candidate.pathname);
       if (candidate.origin === fallback.origin && allowedPage) return candidate.href;
     } catch {
       // Invalid or cross-origin return paths fall back to the student home.
@@ -95,7 +95,7 @@
     const location = global.location;
     if (!location) return "index.html";
     const pageName = location.pathname.split("/").pop() || "index.html";
-    if (!["index.html", "notice.html"].includes(pageName)) return "index.html";
+    if (!["index.html", "notice.html", "profile.html"].includes(pageName)) return "index.html";
     return `${pageName}${location.search || ""}`;
   }
 

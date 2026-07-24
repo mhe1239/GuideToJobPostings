@@ -107,12 +107,16 @@ const listElements = {
   interestCheckboxes: [...document.querySelectorAll("input[name='student-interest']")],
   personalizedResetButton: document.querySelector("#personalized-reset-button"),
   personalizedSummary: document.querySelector("#personalized-summary"),
+  personalizedTitle: document.querySelector("#personalized-search-title"),
+  personalizedPrivacyNote: document.querySelector("#personalized-privacy-note"),
+  personalizedProfileLink: document.querySelector("#personalized-profile-link"),
 };
 
 const activeFilters = {
   category: FILTER_ALL,
   recruitmentStatus: FILTER_ALL,
 };
+let signedInStudent = null;
 
 function loadPublishedNotices() {
   try {
@@ -219,6 +223,57 @@ function getStudentProfile() {
   };
 }
 
+function fillStudentProfile(profile = {}) {
+  const normalized = window.KANGNAM_STUDENT_PROFILE?.normalize(profile) || profile;
+  listElements.enrollmentRadios.forEach((radio) => {
+    radio.checked = radio.value === (normalized.enrollmentStatus || "");
+  });
+  if (listElements.gradeSelect) listElements.gradeSelect.value = normalized.grade || "";
+  if (listElements.transferCheckbox) listElements.transferCheckbox.checked = normalized.transferStudent === true;
+  listElements.interestCheckboxes.forEach((checkbox) => {
+    checkbox.checked = normalized.interests?.includes(checkbox.value) === true;
+  });
+}
+
+function resetStudentProfileControls() {
+  fillStudentProfile({
+    enrollmentStatus: "",
+    grade: "",
+    transferStudent: false,
+    interests: [],
+  });
+}
+
+function setStudentProfileMode(user) {
+  signedInStudent = user || null;
+  const isStudent = Boolean(signedInStudent);
+  const controls = [
+    ...listElements.enrollmentRadios,
+    listElements.gradeSelect,
+    listElements.transferCheckbox,
+    ...listElements.interestCheckboxes,
+  ].filter(Boolean);
+  controls.forEach((control) => {
+    control.disabled = isStudent;
+  });
+
+  if (listElements.personalizedTitle) {
+    listElements.personalizedTitle.textContent = isStudent
+      ? "저장된 내 정보로 공고를 골랐습니다"
+      : "로그인 없이 조건을 선택하세요";
+  }
+  if (listElements.personalizedPrivacyNote) {
+    listElements.personalizedPrivacyNote.textContent = isStudent ? "이 기기에 저장" : "저장 안 함";
+  }
+  if (listElements.personalizedResetButton) listElements.personalizedResetButton.hidden = isStudent;
+  if (listElements.personalizedProfileLink) {
+    listElements.personalizedProfileLink.hidden = !isStudent;
+    listElements.personalizedProfileLink.textContent = window.KANGNAM_STUDENT_PROFILE?.isConfigured(getStudentProfile())
+      ? "내 정보 수정"
+      : "내 정보 설정";
+  }
+}
+
 function hasPersonalizedConditions(profile = getStudentProfile()) {
   return Boolean(profile.enrollmentStatus || profile.grade || profile.transferStudent || profile.interests.length > 0);
 }
@@ -301,6 +356,15 @@ function setFilter(type, value) {
 
 function updatePersonalizedSummary(profile = getStudentProfile()) {
   if (!listElements.personalizedSummary) return;
+  if (signedInStudent) {
+    if (!window.KANGNAM_STUDENT_PROFILE?.isConfigured(profile)) {
+      listElements.personalizedSummary.textContent = "저장된 내 정보가 없습니다. 내 정보를 설정하면 맞춤 공고가 자동으로 표시됩니다.";
+      return;
+    }
+    const summary = window.KANGNAM_STUDENT_PROFILE.toSummary(profile);
+    listElements.personalizedSummary.textContent = `내 정보 적용: ${summary.join(" · ")}. 조건 정보가 없는 공고는 조건 확인 필요로 표시합니다.`;
+    return;
+  }
   if (!hasPersonalizedConditions(profile)) {
     listElements.personalizedSummary.textContent = "조건을 선택하면 목록에 즉시 반영됩니다. 입력 내용은 저장되지 않습니다.";
     return;
@@ -365,41 +429,6 @@ function renderNoticeList() {
   listElements.noticeList.replaceChildren(...notices.map(createNoticeLink));
   updateFilterButtons();
   updatePersonalizedSummary();
-}
-
-function getLocalAdminRole(email) {
-  const normalized = String(email || "").trim().toLowerCase();
-  if (!normalized) return "viewer";
-
-  const firebase = window.KANGNAM_FIREBASE;
-  const roleLists = firebase?.roleLists ?? { owners: [], editors: [] };
-  if (roleLists.owners.includes(normalized)) return "owner";
-  if (roleLists.editors.includes(normalized)) return "editor";
-
-  try {
-    const members = JSON.parse(window.localStorage.getItem("kangnamManagedMembers") || "[]");
-    const matched = Array.isArray(members)
-      ? members.find((member) => String(member.email || "").trim().toLowerCase() === normalized)
-      : null;
-    if (["owner", "editor", "viewer"].includes(matched?.role)) return matched.role;
-  } catch {
-    // Keep the header usable even when local member data is unavailable.
-  }
-
-  return "viewer";
-}
-
-async function getHeaderAdminRole(user) {
-  const store = window.KANGNAM_NOTICE_STORE;
-  try {
-    const firestore = await store?.ready;
-    if (firestore?.db && store?.getAdminRole) {
-      return await store.getAdminRole(user.email) || "viewer";
-    }
-  } catch {
-    // Fall back to local role data below.
-  }
-  return getLocalAdminRole(user.email);
 }
 
 function closeAccountMenu(authLink) {
@@ -467,7 +496,7 @@ function renderAccountMenu(authLink, user, role) {
 
   const canOpenAdmin = role === "owner" || role === "editor";
   authLink.dataset.accountMenu = "enabled";
-  authLink.href = canOpenAdmin ? "./admin.html" : "./index.html";
+  authLink.href = canOpenAdmin ? "./admin.html" : "./profile.html";
   authLink.lastChild.textContent = "내 계정";
 
   const email = document.createElement("p");
@@ -481,6 +510,12 @@ function renderAccountMenu(authLink, user, role) {
     adminLink.textContent = "관리자 메뉴";
     adminLink.setAttribute("role", "menuitem");
     items.push(adminLink);
+  } else {
+    const profileLink = document.createElement("a");
+    profileLink.href = "./profile.html";
+    profileLink.textContent = "내 정보";
+    profileLink.setAttribute("role", "menuitem");
+    items.push(profileLink);
   }
 
   const homeLink = document.createElement("a");
@@ -517,6 +552,10 @@ function initListAuth() {
     const accountAccess = window.KANGNAM_ACCOUNT_ACCESS;
 
     if (!user) {
+      const wasSignedInStudent = Boolean(signedInStudent);
+      setStudentProfileMode(null);
+      if (wasSignedInStudent) resetStudentProfileControls();
+      renderNoticeList();
       renderAccountMenu(listElements.authLink, null, "viewer");
       return;
     }
@@ -525,6 +564,17 @@ function initListAuth() {
       || Promise.resolve({ type: "student", isAdmin: false }));
     if (updateId !== authUpdateId) return;
 
+    if (account.isAdmin) {
+      setStudentProfileMode(null);
+      renderNoticeList();
+      renderAccountMenu(listElements.authLink, user, account.role);
+      return;
+    }
+
+    const savedProfile = window.KANGNAM_STUDENT_PROFILE?.load(user) || {};
+    fillStudentProfile(savedProfile);
+    setStudentProfileMode(user);
+    renderNoticeList();
     renderAccountMenu(listElements.authLink, user, account.role);
   });
 }
@@ -547,14 +597,7 @@ listElements.gradeSelect?.addEventListener("change", renderNoticeList);
 listElements.transferCheckbox?.addEventListener("change", renderNoticeList);
 
 listElements.personalizedResetButton?.addEventListener("click", () => {
-  listElements.enrollmentRadios.forEach((radio) => {
-    radio.checked = radio.value === "";
-  });
-  if (listElements.gradeSelect) listElements.gradeSelect.value = "";
-  if (listElements.transferCheckbox) listElements.transferCheckbox.checked = false;
-  listElements.interestCheckboxes.forEach((checkbox) => {
-    checkbox.checked = false;
-  });
+  resetStudentProfileControls();
   renderNoticeList();
 });
 

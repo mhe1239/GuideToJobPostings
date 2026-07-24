@@ -231,10 +231,6 @@ const adminPage = {
   loadSchoolNoticesButton: document.querySelector("#load-school-notices-button"),
   simulateSchoolErrorButton: document.querySelector("#simulate-school-error-button"),
   schoolImportStatus: document.querySelector("#school-import-status"),
-  schoolBulkToolbar: document.querySelector("#school-bulk-toolbar"),
-  schoolSelectAll: document.querySelector("#school-select-all"),
-  schoolBulkSummary: document.querySelector("#school-bulk-summary"),
-  clearSchoolSelectionButton: document.querySelector("#clear-school-selection-button"),
   schoolNoticeList: document.querySelector("#school-notice-list"),
   selectedNoticePanel: document.querySelector("#selected-notice-panel"),
   selectedNoticeTitle: document.querySelector("#selected-notice-title"),
@@ -276,7 +272,6 @@ let currentDraftNotice = null;
 let selectedPublishedId = "";
 let selectedMockNoticeId = "";
 let selectedPublishedIds = new Set();
-let selectedSchoolNoticeIds = new Set();
 let noticeInputMode = "url";
 let schoolNoticeLoadState = "idle";
 let importedSchoolNotices = [];
@@ -292,58 +287,6 @@ function updateCheckboxState(checkbox, checked, indeterminate = false) {
   if (!checkbox) return;
   checkbox.checked = checked;
   checkbox.indeterminate = indeterminate;
-}
-
-function getSelectableSchoolNotices() {
-  return importedSchoolNotices.filter((notice) => !isProcessedSchoolNotice(notice));
-}
-
-function updateSchoolBulkState() {
-  if (!adminPage.schoolBulkToolbar) return;
-  const selectableNotices = getSelectableSchoolNotices();
-  const selectableIds = new Set(selectableNotices.map((notice) => notice.id));
-  selectedSchoolNoticeIds = new Set([...selectedSchoolNoticeIds].filter((id) => selectableIds.has(id)));
-  const selectedCount = selectedSchoolNoticeIds.size;
-
-  adminPage.schoolBulkToolbar.hidden = noticeInputMode !== "list" || selectableNotices.length === 0;
-  if (adminPage.schoolBulkSummary) {
-    adminPage.schoolBulkSummary.textContent = selectedCount > 0
-      ? `${selectedCount}개 선택됨 · 초안 생성은 1건씩 진행`
-      : "0개 선택됨";
-  }
-  updateCheckboxState(
-    adminPage.schoolSelectAll,
-    selectedCount > 0 && selectedCount === selectableNotices.length,
-    selectedCount > 0 && selectedCount < selectableNotices.length,
-  );
-  if (adminPage.clearSchoolSelectionButton) adminPage.clearSchoolSelectionButton.disabled = selectedCount === 0;
-  adminPage.schoolNoticeList?.querySelectorAll(".school-notice-checkbox").forEach((checkbox) => {
-    checkbox.checked = selectedSchoolNoticeIds.has(checkbox.dataset.noticeId);
-  });
-}
-
-function toggleSchoolNoticeBulkSelection(noticeId, checked) {
-  const notice = importedSchoolNotices.find((item) => item.id === noticeId);
-  if (!notice || isProcessedSchoolNotice(notice)) return;
-  if (checked) {
-    selectedSchoolNoticeIds.add(noticeId);
-  } else {
-    selectedSchoolNoticeIds.delete(noticeId);
-  }
-  updateSchoolBulkState();
-}
-
-function handleSchoolSelectAllChange() {
-  if (!adminPage.schoolSelectAll) return;
-  selectedSchoolNoticeIds = adminPage.schoolSelectAll.checked
-    ? new Set(getSelectableSchoolNotices().map((notice) => notice.id))
-    : new Set();
-  updateSchoolBulkState();
-}
-
-function clearSchoolBulkSelection() {
-  selectedSchoolNoticeIds = new Set();
-  updateSchoolBulkState();
 }
 
 function getSelectedPublishedNotices() {
@@ -637,7 +580,6 @@ function getOfficialNoticeSourceUrl(value) {
 async function loadSchoolNoticeList({ simulateError = false } = {}) {
   if (!canEditAndPublish()) return;
   selectedMockNoticeId = "";
-  selectedSchoolNoticeIds = new Set();
   importedSchoolNotices = [];
   renderMockSchoolNotices();
   updateSelectedNoticeSummary();
@@ -666,7 +608,6 @@ function renderMockSchoolNotices() {
   if (schoolNoticeLoadState === "idle") {
     adminPage.schoolNoticeList.replaceChildren();
     updateSelectedNoticeSummary();
-    updateSchoolBulkState();
     setSchoolImportState("idle", "가져오기 버튼을 누르면 최근 공고 10개를 불러옵니다.");
     return;
   }
@@ -676,7 +617,6 @@ function renderMockSchoolNotices() {
     loading.className = "school-notice-state";
     loading.textContent = "학교 공고 목록을 가져오는 중입니다.";
     adminPage.schoolNoticeList.replaceChildren(loading);
-    updateSchoolBulkState();
     return;
   }
 
@@ -686,7 +626,6 @@ function renderMockSchoolNotices() {
     error.textContent = "학교 공고 목록을 불러오지 못했습니다. URL을 직접 입력해 주세요.";
     adminPage.schoolNoticeList.replaceChildren(error);
     updateSelectedNoticeSummary();
-    updateSchoolBulkState();
     return;
   }
 
@@ -694,9 +633,6 @@ function renderMockSchoolNotices() {
     ...importedSchoolNotices.map((notice) => {
       const processed = isProcessedSchoolNotice(notice);
       const row = document.createElement("div");
-      const checkboxLabel = document.createElement("label");
-      const checkbox = document.createElement("input");
-      const checkboxText = document.createElement("span");
       const button = document.createElement("button");
       const title = document.createElement("strong");
       const meta = document.createElement("span");
@@ -704,16 +640,6 @@ function renderMockSchoolNotices() {
       const state = document.createElement("em");
       row.className = "school-notice-row";
       row.dataset.processed = String(processed);
-      checkboxLabel.className = "bulk-item-check";
-      checkbox.type = "checkbox";
-      checkbox.className = "school-notice-checkbox";
-      checkbox.dataset.noticeId = notice.id;
-      checkbox.disabled = processed;
-      checkbox.checked = selectedSchoolNoticeIds.has(notice.id);
-      checkbox.setAttribute("aria-label", `${notice.title} 일괄 선택`);
-      checkboxText.textContent = "선택";
-      checkboxLabel.append(checkbox, checkboxText);
-      checkbox.addEventListener("change", () => toggleSchoolNoticeBulkSelection(notice.id, checkbox.checked));
       button.type = "button";
       button.className = "school-notice-item";
       button.dataset.noticeId = notice.id;
@@ -735,11 +661,10 @@ function renderMockSchoolNotices() {
         if (selectedMockNoticeId !== notice.id) selectMockSchoolNotice(notice.id);
         void generateDraft();
       });
-      row.append(checkboxLabel, button);
+      row.append(button);
       return row;
     }),
   );
-  updateSchoolBulkState();
   updateSelectedNoticeSummary();
 }
 
@@ -753,7 +678,6 @@ function updateMockSchoolNoticeSelection() {
       button.removeAttribute("aria-current");
     }
   });
-  updateSchoolBulkState();
   updateSelectedNoticeSummary();
 }
 
@@ -771,7 +695,6 @@ function setNoticeInputMode(mode) {
   if (adminPage.urlPanel) adminPage.urlPanel.hidden = mode !== "url";
   if (adminPage.listPanel) adminPage.listPanel.hidden = mode !== "list";
   if (mode === "url") selectedMockNoticeId = "";
-  selectedSchoolNoticeIds = new Set();
   resetDraftSelectionState(mode === "url" ? "공식 공고 URL을 입력해 주세요." : "학교 홈페이지에서 가져오기 버튼을 눌러 공고 목록을 불러와 주세요.");
   renderMockSchoolNotices();
   updateApprovalState();
@@ -861,7 +784,6 @@ function updateApprovalState() {
   if (adminPage.savePublishedButton) adminPage.savePublishedButton.disabled = !canManagePublished;
   if (adminPage.deletePublishedButton) adminPage.deletePublishedButton.disabled = !canManagePublished;
   updatePublishedBulkState();
-  updateSchoolBulkState();
   updatePublishActionBar();
 }
 
@@ -1836,8 +1758,6 @@ adminPage.form?.addEventListener("submit", handleDraftGeneration);
 adminPage.urlInput?.addEventListener("input", resetDraftForUrlChange);
 adminPage.loadSchoolNoticesButton?.addEventListener("click", () => loadSchoolNoticeList());
 adminPage.simulateSchoolErrorButton?.addEventListener("click", () => loadSchoolNoticeList({ simulateError: true }));
-adminPage.schoolSelectAll?.addEventListener("change", handleSchoolSelectAllChange);
-adminPage.clearSchoolSelectionButton?.addEventListener("click", clearSchoolBulkSelection);
 adminPage.inputModeRadios.forEach((radio) => {
   radio.addEventListener("change", () => {
     if (radio.checked) setNoticeInputMode(radio.value);

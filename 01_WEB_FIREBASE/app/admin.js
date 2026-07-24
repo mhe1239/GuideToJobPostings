@@ -257,7 +257,6 @@ const adminPage = {
   publishedBulkToolbar: document.querySelector("#published-bulk-toolbar"),
   publishedSelectAll: document.querySelector("#published-select-all"),
   publishedBulkSummary: document.querySelector("#published-bulk-summary"),
-  clearPublishedSelectionButton: document.querySelector("#clear-published-selection-button"),
   bulkDeletePublishedButton: document.querySelector("#bulk-delete-published-button"),
   bulkDeclinePublishedButton: document.querySelector("#bulk-decline-published-button"),
   bulkPublishPublishedButton: document.querySelector("#bulk-publish-published-button"),
@@ -315,7 +314,6 @@ function updatePublishedBulkState() {
     selectedCount > 0 && selectedCount < notices.length,
   );
   const disabled = !allowed || selectedCount === 0;
-  if (adminPage.clearPublishedSelectionButton) adminPage.clearPublishedSelectionButton.disabled = selectedCount === 0;
   if (adminPage.bulkDeletePublishedButton) adminPage.bulkDeletePublishedButton.disabled = disabled;
   if (adminPage.bulkDeclinePublishedButton) adminPage.bulkDeclinePublishedButton.disabled = disabled;
   if (adminPage.bulkPublishPublishedButton) adminPage.bulkPublishPublishedButton.disabled = disabled;
@@ -339,11 +337,6 @@ function handlePublishedSelectAllChange() {
   selectedPublishedIds = adminPage.publishedSelectAll.checked
     ? new Set(getManageableNotices().map((notice) => notice.id))
     : new Set();
-  updatePublishedBulkState();
-}
-
-function clearPublishedBulkSelection() {
-  selectedPublishedIds = new Set();
   updatePublishedBulkState();
 }
 
@@ -1770,7 +1763,6 @@ adminPage.inputModeRadios.forEach((radio) => {
 adminPage.savePublishedButton?.addEventListener("click", handlePublishedSave);
 adminPage.deletePublishedButton?.addEventListener("click", handlePublishedDelete);
 adminPage.publishedSelectAll?.addEventListener("change", handlePublishedSelectAllChange);
-adminPage.clearPublishedSelectionButton?.addEventListener("click", clearPublishedBulkSelection);
 adminPage.bulkDeletePublishedButton?.addEventListener("click", handlePublishedBulkDelete);
 adminPage.bulkDeclinePublishedButton?.addEventListener("click", () => handlePublishedBulkStatus("declined"));
 adminPage.bulkPublishPublishedButton?.addEventListener("click", () => handlePublishedBulkStatus("published"));

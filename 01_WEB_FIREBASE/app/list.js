@@ -420,11 +420,13 @@ function matchesStudentProfile(notice, profile) {
 
 function getFilteredNotices(notices) {
   const profile = getEffectiveStudentProfile();
-  return notices.filter((notice) => {
+  const filteredNotices = notices.filter((notice) => {
     const matchesCategory = activeFilters.category === FILTER_ALL || getNoticeCategory(notice) === activeFilters.category;
     const matchesStatus = activeFilters.recruitmentStatus === FILTER_ALL || getNoticeRecruitmentStatus(notice) === activeFilters.recruitmentStatus;
     return matchesCategory && matchesStatus && matchesStudentProfile(notice, profile);
   });
+  const sortNotices = window.KANGNAM_NOTICE_SORT?.sortNoticesByDeadline;
+  return typeof sortNotices === "function" ? sortNotices(filteredNotices) : filteredNotices;
 }
 
 function updateFilterButtons() {

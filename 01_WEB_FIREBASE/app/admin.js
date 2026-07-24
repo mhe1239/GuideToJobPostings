@@ -230,6 +230,10 @@ const adminPage = {
   loadSchoolNoticesButton: document.querySelector("#load-school-notices-button"),
   simulateSchoolErrorButton: document.querySelector("#simulate-school-error-button"),
   schoolImportStatus: document.querySelector("#school-import-status"),
+  schoolBulkToolbar: document.querySelector("#school-bulk-toolbar"),
+  schoolSelectAll: document.querySelector("#school-select-all"),
+  schoolBulkSummary: document.querySelector("#school-bulk-summary"),
+  clearSchoolSelectionButton: document.querySelector("#clear-school-selection-button"),
   schoolNoticeList: document.querySelector("#school-notice-list"),
   selectedNoticePanel: document.querySelector("#selected-notice-panel"),
   selectedNoticeTitle: document.querySelector("#selected-notice-title"),
@@ -251,6 +255,13 @@ const adminPage = {
   publishedList: document.querySelector("#published-list"),
   publishedCountChip: document.querySelector("#published-count-chip"),
   publishedNote: document.querySelector("#published-note"),
+  publishedBulkToolbar: document.querySelector("#published-bulk-toolbar"),
+  publishedSelectAll: document.querySelector("#published-select-all"),
+  publishedBulkSummary: document.querySelector("#published-bulk-summary"),
+  clearPublishedSelectionButton: document.querySelector("#clear-published-selection-button"),
+  bulkDeletePublishedButton: document.querySelector("#bulk-delete-published-button"),
+  bulkDeclinePublishedButton: document.querySelector("#bulk-decline-published-button"),
+  bulkPublishPublishedButton: document.querySelector("#bulk-publish-published-button"),
   savePublishedButton: document.querySelector("#save-published-button"),
   deletePublishedButton: document.querySelector("#delete-published-button"),
 };
@@ -262,6 +273,8 @@ let generatedDraftUrl = "";
 let currentDraftNotice = null;
 let selectedPublishedId = "";
 let selectedMockNoticeId = "";
+let selectedPublishedIds = new Set();
+let selectedSchoolNoticeIds = new Set();
 let noticeInputMode = "url";
 let schoolNoticeLoadState = "idle";
 let importedSchoolNotices = [];
@@ -270,6 +283,121 @@ let currentApprovalStatus = "draft";
 function setAdminNote(message) {
   if (adminPage.note) adminPage.note.textContent = message;
   if (adminPage.publishedNote) adminPage.publishedNote.textContent = message;
+}
+
+function updateCheckboxState(checkbox, checked, indeterminate = false) {
+  if (!checkbox) return;
+  checkbox.checked = checked;
+  checkbox.indeterminate = indeterminate;
+}
+
+function getSelectableSchoolNotices() {
+  return importedSchoolNotices.filter((notice) => !isProcessedSchoolNotice(notice));
+}
+
+function updateSchoolBulkState() {
+  if (!adminPage.schoolBulkToolbar) return;
+  const selectableNotices = getSelectableSchoolNotices();
+  const selectableIds = new Set(selectableNotices.map((notice) => notice.id));
+  selectedSchoolNoticeIds = new Set([...selectedSchoolNoticeIds].filter((id) => selectableIds.has(id)));
+  const selectedCount = selectedSchoolNoticeIds.size;
+
+  adminPage.schoolBulkToolbar.hidden = noticeInputMode !== "list" || selectableNotices.length === 0;
+  if (adminPage.schoolBulkSummary) {
+    adminPage.schoolBulkSummary.textContent = selectedCount > 0
+      ? `${selectedCount}개 선택됨 · 초안 생성은 1건씩 진행`
+      : "0개 선택됨";
+  }
+  updateCheckboxState(
+    adminPage.schoolSelectAll,
+    selectedCount > 0 && selectedCount === selectableNotices.length,
+    selectedCount > 0 && selectedCount < selectableNotices.length,
+  );
+  if (adminPage.clearSchoolSelectionButton) adminPage.clearSchoolSelectionButton.disabled = selectedCount === 0;
+  adminPage.schoolNoticeList?.querySelectorAll(".school-notice-checkbox").forEach((checkbox) => {
+    checkbox.checked = selectedSchoolNoticeIds.has(checkbox.dataset.noticeId);
+  });
+}
+
+function toggleSchoolNoticeBulkSelection(noticeId, checked) {
+  const notice = importedSchoolNotices.find((item) => item.id === noticeId);
+  if (!notice || isProcessedSchoolNotice(notice)) return;
+  if (checked) {
+    selectedSchoolNoticeIds.add(noticeId);
+  } else {
+    selectedSchoolNoticeIds.delete(noticeId);
+  }
+  updateSchoolBulkState();
+}
+
+function handleSchoolSelectAllChange() {
+  if (!adminPage.schoolSelectAll) return;
+  selectedSchoolNoticeIds = adminPage.schoolSelectAll.checked
+    ? new Set(getSelectableSchoolNotices().map((notice) => notice.id))
+    : new Set();
+  updateSchoolBulkState();
+}
+
+function clearSchoolBulkSelection() {
+  selectedSchoolNoticeIds = new Set();
+  updateSchoolBulkState();
+}
+
+function getSelectedPublishedNotices() {
+  const notices = getManageableNotices();
+  const noticeIds = new Set(notices.map((notice) => notice.id));
+  selectedPublishedIds = new Set([...selectedPublishedIds].filter((id) => noticeIds.has(id)));
+  return notices.filter((notice) => selectedPublishedIds.has(notice.id));
+}
+
+function updatePublishedBulkState() {
+  if (!adminPage.publishedBulkToolbar) return;
+  const notices = getManageableNotices();
+  const noticeIds = new Set(notices.map((notice) => notice.id));
+  selectedPublishedIds = new Set([...selectedPublishedIds].filter((id) => noticeIds.has(id)));
+  const selectedCount = selectedPublishedIds.size;
+  const allowed = canEditAndPublish();
+
+  adminPage.publishedBulkToolbar.hidden = notices.length === 0;
+  if (adminPage.publishedBulkSummary) {
+    adminPage.publishedBulkSummary.textContent = selectedCount > 0 ? `${selectedCount}개 선택됨` : "0개 선택됨";
+  }
+  updateCheckboxState(
+    adminPage.publishedSelectAll,
+    selectedCount > 0 && selectedCount === notices.length,
+    selectedCount > 0 && selectedCount < notices.length,
+  );
+  const disabled = !allowed || selectedCount === 0;
+  if (adminPage.clearPublishedSelectionButton) adminPage.clearPublishedSelectionButton.disabled = selectedCount === 0;
+  if (adminPage.bulkDeletePublishedButton) adminPage.bulkDeletePublishedButton.disabled = disabled;
+  if (adminPage.bulkDeclinePublishedButton) adminPage.bulkDeclinePublishedButton.disabled = disabled;
+  if (adminPage.bulkPublishPublishedButton) adminPage.bulkPublishPublishedButton.disabled = disabled;
+  adminPage.publishedList?.querySelectorAll(".published-checkbox").forEach((checkbox) => {
+    checkbox.checked = selectedPublishedIds.has(checkbox.dataset.noticeId);
+  });
+}
+
+function togglePublishedBulkSelection(noticeId, checked) {
+  if (!getManageableNotices().some((notice) => notice.id === noticeId)) return;
+  if (checked) {
+    selectedPublishedIds.add(noticeId);
+  } else {
+    selectedPublishedIds.delete(noticeId);
+  }
+  updatePublishedBulkState();
+}
+
+function handlePublishedSelectAllChange() {
+  if (!adminPage.publishedSelectAll) return;
+  selectedPublishedIds = adminPage.publishedSelectAll.checked
+    ? new Set(getManageableNotices().map((notice) => notice.id))
+    : new Set();
+  updatePublishedBulkState();
+}
+
+function clearPublishedBulkSelection() {
+  selectedPublishedIds = new Set();
+  updatePublishedBulkState();
 }
 
 function setApprovalStatus(status) {
@@ -493,6 +621,7 @@ function normalizeImportedSchoolNotice(item) {
 async function loadSchoolNoticeList({ simulateError = false } = {}) {
   if (!canEditAndPublish()) return;
   selectedMockNoticeId = "";
+  selectedSchoolNoticeIds = new Set();
   importedSchoolNotices = [];
   renderMockSchoolNotices();
   updateSelectedNoticeSummary();
@@ -521,6 +650,7 @@ function renderMockSchoolNotices() {
   if (schoolNoticeLoadState === "idle") {
     adminPage.schoolNoticeList.replaceChildren();
     updateSelectedNoticeSummary();
+    updateSchoolBulkState();
     setSchoolImportState("idle", "가져오기 버튼을 누르면 최근 공고 10개를 불러옵니다.");
     return;
   }
@@ -530,6 +660,7 @@ function renderMockSchoolNotices() {
     loading.className = "school-notice-state";
     loading.textContent = "학교 공고 목록을 가져오는 중입니다.";
     adminPage.schoolNoticeList.replaceChildren(loading);
+    updateSchoolBulkState();
     return;
   }
 
@@ -539,17 +670,34 @@ function renderMockSchoolNotices() {
     error.textContent = "학교 공고 목록을 불러오지 못했습니다. URL을 직접 입력해 주세요.";
     adminPage.schoolNoticeList.replaceChildren(error);
     updateSelectedNoticeSummary();
+    updateSchoolBulkState();
     return;
   }
 
   adminPage.schoolNoticeList.replaceChildren(
     ...importedSchoolNotices.map((notice) => {
       const processed = isProcessedSchoolNotice(notice);
+      const row = document.createElement("div");
+      const checkboxLabel = document.createElement("label");
+      const checkbox = document.createElement("input");
+      const checkboxText = document.createElement("span");
       const button = document.createElement("button");
       const title = document.createElement("strong");
       const meta = document.createElement("span");
       const type = document.createElement("small");
       const state = document.createElement("em");
+      row.className = "school-notice-row";
+      row.dataset.processed = String(processed);
+      checkboxLabel.className = "bulk-item-check";
+      checkbox.type = "checkbox";
+      checkbox.className = "school-notice-checkbox";
+      checkbox.dataset.noticeId = notice.id;
+      checkbox.disabled = processed;
+      checkbox.checked = selectedSchoolNoticeIds.has(notice.id);
+      checkbox.setAttribute("aria-label", `${notice.title} 일괄 선택`);
+      checkboxText.textContent = "선택";
+      checkboxLabel.append(checkbox, checkboxText);
+      checkbox.addEventListener("change", () => toggleSchoolNoticeBulkSelection(notice.id, checkbox.checked));
       button.type = "button";
       button.className = "school-notice-item";
       button.dataset.noticeId = notice.id;
@@ -571,9 +719,11 @@ function renderMockSchoolNotices() {
         if (selectedMockNoticeId !== notice.id) selectMockSchoolNotice(notice.id);
         void generateDraft();
       });
-      return button;
+      row.append(checkboxLabel, button);
+      return row;
     }),
   );
+  updateSchoolBulkState();
   updateSelectedNoticeSummary();
 }
 
@@ -587,6 +737,7 @@ function updateMockSchoolNoticeSelection() {
       button.removeAttribute("aria-current");
     }
   });
+  updateSchoolBulkState();
   updateSelectedNoticeSummary();
 }
 
@@ -604,6 +755,7 @@ function setNoticeInputMode(mode) {
   if (adminPage.urlPanel) adminPage.urlPanel.hidden = mode !== "url";
   if (adminPage.listPanel) adminPage.listPanel.hidden = mode !== "list";
   if (mode === "url") selectedMockNoticeId = "";
+  selectedSchoolNoticeIds = new Set();
   resetDraftSelectionState(mode === "url" ? "공식 공고 URL을 입력해 주세요." : "학교 홈페이지에서 가져오기 버튼을 눌러 공고 목록을 불러와 주세요.");
   renderMockSchoolNotices();
 }
@@ -690,6 +842,8 @@ function updateApprovalState() {
   const canManagePublished = allowed && Boolean(selectedPublishedId);
   if (adminPage.savePublishedButton) adminPage.savePublishedButton.disabled = !canManagePublished;
   if (adminPage.deletePublishedButton) adminPage.deletePublishedButton.disabled = !canManagePublished;
+  updatePublishedBulkState();
+  updateSchoolBulkState();
   updatePublishActionBar();
 }
 
@@ -1245,6 +1399,7 @@ function renderPublishedNotices() {
   if (notices.length === 0) {
     adminPage.publishedList.innerHTML = "<p class=\"member-empty\">아직 공개된 공고가 없습니다.</p>";
     selectedPublishedId = "";
+    selectedPublishedIds = new Set();
     updateApprovalState();
     return;
   }
@@ -1255,10 +1410,24 @@ function renderPublishedNotices() {
 
   adminPage.publishedList.replaceChildren(
     ...notices.map((notice) => {
+      const row = document.createElement("div");
+      const checkboxLabel = document.createElement("label");
+      const checkbox = document.createElement("input");
+      const checkboxText = document.createElement("span");
       const button = document.createElement("button");
       const title = document.createElement("strong");
       const meta = document.createElement("span");
       const state = document.createElement("small");
+      row.className = "published-row";
+      checkboxLabel.className = "bulk-item-check";
+      checkbox.type = "checkbox";
+      checkbox.className = "published-checkbox";
+      checkbox.dataset.noticeId = notice.id;
+      checkbox.checked = selectedPublishedIds.has(notice.id);
+      checkbox.setAttribute("aria-label", `${notice.title} 일괄 선택`);
+      checkboxText.textContent = "선택";
+      checkboxLabel.append(checkbox, checkboxText);
+      checkbox.addEventListener("change", () => togglePublishedBulkSelection(notice.id, checkbox.checked));
       button.type = "button";
       button.className = "published-item";
       button.dataset.noticeId = notice.id;
@@ -1270,9 +1439,11 @@ function renderPublishedNotices() {
       state.textContent = APPROVAL_STATUS_LABELS[notice.approvalStatus || "published"] || "공개";
       button.append(title, meta, state);
       button.addEventListener("click", () => selectPublishedNotice(notice.id));
-      return button;
+      row.append(checkboxLabel, button);
+      return row;
     }),
   );
+  updatePublishedBulkState();
   updateApprovalState();
 }
 
@@ -1361,6 +1532,112 @@ async function handlePublishedDelete() {
   setAdminNote("공개된 공고를 삭제했습니다.");
   renderPublishedNotices();
   updateApprovalState();
+}
+
+function resetPublishedEditorState(message) {
+  selectedPublishedId = "";
+  currentDraftNotice = null;
+  generatedDraftUrl = "";
+  if (adminPage.urlInput) adminPage.urlInput.value = "";
+  if (adminPage.empty) adminPage.empty.hidden = false;
+  if (adminPage.fields) adminPage.fields.hidden = true;
+  if (adminPage.title) adminPage.title.value = "";
+  if (adminPage.summary) adminPage.summary.value = "";
+  if (adminPage.faq) adminPage.faq.value = "";
+  if (adminPage.evidence) adminPage.evidence.value = "";
+  setApprovalStatus("draft");
+  setAdminNote(message);
+}
+
+function buildBulkApprovalNotice(baseNotice, approvalStatus) {
+  const today = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, ".").replace(/\.$/, "");
+  return {
+    ...baseNotice,
+    approvalStatus,
+    status: approvalStatus === "published" ? (baseNotice.status && baseNotice.status !== "검수 중" ? baseNotice.status : "공개됨") : "검수 중",
+    reviewed: approvalStatus === "published",
+    reviewedAt: approvalStatus === "published" ? today : "",
+    isPublished: approvalStatus === "published",
+    updatedAt: Date.now(),
+  };
+}
+
+async function handlePublishedBulkStatus(approvalStatus) {
+  if (!canEditAndPublish()) return;
+  const selectedNotices = getSelectedPublishedNotices();
+  if (selectedNotices.length === 0) return;
+
+  const updatedNotices = selectedNotices.map((notice) => buildBulkApprovalNotice(notice, approvalStatus));
+  for (const notice of updatedNotices) {
+    try {
+      await saveNoticeToSharedStore(notice);
+    } catch (error) {
+      setAdminNote(window.KANGNAM_NOTICE_STORE?.getFriendlyError(error) || error.message);
+      return;
+    }
+  }
+
+  const updatedIds = new Set(updatedNotices.map((notice) => notice.id));
+  const remainingNotices = loadPublishedNotices().filter((notice) => !updatedIds.has(notice.id));
+  savePublishedNotices([...updatedNotices, ...remainingNotices].slice(0, 20));
+  const deletedIds = loadDeletedNoticeIds();
+  updatedNotices.forEach((notice) => {
+    if (approvalStatus === "published") {
+      deletedIds.delete(notice.id);
+    } else {
+      deletedIds.add(notice.id);
+    }
+  });
+  saveDeletedNoticeIds(deletedIds);
+
+  const changedCount = updatedNotices.length;
+  selectedPublishedIds = new Set();
+  if (updatedIds.has(selectedPublishedId)) {
+    resetPublishedEditorState(approvalStatus === "published"
+      ? `${changedCount}개 공고를 공개 상태로 변경했습니다.`
+      : `${changedCount}개 공고를 보류 상태로 변경했습니다.`);
+  } else {
+    setAdminNote(approvalStatus === "published"
+      ? `${changedCount}개 공고를 공개 상태로 변경했습니다.`
+      : `${changedCount}개 공고를 보류 상태로 변경했습니다.`);
+  }
+  renderPublishedNotices();
+  renderMockSchoolNotices();
+  updateApprovalState();
+  showPublishCompletionToast(approvalStatus === "published"
+    ? `${changedCount}개 공고를 공개했습니다.`
+    : `${changedCount}개 공고를 보류했습니다.`,
+  approvalStatus === "published" ? "success" : "danger");
+}
+
+async function handlePublishedBulkDelete() {
+  if (!canEditAndPublish()) return;
+  const selectedNotices = getSelectedPublishedNotices();
+  if (selectedNotices.length === 0) return;
+  const confirmed = window.confirm(`선택한 ${selectedNotices.length}개 공고를 삭제할까요?\n삭제하면 학생 페이지 목록과 상세 페이지에서 보이지 않습니다.`);
+  if (!confirmed) return;
+
+  for (const notice of selectedNotices) {
+    try {
+      await deleteNoticeFromSharedStore(notice.id);
+    } catch (error) {
+      setAdminNote(window.KANGNAM_NOTICE_STORE?.getFriendlyError(error) || error.message);
+      return;
+    }
+  }
+
+  const deletedIdsToApply = new Set(selectedNotices.map((notice) => notice.id));
+  const notices = loadPublishedNotices().filter((notice) => !deletedIdsToApply.has(notice.id));
+  savePublishedNotices(notices);
+  const deletedIds = loadDeletedNoticeIds();
+  deletedIdsToApply.forEach((noticeId) => deletedIds.add(noticeId));
+  saveDeletedNoticeIds(deletedIds);
+  selectedPublishedIds = new Set();
+  resetPublishedEditorState(`${deletedIdsToApply.size}개 공고를 삭제했습니다.`);
+  renderPublishedNotices();
+  renderMockSchoolNotices();
+  updateApprovalState();
+  showPublishCompletionToast(`${deletedIdsToApply.size}개 공고를 삭제했습니다.`, "danger");
 }
 
 async function fetchNoticeMarkdown(url) {
@@ -1505,6 +1782,8 @@ adminPage.form?.addEventListener("submit", handleDraftGeneration);
 adminPage.urlInput?.addEventListener("input", resetDraftForUrlChange);
 adminPage.loadSchoolNoticesButton?.addEventListener("click", () => loadSchoolNoticeList());
 adminPage.simulateSchoolErrorButton?.addEventListener("click", () => loadSchoolNoticeList({ simulateError: true }));
+adminPage.schoolSelectAll?.addEventListener("change", handleSchoolSelectAllChange);
+adminPage.clearSchoolSelectionButton?.addEventListener("click", clearSchoolBulkSelection);
 adminPage.inputModeRadios.forEach((radio) => {
   radio.addEventListener("change", () => {
     if (radio.checked) setNoticeInputMode(radio.value);
@@ -1512,6 +1791,11 @@ adminPage.inputModeRadios.forEach((radio) => {
 });
 adminPage.savePublishedButton?.addEventListener("click", handlePublishedSave);
 adminPage.deletePublishedButton?.addEventListener("click", handlePublishedDelete);
+adminPage.publishedSelectAll?.addEventListener("change", handlePublishedSelectAllChange);
+adminPage.clearPublishedSelectionButton?.addEventListener("click", clearPublishedBulkSelection);
+adminPage.bulkDeletePublishedButton?.addEventListener("click", handlePublishedBulkDelete);
+adminPage.bulkDeclinePublishedButton?.addEventListener("click", () => handlePublishedBulkStatus("declined"));
+adminPage.bulkPublishPublishedButton?.addEventListener("click", () => handlePublishedBulkStatus("published"));
 clearLegacyDefaultNoticeUrl();
 renderMockSchoolNotices();
 adminPage.approveButton?.addEventListener("click", handleDraftApproval);

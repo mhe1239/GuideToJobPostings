@@ -105,6 +105,17 @@
                 <button class="button secondary" id="simulate-school-error-button" type="button">오류 상태 시뮬레이션</button>
               </div>
               <p class="school-import-status" id="school-import-status" aria-live="polite">가져오기 버튼을 누르면 최근 공고 10개를 불러옵니다.</p>
+              <div class="bulk-selection-toolbar school-bulk-toolbar" id="school-bulk-toolbar" hidden aria-live="polite">
+                <label class="bulk-select-all" for="school-select-all">
+                  <input id="school-select-all" type="checkbox" />
+                  <span>전체 선택</span>
+                </label>
+                <span class="bulk-selection-summary" id="school-bulk-summary">0개 선택됨</span>
+                <div class="bulk-selection-actions">
+                  <button class="button secondary" id="clear-school-selection-button" type="button" disabled>선택 해제</button>
+                </div>
+                <small>Codex 초안 생성은 선택한 공고 1건씩만 처리합니다.</small>
+              </div>
               <div class="school-notice-list" id="school-notice-list" aria-label="최근 학교 공고 10개"></div>
             </div>
 
@@ -139,6 +150,18 @@
             <div class="panel-title-row">
               <h2>검수 공고 상태 목록</h2>
               <span class="draft-chip" id="published-count-chip">0개</span>
+            </div>
+            <div class="bulk-selection-toolbar" id="published-bulk-toolbar" aria-live="polite">
+              <label class="bulk-select-all" for="published-select-all">
+                <input id="published-select-all" type="checkbox" />
+                <span>전체 선택</span>
+              </label>
+              <span class="bulk-selection-summary" id="published-bulk-summary">0개 선택됨</span>
+              <div class="bulk-selection-actions">
+                <button class="button secondary" id="clear-published-selection-button" type="button" disabled>선택 해제</button>
+                <button class="button secondary" id="bulk-decline-published-button" type="button" disabled>선택 보류</button>
+                <button class="button primary" id="bulk-publish-published-button" type="button" disabled>선택 공개</button>
+              </div>
             </div>
             <div class="published-list" id="published-list" aria-label="검수 공고 상태 목록"></div>
             <p class="approval-note" id="published-note">공개, 보류, 검수 필요 상태를 여기에서 확인할 수 있습니다.</p>

@@ -303,6 +303,32 @@ function bootPublish() {
   return window;
 }
 
+async function bootManageWithStorage(publishedNotices) {
+  const window = new Window({ url: "http://127.0.0.1:4173/manage.html" });
+  const page = manageHtml
+    .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
+    .replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
+  window.document.write(page);
+  window.document.close();
+  window.localStorage.setItem("kangnamPublishedNotices", JSON.stringify(publishedNotices));
+  window.localStorage.setItem("kangnamManagedMembers", JSON.stringify([
+    { email: "admin@kangnam.ac.kr", role: "owner" },
+  ]));
+  window.KANGNAM_FIREBASE = {
+    auth: {},
+    onAuthStateChanged: (_auth, callback) => callback({ email: "admin@kangnam.ac.kr" }),
+    signOut: async () => {},
+  };
+  window.confirm = () => true;
+  window.alert = () => {
+    throw new Error("완료 안내는 브라우저 alert를 사용하지 않아야 합니다.");
+  };
+  window.eval(adminGuardScript);
+  window.eval(adminScript);
+  await new Promise((resolve) => window.setTimeout(resolve, 0));
+  return window;
+}
+
 async function bootAdminGuard(pageHtml, user, members = [], url = "http://127.0.0.1:4173/admin.html") {
   const window = new Window({ url });
   const page = pageHtml
@@ -643,6 +669,13 @@ assert.equal(publishDocument.querySelector("#school-import-status").dataset.stat
 assert.match(publishDocument.querySelector("#school-import-status").textContent, /두 번 클릭하면 바로 초안을 생성/, "공고 목록에 더블클릭 생성 방법을 안내해야 합니다.");
 assert.match(publishDocument.querySelector(".mock-list-note").textContent, /프로토타입용 예시 데이터/, "Mock 목록은 예시 데이터임을 명확히 안내해야 합니다.");
 assert.match(publishDocument.querySelector(".school-notice-state-label").textContent, /선택 가능/, "처리 전 공고는 선택 가능 상태로 표시되어야 합니다.");
+assert.equal(publishDocument.querySelector("#school-bulk-toolbar").hidden, false, "학교 공고를 불러오면 체크 선택 도구가 표시되어야 합니다.");
+assert.equal(publishDocument.querySelectorAll(".school-notice-checkbox").length, 10, "학교 공고 목록에는 각 항목별 체크박스가 있어야 합니다.");
+click(publishWindow, "#school-select-all");
+assert.equal(publishDocument.querySelector("#school-bulk-summary").textContent, "10개 선택됨 · 초안 생성은 1건씩 진행", "학교 공고 전체 선택 시 선택 개수와 단건 초안 생성 안내를 함께 보여야 합니다.");
+assert.equal(publishDocument.querySelector("#draft-fields").hidden, true, "학교 공고 체크 선택만으로는 Codex 초안을 한 번에 생성하지 않아야 합니다.");
+click(publishWindow, "#clear-school-selection-button");
+assert.equal(publishDocument.querySelector("#school-bulk-summary").textContent, "0개 선택됨", "학교 공고 체크 선택을 한 번에 해제할 수 있어야 합니다.");
 const schoolNoticeItems = [...publishDocument.querySelectorAll(".school-notice-item")];
 schoolNoticeItems[1].dispatchEvent(new publishWindow.MouseEvent("dblclick", { bubbles: true }));
 await new Promise((resolve) => publishWindow.setTimeout(resolve, 0));
@@ -697,6 +730,18 @@ assert.equal(publishDocument.querySelector("#draft-chip").textContent, "공개",
 const approvedNotices = JSON.parse(publishWindow.localStorage.getItem("kangnamPublishedNotices"));
 const approvedListWindow = bootListWithStorage(approvedNotices, JSON.parse(publishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
 assert.match(approvedListWindow.document.querySelector("#notice-list").textContent, /관리자가 수정한 비교과 프로그램 공고/, "수정한 제목으로 공개 승인된 공고가 학생 목록에 표시되어야 합니다.");
+assert.equal(publishDocument.querySelector("#published-bulk-toolbar").hidden, false, "검수 공고 상태 목록에는 일괄 선택 도구가 표시되어야 합니다.");
+click(publishWindow, "#published-select-all");
+assert.match(publishDocument.querySelector("#published-bulk-summary").textContent, /6개 선택됨/, "검수 공고를 전체 선택하면 화면에 보이는 전체 선택 개수가 표시되어야 합니다.");
+click(publishWindow, "#bulk-decline-published-button");
+await new Promise((resolve) => publishWindow.setTimeout(resolve, 0));
+assert.equal(publishDocument.querySelector(".publish-completion-toast").textContent, "6개 공고를 보류했습니다.", "선택한 검수 공고를 한 번에 보류할 수 있어야 합니다.");
+assert.equal(publishDocument.querySelectorAll(".published-item[data-approval-status='declined']").length, 6, "일괄 보류 후 선택한 공고 상태가 모두 보류로 표시되어야 합니다.");
+click(publishWindow, "#published-select-all");
+click(publishWindow, "#bulk-publish-published-button");
+await new Promise((resolve) => publishWindow.setTimeout(resolve, 0));
+assert.equal(publishDocument.querySelector(".publish-completion-toast").textContent, "6개 공고를 공개했습니다.", "선택한 검수 공고를 한 번에 공개할 수 있어야 합니다.");
+assert.equal(publishDocument.querySelectorAll(".published-item[data-approval-status='published']").length, 6, "일괄 공개 후 선택한 공고 상태가 모두 공개로 표시되어야 합니다.");
 click(publishWindow, "#simulate-school-error-button");
 assert.equal(publishDocument.querySelector("#school-import-status").dataset.state, "loading", "오류 시뮬레이션도 먼저 로딩 상태를 거쳐야 합니다.");
 await new Promise((resolve) => publishWindow.setTimeout(resolve, 500));
@@ -704,6 +749,15 @@ assert.equal(publishDocument.querySelector("#school-import-status").dataset.stat
 assert.equal(publishDocument.querySelector("#school-import-status").textContent, "학교 공고 목록을 불러오지 못했습니다. URL을 직접 입력해 주세요.", "오류 문구가 정확해야 합니다.");
 assert.match(publishDocument.querySelector(".school-notice-state.error").textContent, /URL을 직접 입력해 주세요/, "목록 영역에도 오류 안내가 표시되어야 합니다.");
 assert.match(manageHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "공개 공고 관리 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
+const manageWindow = await bootManageWithStorage(JSON.parse(publishWindow.localStorage.getItem("kangnamPublishedNotices")));
+const manageDocument = manageWindow.document;
+assert.equal(manageDocument.querySelector("#published-bulk-toolbar").hidden, false, "공개 공고 관리 화면에는 일괄 선택 도구가 표시되어야 합니다.");
+click(manageWindow, "#published-select-all");
+assert.match(manageDocument.querySelector("#published-bulk-summary").textContent, /6개 선택됨/, "공개 공고 관리 화면에서 전체 선택 개수를 확인할 수 있어야 합니다.");
+click(manageWindow, "#bulk-delete-published-button");
+await new Promise((resolve) => manageWindow.setTimeout(resolve, 0));
+assert.equal(manageDocument.querySelector(".publish-completion-toast").textContent, "6개 공고를 삭제했습니다.", "선택한 공개 공고를 한 번에 삭제할 수 있어야 합니다.");
+assert.equal(JSON.parse(manageWindow.localStorage.getItem("kangnamPublishedNotices")).length, 0, "일괄 삭제한 공고는 저장 목록에서 제거되어야 합니다.");
 assert.equal(document.querySelectorAll(".faq-item").length, 3, "P0 FAQ 3개가 표시되어야 합니다.");
 assert.equal(document.querySelectorAll(".key-facts > div").length, 6, "핵심 정보는 신청 기간, 지원 대상, 모집 분야, 제출 서류, 운영 기간, 담당 부서 6개 항목으로 표시되어야 합니다.");
 assert.equal(document.querySelector("#fact-documents").textContent, "지원서", "핵심 정보에 제출 서류가 표시되어야 합니다.");
@@ -845,7 +899,11 @@ assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.admin-menu-card\s*\{[\
 assert.match(styles, /\.publish-action-bar\s*\{[^}]*position:\s*fixed[^}]*bottom:\s*18px/s, "AI 공고 공개 빠른 작업바는 스크롤 중에도 하단에 고정되어야 합니다.");
 assert.match(styles, /\.publish-action-summary strong\s*\{[^}]*white-space:\s*normal/s, "빠른 작업바의 최종 확인 문구는 잘리지 않고 줄바꿈되어야 합니다.");
 assert.doesNotMatch(styles, /body\.notice-color-preview/, "상세 공고의 임시 색상 미리보기 스타일은 제거되어야 합니다.");
+assert.match(styles, /\.bulk-selection-toolbar\s*\{[^}]*flex-wrap:\s*wrap[^}]*background:\s*var\(--primary-50\)[^}]*border:\s*1px solid var\(--primary-100\)/s, "일괄 선택 도구는 기존 관리자 블루 톤과 맞는 구분 영역으로 표시되어야 합니다.");
+assert.match(styles, /\.bulk-select-all input,[\s\S]*\.bulk-item-check input\s*\{[^}]*accent-color:\s*var\(--primary-800\)/s, "일괄 선택 체크박스는 기본 접근성 입력과 포인트 색상을 사용해야 합니다.");
+assert.match(styles, /\.school-notice-row,[\s\S]*\.published-row\s*\{[^}]*grid-template-columns:\s*auto minmax\(0, 1fr\)/s, "체크박스와 항목 본문은 데스크톱에서 안정적인 두 칸 구조로 표시되어야 합니다.");
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.publish-action-buttons\s*\{[\s\S]*grid-template-columns:\s*1fr 1fr/s, "모바일 빠른 작업바 버튼은 두 열로 정돈되어야 합니다.");
+assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.school-notice-row,[\s\S]*\.published-row\s*\{[\s\S]*grid-template-columns:\s*1fr/s, "모바일에서 일괄 선택 행은 한 열로 겹침 없이 표시되어야 합니다.");
 assert.match(styles, /\.publish-completion-toast\s*\{[^}]*top:\s*50%[^}]*left:\s*50%[^}]*background:\s*var\(--status-success-700\)[^}]*transform-origin:\s*center[^}]*animation:\s*publish-toast-grow/s, "완료 안내는 화면 중앙의 상태 박스로 표시되어야 합니다.");
 assert.match(styles, /\.publish-completion-toast\[data-tone="danger"\]\s*\{[^}]*background:\s*var\(--status-danger-700\)/s, "보류 완료 안내는 보류 버튼과 같은 위험 상태 색상을 사용해야 합니다.");
 assert.match(styles, /@keyframes publish-toast-grow[\s\S]*translate\(-50%,\s*-50%\) scale\(0\.88\)[\s\S]*translate\(-50%,\s*-50%\) scale\(1\)/, "완료 안내 박스는 화면 중앙에서 자연스럽게 나타나야 합니다.");

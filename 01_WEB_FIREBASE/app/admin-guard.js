@@ -84,7 +84,7 @@ async function checkAdminAccess() {
   }
 
   return new Promise((resolve) => {
-    firebase.onAuthStateChanged(firebase.auth, (user) => {
+    firebase.onAuthStateChanged(firebase.auth, async (user) => {
       if (!user) {
         document.body.dataset.adminGuard = "denied";
         setGuardMessage("관리자만 접근 가능한 페이지입니다.");
@@ -93,7 +93,20 @@ async function checkAdminAccess() {
         return;
       }
 
-      const role = resolveAdminRole(user);
+      const store = window.KANGNAM_NOTICE_STORE;
+      let role = "viewer";
+      try {
+        const firestore = await store?.ready;
+        role = firestore?.db
+          ? (await store.getAdminRole(user.email) || "viewer")
+          : resolveAdminRole(user);
+      } catch (error) {
+        document.body.dataset.adminGuard = "denied";
+        setGuardMessage(store?.getFriendlyError(error) || "관리자 권한을 확인하지 못했습니다.");
+        redirectToStudentHome();
+        resolve({ allowed: false, user, role: "viewer", reason: "role-check-failed" });
+        return;
+      }
       if (!isAllowedRole(role)) {
         document.body.dataset.adminGuard = "denied";
         setGuardMessage("관리자 권한이 없습니다.");

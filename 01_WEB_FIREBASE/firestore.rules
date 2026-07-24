@@ -1,0 +1,168 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    function adminPath() {
+      return /databases/$(database)/documents/admins/$(request.auth.token.email);
+    }
+
+    function adminRole() {
+      return signedIn() && exists(adminPath())
+        ? get(adminPath()).data.role
+        : "viewer";
+    }
+
+    function isEditor() {
+      return adminRole() == "editor" || adminRole() == "owner";
+    }
+
+    function isOwner() {
+      return adminRole() == "owner";
+    }
+
+    function validUsage(data, dateId) {
+      return data.keys().hasOnly(["date", "reads", "writes", "deletes", "updatedAt"])
+        && data.date == dateId
+        && data.reads is int
+        && data.writes is int
+        && data.deletes is int
+        && data.updatedAt is int
+        && data.reads >= 0
+        && data.writes >= 0
+        && data.deletes >= 0
+        && data.reads <= 38000
+        && data.writes <= 8000
+        && data.deletes <= 8000;
+    }
+
+    function validNotice(data, noticeId) {
+      return data.keys().hasOnly([
+          "schemaVersion",
+          "id",
+          "title",
+          "category",
+          "department",
+          "date",
+          "status",
+          "recruitmentStatus",
+          "eligibleEnrollmentStatus",
+          "eligibleGrades",
+          "transferStudentEligible",
+          "graduateEligible",
+          "summary",
+          "sourceTitle",
+          "sourcePrefix",
+          "approvalStatus",
+          "sourceUrl",
+          "sourceImageUrl",
+          "publishedAt",
+          "sourceType",
+          "dataMethod",
+          "reviewed",
+          "reviewedAt",
+          "imageUrls",
+          "faqs",
+          "facts",
+          "isPublished",
+          "updatedAt"
+        ])
+        && data.schemaVersion == 2
+        && data.id is string
+        && data.id == noticeId
+        && data.id.size() > 0
+        && data.id.size() <= 120
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 240
+        && data.approvalStatus in ["draft", "review", "published", "declined"]
+        && data.sourceUrl is string
+        && data.sourceUrl.matches("^https://web[.]kangnam[.]ac[.]kr/.*")
+        && data.sourceImageUrl is string
+        && (data.sourceImageUrl == ""
+          || data.sourceImageUrl.matches("^https://web[.]kangnam[.]ac[.]kr/.*"))
+        && data.updatedAt is int
+        && data.category is string && data.category.size() <= 80
+        && data.department is string && data.department.size() <= 160
+        && data.date is string && data.date.size() <= 40
+        && data.status is string && data.status.size() <= 40
+        && data.recruitmentStatus is string && data.recruitmentStatus.size() <= 40
+        && data.eligibleEnrollmentStatus is list && data.eligibleEnrollmentStatus.size() <= 8
+        && data.eligibleGrades is string && data.eligibleGrades.size() <= 80
+        && (data.transferStudentEligible == null || data.transferStudentEligible is bool)
+        && (data.graduateEligible == null || data.graduateEligible is bool)
+        && data.summary is string && data.summary.size() <= 4000
+        && data.sourceTitle is string && data.sourceTitle.size() <= 300
+        && data.sourcePrefix is string && data.sourcePrefix.size() <= 80
+        && data.publishedAt is string && data.publishedAt.size() <= 40
+        && data.sourceType is string && data.sourceType.size() <= 40
+        && data.dataMethod is string && data.dataMethod.size() <= 80
+        && data.reviewed is bool
+        && data.reviewedAt is string && data.reviewedAt.size() <= 40
+        && data.imageUrls is list && data.imageUrls.size() <= 4
+        && data.faqs is list && data.faqs.size() <= 10
+        && data.facts is map
+        && data.facts.keys().hasOnly(["period", "eligibility", "field", "documents", "operation"])
+        && data.facts.period is string && data.facts.period.size() <= 500
+        && data.facts.eligibility is string && data.facts.eligibility.size() <= 500
+        && data.facts.field is string && data.facts.field.size() <= 500
+        && data.facts.documents is string && data.facts.documents.size() <= 500
+        && data.facts.operation is string && data.facts.operation.size() <= 500
+        && data.isPublished is bool
+        && data.isPublished == (data.approvalStatus == "published");
+    }
+
+    function validAdmin(data, email) {
+      return data.keys().hasOnly(["schemaVersion", "email", "role", "updatedAt"])
+        && data.schemaVersion == 2
+        && data.email == email
+        && data.email is string
+        && data.email.size() > 3
+        && data.email.size() <= 254
+        && data.role in ["viewer", "editor", "owner"]
+        && data.updatedAt is int;
+    }
+
+    match /systemUsage/{dateId} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if validUsage(request.resource.data, dateId)
+        && request.resource.data.reads <= 21
+        && request.resource.data.writes <= 2
+        && request.resource.data.deletes <= 1;
+      allow update: if validUsage(request.resource.data, dateId)
+        && request.resource.data.reads >= resource.data.reads
+        && request.resource.data.writes >= resource.data.writes
+        && request.resource.data.deletes >= resource.data.deletes
+        && request.resource.data.reads <= resource.data.reads + 21
+        && request.resource.data.writes <= resource.data.writes + 2
+        && request.resource.data.deletes <= resource.data.deletes + 1;
+      allow delete: if false;
+    }
+
+    match /notices/{noticeId} {
+      allow get: if resource.data.approvalStatus == "published" || isEditor();
+      allow list: if request.query.limit != null
+        && request.query.limit <= 20
+        && (resource.data.approvalStatus == "published" || isEditor());
+      allow create, update: if isEditor() && validNotice(request.resource.data, noticeId);
+      allow delete: if isEditor();
+    }
+
+    match /admins/{email} {
+      allow get: if signedIn() && (request.auth.token.email == email || isOwner());
+      allow list: if isOwner()
+        && request.query.limit != null
+        && request.query.limit <= 20;
+      allow create, update: if isOwner() && validAdmin(request.resource.data, email);
+      allow delete: if isOwner() && request.auth.token.email != email;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

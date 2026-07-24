@@ -2,8 +2,9 @@
 
 const PUBLISHED_NOTICES_KEY = "kangnamPublishedNotices";
 const DELETED_NOTICES_KEY = "kangnamDeletedNoticeIds";
+const FIRESTORE_AUTHORITATIVE_KEY = "kangnamFirestoreAuthoritativeV2";
 const FILTER_ALL = "전체";
-const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감"]);
+const RECRUITMENT_STATUSES = Object.freeze(["모집 예정", "모집 중", "마감 임박", "마감"]);
 const UNKNOWN_ELIGIBILITY = "공고 원문에서 확인 필요";
 
 const DEFAULT_NOTICES = Object.freeze([
@@ -13,8 +14,8 @@ const DEFAULT_NOTICES = Object.freeze([
     category: "비교과 프로그램",
     department: "입학전형관리팀",
     date: "2026.07.20",
-    status: "모집 중",
-    recruitmentStatus: "모집 중",
+    status: "마감 임박",
+    recruitmentStatus: "마감 임박",
     eligibleEnrollmentStatus: ["재학생"],
     eligibleGrades: "",
     transferStudentEligible: true,
@@ -121,6 +122,42 @@ function loadPublishedNotices() {
   }
 }
 
+function savePublishedNotices(notices) {
+  window.localStorage.setItem(PUBLISHED_NOTICES_KEY, JSON.stringify(notices));
+}
+
+function setDataSyncStatus(message, state = "info") {
+  let status = document.querySelector("#data-sync-status");
+  if (!status) {
+    status = document.createElement("p");
+    status.id = "data-sync-status";
+    status.className = "data-sync-status";
+    status.setAttribute("role", "status");
+    document.querySelector("main")?.prepend(status);
+  }
+  status.dataset.state = state;
+  status.textContent = message;
+  status.hidden = !message;
+}
+
+async function hydratePublishedNotices() {
+  const store = window.KANGNAM_NOTICE_STORE;
+  if (!store?.loadPublishedNotices) return;
+
+  try {
+    const result = await store.loadPublishedNotices();
+    if (!String(result.source || "").startsWith("firestore")) return;
+    savePublishedNotices(result.notices);
+    window.localStorage.setItem(FIRESTORE_AUTHORITATIVE_KEY, "true");
+    renderNoticeList();
+    setDataSyncStatus("공용 공고 데이터를 최신 상태로 불러왔습니다.", "success");
+  } catch (error) {
+    const message = store.getFriendlyError(error);
+    const state = error?.code === "FREE_TIER_LIMIT" ? "limit" : "error";
+    setDataSyncStatus(`${message} 저장된 공고를 대신 표시합니다.`, state);
+  }
+}
+
 function loadDeletedNoticeIds() {
   try {
     return new Set(JSON.parse(window.localStorage.getItem(DELETED_NOTICES_KEY) || "[]"));
@@ -131,7 +168,9 @@ function loadDeletedNoticeIds() {
 
 function getNotices() {
   const deletedIds = loadDeletedNoticeIds();
-  const merged = [...loadPublishedNotices(), ...DEFAULT_NOTICES];
+  const stored = loadPublishedNotices();
+  const firestoreIsAuthoritative = window.localStorage.getItem(FIRESTORE_AUTHORITATIVE_KEY) === "true";
+  const merged = firestoreIsAuthoritative ? stored : [...stored, ...DEFAULT_NOTICES];
   return merged
     .filter((notice, index, list) => list.findIndex((item) => item.id === notice.id) === index)
     .filter((notice) => !deletedIds.has(notice.id))
@@ -288,6 +327,7 @@ function createNoticeLink(notice) {
   const action = document.createElement("span");
   link.className = "notice-list-item";
   link.href = `./notice.html?notice=${encodeURIComponent(notice.id)}`;
+  link.dataset.status = getNoticeRecruitmentStatus(notice);
   top.className = "notice-card-top";
   category.className = "notice-card-category";
   status.className = "notice-card-status";
@@ -370,3 +410,4 @@ listElements.personalizedResetButton?.addEventListener("click", () => {
 renderNoticeList();
 window.addEventListener("kangnam-firebase-ready", initListAuth, { once: true });
 initListAuth();
+hydratePublishedNotices();

@@ -234,9 +234,12 @@ async function callGemini(env, parts) {
   }
 
   const model = env.GEMINI_MODEL || "gemini-2.0-flash";
-  const response = await fetch(`${GEMINI_ENDPOINT}/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`, {
+  const response = await fetch(`${GEMINI_ENDPOINT}/models/${model}:generateContent`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": env.GEMINI_API_KEY,
+    },
     body: JSON.stringify({
       contents: [{ role: "user", parts }],
       generationConfig: {
@@ -307,6 +310,14 @@ async function handleAskNotice(request, env) {
 
 export default {
   async fetch(request, env) {
+    const requestOrigin = request.headers.get("Origin") || "";
+    if (requestOrigin && !getAllowedOrigins(env).includes(requestOrigin)) {
+      return jsonResponse(request, env, 403, {
+        status: "error",
+        message: "This origin is not allowed.",
+      });
+    }
+
     if (request.method === "OPTIONS") return optionsResponse(request, env);
     if (request.method !== "POST") {
       return jsonResponse(request, env, 405, {

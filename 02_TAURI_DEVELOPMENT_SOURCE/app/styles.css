@@ -2545,7 +2545,6 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   line-height: 1.5;
 }
 
-.publish-grid .approval-panel,
 .publish-grid .published-panel {
   grid-column: 1 / -1;
 }
@@ -3139,6 +3138,21 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   width: auto;
 }
 
+.draft-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.draft-review-button {
+  min-width: 180px;
+  min-height: 48px;
+}
+
+.draft-review-button[hidden] {
+  display: none;
+}
+
 .has-publish-action-bar {
   padding-bottom: 112px;
 }
@@ -3162,6 +3176,11 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   backdrop-filter: blur(12px);
 }
 
+.publish-action-bar:focus-visible {
+  outline: 3px solid rgb(37 99 169 / 28%);
+  outline-offset: 3px;
+}
+
 .publish-action-summary {
   min-width: 0;
   display: grid;
@@ -3179,6 +3198,11 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   color: var(--primary-950);
   font-size: 14px;
   line-height: 1.4;
+  white-space: normal;
+}
+
+.publish-action-summary small {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4338,7 +4362,7 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   }
 
   .has-publish-action-bar {
-    padding-bottom: 246px;
+    padding-bottom: 184px;
   }
 
   .publish-action-bar {

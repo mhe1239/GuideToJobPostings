@@ -584,6 +584,7 @@ assert.equal(document.querySelector("#header-auth-link").getAttribute("aria-cont
 assert.match(document.querySelector("#header-auth-link").textContent, /^\s*로그인\s*$/, "학생용 공고 상세의 상단 진입점은 학생·관리자 공용 로그인으로 표시되어야 합니다.");
 assert.equal(document.querySelector("#notice-list"), null, "상세 페이지에는 공고 선택 목록이 없어야 합니다.");
 assert.equal(document.querySelector(".notice-list-back").getAttribute("href"), "./index.html", "상세 공고에서 공고 선택 화면으로 돌아갈 수 있어야 합니다.");
+assert.doesNotMatch(html, /notice-color-preview/, "상세 공고는 별도 색상 미리보기 없이 원래 파란색 테마를 사용해야 합니다.");
 assert.ok(html.indexOf('class="notice-hero"') < html.indexOf('class="overview-section"'), "공고 제목과 핵심 정보가 프로그램 개요보다 먼저 나와야 합니다.");
 assert.ok(html.indexOf('class="overview-section"') < html.indexOf('class="content-grid"'), "프로그램 개요가 FAQ와 질문 영역보다 먼저 나와야 합니다.");
 assert.ok(html.indexOf('class="content-grid"') < html.indexOf('class="full-notice-section"'), "FAQ와 질문 영역 다음에 전체 공고 내용이 나와야 합니다.");
@@ -599,8 +600,9 @@ assert.match(adminHtml, /관리자 관리 열기[\s\S]*공고 생성 열기[\s\S
 assert.match(membersHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "관리자 관리 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.match(publishHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "AI 공고 공개 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.ok(publishDocument.querySelector("#publish-action-bar"), "AI 공고 공개 화면에는 스크롤 중에도 사용할 수 있는 빠른 작업바가 있어야 합니다.");
-assert.equal(publishDocument.querySelector("#publish-action-bar").hidden, false, "관리자는 빠른 작업바를 바로 사용할 수 있어야 합니다.");
-assert.equal(publishDocument.querySelector("#sticky-generate-draft-button").getAttribute("form"), "admin-ingest-form", "빠른 초안 생성 버튼은 기존 생성 폼을 제출해야 합니다.");
+assert.equal(publishDocument.querySelector("#publish-action-bar").hidden, true, "빠른 작업바는 초안을 생성하기 전에는 숨겨야 합니다.");
+assert.equal(publishDocument.querySelector("#sticky-generate-draft-button"), null, "빠른 작업바에는 중복 초안 생성 버튼을 표시하지 않아야 합니다.");
+assert.equal(publishDocument.querySelector("#sticky-edit-draft-button"), null, "빠른 작업바에는 별도 수정 버튼을 표시하지 않아야 합니다.");
 for (const [pageName, pageHtml] of [
   ["관리자 관리", membersHtml],
   ["AI 공고 생성 및 공개", publishHtml],
@@ -620,6 +622,8 @@ assert.equal(publishDocument.querySelector("#draft-fields").hidden, false, "URL 
 assert.match(publishDocument.querySelector("#draft-title").value, /URL 입력 테스트 공고/, "URL 입력 초안의 제목이 편집 필드에 표시되어야 합니다.");
 assert.match(publishDocument.querySelector("#draft-summary").value, /URL 입력 테스트 공고/, "URL 입력 초안은 읽은 공고 제목을 반영해야 합니다.");
 assert.equal(publishDocument.querySelector(".publish-completion-toast").textContent, "초안 생성을 완료했습니다.", "URL 입력 초안 생성 완료 시 비차단 완료 박스를 표시해야 합니다.");
+assert.equal(publishDocument.querySelector("#publish-action-bar").hidden, false, "초안을 생성하면 빠른 작업바를 표시해야 합니다.");
+assert.equal(publishDocument.querySelector("#review-draft-button").hidden, false, "생성 초안 하단에 검수 버튼을 표시해야 합니다.");
 click(publishWindow, "input[value='list']");
 assert.equal(publishDocument.querySelector("#url-input-panel").hidden, true, "목록 선택 모드에서는 URL 입력 영역을 숨겨야 합니다.");
 assert.equal(publishDocument.querySelector("#notice-list-panel").hidden, false, "목록 선택 모드에서는 학교 공고 목록을 보여야 합니다.");
@@ -643,24 +647,28 @@ assert.equal(publishDocument.querySelector(".publish-completion-toast").textCont
 click(publishWindow, ".school-notice-item");
 assert.equal(publishDocument.querySelector(".school-notice-item").getAttribute("aria-current"), "true", "공고를 선택하면 선택 상태가 명확히 표시되어야 합니다.");
 assert.match(publishDocument.querySelector("#selected-notice-title").textContent, /2026학년도 비교과 프로그램 참가자 모집/, "선택한 공고 제목이 표시되어야 합니다.");
-assert.match(publishDocument.querySelector("#publish-selection-summary").textContent, /2026학년도 비교과 프로그램 참가자 모집/, "빠른 작업바에도 선택한 공고가 표시되어야 합니다.");
+assert.equal(publishDocument.querySelector("#publish-action-bar").hidden, true, "새 공고를 선택해 기존 초안이 초기화되면 빠른 작업바를 다시 숨겨야 합니다.");
 assert.match(publishDocument.querySelector("#selected-notice-source").textContent, /학생지원팀 · 2026\.07\.23 · HTML/, "선택한 공고 출처 정보가 표시되어야 합니다.");
 publishDocument.querySelector("#admin-ingest-form").dispatchEvent(new publishWindow.Event("submit", { bubbles: true, cancelable: true }));
 assert.equal(publishDocument.querySelector("#draft-chip").textContent, "검수 필요", "목록 선택으로 만든 초안은 검수 필요 상태로 표시되어야 합니다.");
 assert.match(publishDocument.querySelector("#draft-title").value, /2026학년도 비교과 프로그램 참가자 모집/, "목록 선택 초안의 제목이 편집 필드에 표시되어야 합니다.");
+assert.match(publishDocument.querySelector("#publish-selection-summary").textContent, /2026학년도 비교과 프로그램 참가자 모집/, "초안 생성 후 빠른 작업바에 선택한 공고가 표시되어야 합니다.");
 assert.match(publishDocument.querySelector("#approval-note").textContent, /프로토타입용 예시 데이터/, "목록 선택 초안은 예시 데이터임을 안내해야 합니다.");
-assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "검수 필요", "초안 생성 후 관리자 검수 상태가 표시되어야 합니다.");
-assert.equal(publishDocument.querySelector("#edit-draft-button"), null, "관리자 검수 체크에는 별도 수정 버튼을 표시하지 않아야 합니다.");
-assert.equal(publishDocument.querySelectorAll(".approval-actions button").length, 2, "관리자 검수 체크에는 공개 승인과 보류 버튼만 표시해야 합니다.");
-assert.equal(publishDocument.querySelector("#sticky-edit-draft-button").disabled, false, "빠른 작업바의 수정 버튼도 초안 생성 후 사용할 수 있어야 합니다.");
-assert.equal(publishDocument.querySelector("#sticky-approve-draft-button").disabled, true, "검수 체크 전에는 빠른 공개 승인 버튼도 비활성화되어야 합니다.");
-click(publishWindow, "#sticky-edit-draft-button");
-assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "초안", "수정 버튼을 누르면 상태가 초안으로 바뀌어야 합니다.");
+assert.equal(publishDocument.querySelector(".approval-panel"), null, "공고 생성 페이지에는 별도 관리자 검수 체크 카드를 표시하지 않아야 합니다.");
+assert.equal(publishDocument.querySelectorAll(".approval-checkbox").length, 0, "관리자 검수 안내는 체크박스 기능을 사용하지 않아야 합니다.");
+assert.equal(publishDocument.querySelectorAll(".publish-action-buttons button").length, 2, "빠른 작업바에는 보류와 공개 승인 버튼만 표시해야 합니다.");
+assert.equal(publishDocument.querySelector("#sticky-decline-draft-button").textContent, "보류", "빠른 작업바에 보류 버튼이 표시되어야 합니다.");
+assert.equal(publishDocument.querySelector("#sticky-approve-draft-button").textContent, "공개 승인", "빠른 작업바에 공개 승인 버튼이 표시되어야 합니다.");
+assert.equal(publishDocument.querySelector("#sticky-approve-draft-button").disabled, false, "초안 생성 후 공개 승인 버튼을 사용할 수 있어야 합니다.");
+assert.equal(publishDocument.querySelector("#publish-check-summary").textContent, "마지막으로 확인하셨나요?", "빠른 작업바는 관리자에게 최종 확인 문구를 보여야 합니다.");
+click(publishWindow, "#review-draft-button");
+assert.match(publishDocument.querySelector("#approval-note").textContent, /마지막으로 확인하셨나요/, "초안 검수 버튼은 최종 확인 안내를 표시해야 합니다.");
+assert.equal(publishDocument.activeElement.id, "publish-action-bar", "초안 검수 버튼은 관리자의 시선을 빠른 작업바로 이동시켜야 합니다.");
 setValue(publishWindow, "#draft-title", "관리자가 수정한 비교과 프로그램 공고");
-click(publishWindow, "#decline-draft-button");
+click(publishWindow, "#sticky-decline-draft-button");
 await new Promise((resolve) => publishWindow.setTimeout(resolve, 0));
 assert.equal(publishDocument.querySelector("#approval-note").textContent, "공고가 보류되었습니다.", "보류 시 안내 문구가 표시되어야 합니다.");
-assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "보류", "보류 시 관리자 화면 상태가 구분되어야 합니다.");
+assert.equal(publishDocument.querySelector("#draft-chip").textContent, "보류", "보류 시 생성 초안 상태가 구분되어야 합니다.");
 assert.equal(publishDocument.querySelector(".published-item").dataset.approvalStatus, "declined", "관리자 목록에서 보류 상태가 표시되어야 합니다.");
 assert.equal(publishDocument.querySelector(".school-notice-item").disabled, true, "처리 완료 공고는 다시 선택할 수 없어야 합니다.");
 assert.equal(publishDocument.querySelector(".school-notice-item").dataset.processed, "true", "처리 완료 공고는 처리 상태 데이터가 표시되어야 합니다.");
@@ -668,17 +676,11 @@ assert.match(publishDocument.querySelector(".school-notice-state-label").textCon
 const declinedNotices = JSON.parse(publishWindow.localStorage.getItem("kangnamPublishedNotices"));
 const declinedListWindow = bootListWithStorage(declinedNotices, JSON.parse(publishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
 assert.doesNotMatch(declinedListWindow.document.querySelector("#notice-list").textContent, /관리자가 수정한 비교과 프로그램 공고/, "보류된 공고는 학생 목록에 표시되지 않아야 합니다.");
-publishDocument.querySelectorAll(".approval-checkbox").forEach((checkbox) => {
-  checkbox.checked = true;
-  checkbox.dispatchEvent(new publishWindow.Event("change", { bubbles: true }));
-});
-assert.equal(publishDocument.querySelector("#sticky-approve-draft-button").disabled, false, "검수 체크를 마치면 빠른 공개 승인 버튼이 활성화되어야 합니다.");
-assert.equal(publishDocument.querySelector("#publish-check-summary").textContent, "검수 체크 3/3", "빠른 작업바는 검수 체크 진행 상황을 표시해야 합니다.");
-click(publishWindow, "#approve-draft-button");
+click(publishWindow, "#sticky-approve-draft-button");
 await new Promise((resolve) => publishWindow.setTimeout(resolve, 0));
 assert.equal(publishDocument.querySelector("#approval-note").textContent, "공고가 학생에게 공개되었습니다.", "공개 승인 시 안내 문구가 표시되어야 합니다.");
-assert.equal(publishDocument.querySelector("#approval-status-chip").textContent, "공개", "공개 승인 시 관리자 화면 상태가 공개로 바뀌어야 합니다.");
 assert.equal(publishDocument.querySelector(".publish-completion-toast").textContent, "공고 공개 승인을 완료했습니다.", "공개 승인 완료 시 비차단 완료 박스를 표시해야 합니다.");
+assert.equal(publishDocument.querySelector("#draft-chip").textContent, "공개", "공개 승인 시 생성 초안 상태가 공개로 바뀌어야 합니다.");
 const approvedNotices = JSON.parse(publishWindow.localStorage.getItem("kangnamPublishedNotices"));
 const approvedListWindow = bootListWithStorage(approvedNotices, JSON.parse(publishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
 assert.match(approvedListWindow.document.querySelector("#notice-list").textContent, /관리자가 수정한 비교과 프로그램 공고/, "수정한 제목으로 공개 승인된 공고가 학생 목록에 표시되어야 합니다.");
@@ -828,7 +830,8 @@ assert.match(styles, /\.admin-action-section\s*\{[^}]*background:\s*var\(--prima
 assert.match(styles, /\.admin-menu-card\s*\{[^}]*min-height:\s*218px[^}]*border:\s*2px solid var\(--primary-100\)[^}]*cursor:\s*pointer/s, "관리자 작업 카드는 크고 클릭 가능한 버튼 형태여야 합니다.");
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.admin-menu-card\s*\{[\s\S]*min-height:\s*202px/s, "모바일에서도 관리자 작업 버튼이 충분한 크기를 유지해야 합니다.");
 assert.match(styles, /\.publish-action-bar\s*\{[^}]*position:\s*fixed[^}]*bottom:\s*18px/s, "AI 공고 공개 빠른 작업바는 스크롤 중에도 하단에 고정되어야 합니다.");
-assert.match(styles, /\.publish-action-summary strong\s*\{[^}]*text-overflow:\s*ellipsis/s, "빠른 작업바의 긴 공고 제목은 화면 밖으로 밀리지 않아야 합니다.");
+assert.match(styles, /\.publish-action-summary strong\s*\{[^}]*white-space:\s*normal/s, "빠른 작업바의 최종 확인 문구는 잘리지 않고 줄바꿈되어야 합니다.");
+assert.doesNotMatch(styles, /body\.notice-color-preview/, "상세 공고의 임시 색상 미리보기 스타일은 제거되어야 합니다.");
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.publish-action-buttons\s*\{[\s\S]*grid-template-columns:\s*1fr 1fr/s, "모바일 빠른 작업바 버튼은 두 열로 정돈되어야 합니다.");
 assert.match(styles, /\.publish-completion-toast\s*\{[^}]*bottom:\s*24px[^}]*left:\s*50%[^}]*background:\s*var\(--status-success-700\)[^}]*transform-origin:\s*left center[^}]*animation:\s*publish-toast-grow/s, "완료 안내는 하단 중앙의 초록색 박스로 표시되어야 합니다.");
 assert.match(styles, /\.has-publish-action-bar \.publish-completion-toast\s*\{[^}]*bottom:\s*112px/s, "공고 공개 화면 완료 안내는 하단 작업바 위에 표시되어야 합니다.");

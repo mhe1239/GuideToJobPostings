@@ -2545,7 +2545,6 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   line-height: 1.5;
 }
 
-.publish-grid .approval-panel,
 .publish-grid .published-panel {
   grid-column: 1 / -1;
 }
@@ -3139,6 +3138,21 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   width: auto;
 }
 
+.draft-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.draft-review-button {
+  min-width: 180px;
+  min-height: 48px;
+}
+
+.draft-review-button[hidden] {
+  display: none;
+}
+
 .has-publish-action-bar {
   padding-bottom: 112px;
 }
@@ -3162,6 +3176,11 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   backdrop-filter: blur(12px);
 }
 
+.publish-action-bar:focus-visible {
+  outline: 3px solid rgb(37 99 169 / 28%);
+  outline-offset: 3px;
+}
+
 .publish-action-summary {
   min-width: 0;
   display: grid;
@@ -3179,6 +3198,11 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   color: var(--primary-950);
   font-size: 14px;
   line-height: 1.4;
+  white-space: normal;
+}
+
+.publish-action-summary small {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4338,7 +4362,7 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   }
 
   .has-publish-action-bar {
-    padding-bottom: 246px;
+    padding-bottom: 184px;
   }
 
   .publish-action-bar {
@@ -4624,77 +4648,6 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
-}
-
-/* 공고 상세 페이지 전용 색상 미리보기: 구조와 기능은 변경하지 않습니다. */
-body.notice-color-preview {
-  --primary-950: #344e41;
-  --primary-900: #3a5a40;
-  --primary-800: #3a5a40;
-  --primary-700: #588157;
-  --primary-100: #d8dfcf;
-  --primary-50: #eef0e8;
-  --status-warning-700: #3a5a40;
-  --status-warning-100: #dad7cd;
-  --status-warning-50: #f0eee7;
-  --status-success-700: #3a5a40;
-  --status-success-100: #d8dfcf;
-  --ink: #283b31;
-  --ink-soft: #4b5f52;
-  --ink-faint: #647368;
-  --border: #b8c2aa;
-  --border-strong: #a3b18a;
-  --canvas: #dad7cd;
-  --surface-muted: #f0eee7;
-  --warm: #ebe9df;
-  --focus: #588157;
-  --shadow-card: 0 16px 42px rgb(52 78 65 / 14%);
-}
-
-body.notice-color-preview .site-header {
-  background: linear-gradient(135deg, #344e41 0%, #3a5a40 100%);
-  border-bottom-color: rgb(218 215 205 / 24%);
-}
-
-body.notice-color-preview .notice-hero {
-  background: linear-gradient(135deg, #ffffff 0%, #eef0e8 100%);
-  border-color: #a3b18a;
-}
-
-body.notice-color-preview .notice-hero::after {
-  background-image: radial-gradient(circle, rgb(88 129 87 / 13%) 0 2px, transparent 2.5px);
-}
-
-body.notice-color-preview .key-facts {
-  background: #e4e7dc;
-}
-
-body.notice-color-preview .eligibility-section,
-body.notice-color-preview .example-notice {
-  background: #ebe9df;
-}
-
-body.notice-color-preview .faq-section,
-body.notice-color-preview .assistant-card,
-body.notice-color-preview .overview-section,
-body.notice-color-preview .full-notice-section,
-body.notice-color-preview .source-section {
-  border-color: #a3b18a;
-}
-
-body.notice-color-preview .assistant-card {
-  box-shadow: 0 18px 46px rgb(52 78 65 / 18%);
-}
-
-body.notice-color-preview .example-notice {
-  border-left-color: #588157;
-}
-
-body.notice-color-preview button:focus-visible,
-body.notice-color-preview textarea:focus-visible,
-body.notice-color-preview a:focus-visible,
-body.notice-color-preview [tabindex="-1"]:focus-visible {
-  outline-color: rgb(88 129 87 / 42%);
 }
 
 .data-sync-status {

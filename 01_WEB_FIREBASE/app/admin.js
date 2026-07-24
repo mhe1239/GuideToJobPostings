@@ -251,6 +251,7 @@ const adminPage = {
   declineButton: document.querySelector("#sticky-decline-draft-button"),
   note: document.querySelector("#approval-note"),
   publishActionBar: document.querySelector("#publish-action-bar"),
+  publishActionClose: document.querySelector("#publish-action-close"),
   publishSelectionSummary: document.querySelector("#publish-selection-summary"),
   publishCheckSummary: document.querySelector("#publish-check-summary"),
   publishedList: document.querySelector("#published-list"),
@@ -280,6 +281,7 @@ let noticeInputMode = "url";
 let schoolNoticeLoadState = "idle";
 let importedSchoolNotices = [];
 let currentApprovalStatus = "draft";
+let publishActionBarDismissed = false;
 
 function setAdminNote(message) {
   if (adminPage.note) adminPage.note.textContent = message;
@@ -772,9 +774,11 @@ function setNoticeInputMode(mode) {
   selectedSchoolNoticeIds = new Set();
   resetDraftSelectionState(mode === "url" ? "공식 공고 URL을 입력해 주세요." : "학교 홈페이지에서 가져오기 버튼을 눌러 공고 목록을 불러와 주세요.");
   renderMockSchoolNotices();
+  updateApprovalState();
 }
 
 function resetDraftSelectionState(message) {
+  publishActionBarDismissed = false;
   generatedDraftUrl = "";
   currentDraftNotice = null;
   if (adminPage.fields) adminPage.fields.hidden = true;
@@ -872,14 +876,20 @@ function updatePublishActionBar() {
 
   const allowed = canEditAndPublish();
   const ready = Boolean(adminPage.fields && !adminPage.fields.hidden);
+  const visible = allowed && ready && !publishActionBarDismissed;
 
-  adminPage.publishActionBar.hidden = !(allowed && ready);
-  document.body.classList.toggle("has-publish-action-bar", allowed && ready);
+  adminPage.publishActionBar.hidden = !visible;
+  document.body.classList.toggle("has-publish-action-bar", visible);
 
   if (adminPage.publishSelectionSummary && ready) {
     adminPage.publishSelectionSummary.textContent = `${getPublishSelectionLabel()} · 제목, 일정, 지원 자격과 답변 근거를 확인해 주세요.`;
   }
   if (adminPage.publishCheckSummary) adminPage.publishCheckSummary.textContent = "마지막으로 확인하셨나요?";
+}
+
+function handlePublishActionBarClose() {
+  publishActionBarDismissed = true;
+  updatePublishActionBar();
 }
 
 let publishCompletionToastTimer = 0;
@@ -1332,6 +1342,27 @@ function getManageableNotices() {
     .filter((notice) => notice.approvalStatus || !deletedIds.has(notice.id));
 }
 
+function getNoticeApprovalStatus(notice) {
+  return notice.approvalStatus || (notice.isPublished === false ? "draft" : "published");
+}
+
+function getVisibleManagedNotices() {
+  const notices = getManageableNotices();
+  if (adminPage.publishActionBar) {
+    return notices.filter((notice) => getNoticeApprovalStatus(notice) === "declined");
+  }
+  if (adminPage.savePublishedButton || adminPage.deletePublishedButton) {
+    return notices.filter((notice) => getNoticeApprovalStatus(notice) === "published");
+  }
+  return notices;
+}
+
+function getPublishedListEmptyMessage() {
+  if (adminPage.publishActionBar) return "아직 보류된 공고가 없습니다.";
+  if (adminPage.savePublishedButton || adminPage.deletePublishedButton) return "아직 공개된 공고가 없습니다.";
+  return "표시할 공고가 없습니다.";
+}
+
 function buildModeratedNotice(baseNotice, approvalStatus) {
   if (!baseNotice) return null;
   const title = adminPage.title?.value.trim() || baseNotice.title;
@@ -1411,11 +1442,11 @@ async function saveModeratedNotice(approvalStatus) {
 
 function renderPublishedNotices() {
   if (!adminPage.publishedList) return;
-  const notices = getManageableNotices();
+  const notices = getVisibleManagedNotices();
 
   adminPage.publishedCountChip.textContent = `${notices.length}개`;
   if (notices.length === 0) {
-    adminPage.publishedList.innerHTML = "<p class=\"member-empty\">아직 공개된 공고가 없습니다.</p>";
+    adminPage.publishedList.innerHTML = `<p class="member-empty">${getPublishedListEmptyMessage()}</p>`;
     selectedPublishedId = "";
     selectedPublishedIds = new Set();
     updateApprovalState();
@@ -1449,12 +1480,12 @@ function renderPublishedNotices() {
       button.type = "button";
       button.className = "published-item";
       button.dataset.noticeId = notice.id;
-      button.dataset.approvalStatus = notice.approvalStatus || "published";
+      button.dataset.approvalStatus = getNoticeApprovalStatus(notice);
       if (notice.id === selectedPublishedId) button.setAttribute("aria-current", "true");
       title.textContent = notice.title;
-      meta.textContent = `${notice.department} · ${notice.date}${notice.isPublished ? "" : " · 기본 공고"}`;
+      meta.textContent = `${notice.department} · ${notice.date}${notice.approvalStatus ? "" : " · 기본 공고"}`;
       state.className = "approval-state-label";
-      state.textContent = APPROVAL_STATUS_LABELS[notice.approvalStatus || "published"] || "공개";
+      state.textContent = APPROVAL_STATUS_LABELS[getNoticeApprovalStatus(notice)] || "공개";
       button.append(title, meta, state);
       button.addEventListener("click", () => selectPublishedNotice(notice.id));
       row.append(checkboxLabel, button);
@@ -1470,9 +1501,10 @@ function formatFaqDraft(faqs) {
 }
 
 function selectPublishedNotice(noticeId) {
-  const notice = getManageableNotices().find((item) => item.id === noticeId);
+  const notice = getVisibleManagedNotices().find((item) => item.id === noticeId);
   if (!notice || !canEditAndPublish()) return;
 
+  publishActionBarDismissed = false;
   selectedPublishedId = notice.id;
   currentDraftNotice = notice;
   generatedDraftUrl = notice.sourceUrl;
@@ -1484,7 +1516,9 @@ function selectPublishedNotice(noticeId) {
   adminPage.faq.value = formatFaqDraft(notice.faqs || []);
   adminPage.evidence.value = `출처 URL: ${notice.sourceUrl}\n근거. 신청 기간: ${notice.facts?.period || "공식 공고 원문 확인"}\n근거. 지원 자격: ${notice.facts?.eligibility || "공식 공고 원문 확인"}\n근거. 신청/지원: ${notice.facts?.field || "공식 공고 원문 확인"}`;
   setApprovalStatus(notice.approvalStatus || "published");
-  setAdminNote("공개된 공고를 불러왔습니다. 수정 후 저장하거나 삭제할 수 있습니다.");
+  setAdminNote(adminPage.publishActionBar
+    ? "보류된 공고를 불러왔습니다. 내용을 다시 검수해 공개하거나 계속 보류할 수 있습니다."
+    : "공개된 공고를 불러왔습니다. 수정 후 저장하거나 삭제할 수 있습니다.");
   renderPublishedNotices();
   updateApprovalState();
 }
@@ -1519,7 +1553,7 @@ async function handlePublishedSave() {
 
 async function handlePublishedDelete() {
   if (!canEditAndPublish() || !selectedPublishedId) return;
-  const notice = getManageableNotices().find((item) => item.id === selectedPublishedId);
+  const notice = getVisibleManagedNotices().find((item) => item.id === selectedPublishedId);
   const title = notice?.title || "선택한 공고";
   const confirmed = window.confirm(`"${title}" 공고를 삭제할까요?\n삭제하면 학생 페이지 목록과 상세 페이지에서 보이지 않습니다.`);
   if (!confirmed) return;
@@ -1685,6 +1719,7 @@ async function generateDraft() {
     return;
   }
 
+  publishActionBarDismissed = false;
   if (adminPage.chip) adminPage.chip.textContent = "생성 중";
   adminPage.generateButton.disabled = true;
   updatePublishActionBar();
@@ -1815,6 +1850,7 @@ adminPage.clearPublishedSelectionButton?.addEventListener("click", clearPublishe
 adminPage.bulkDeletePublishedButton?.addEventListener("click", handlePublishedBulkDelete);
 adminPage.bulkDeclinePublishedButton?.addEventListener("click", () => handlePublishedBulkStatus("declined"));
 adminPage.bulkPublishPublishedButton?.addEventListener("click", () => handlePublishedBulkStatus("published"));
+adminPage.publishActionClose?.addEventListener("click", handlePublishActionBarClose);
 clearLegacyDefaultNoticeUrl();
 renderMockSchoolNotices();
 adminPage.approveButton?.addEventListener("click", handleDraftApproval);

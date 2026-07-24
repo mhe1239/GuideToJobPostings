@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node scripts/generate-firebase-config.mjs",
     "dev:codex-answer": "node scripts/local-codex-answer-server.mjs",
-    "lint": "node --check scripts/local-codex-answer-server.mjs && npm --prefix worker run lint",
+    "test": "node --test tests/ai-answer-pipeline.test.mjs",
+    "lint": "node --check scripts/local-codex-answer-server.mjs && node --check tests/ai-answer-pipeline.test.mjs && npm --prefix worker run lint",
     "deploy": "npm run build && firebase deploy --only hosting --project guide-to-job-postings",
     "deploy:worker": "npm --prefix worker run deploy"
   }

@@ -954,8 +954,8 @@ function renderAuthState() {
     if (adminReview.headerAuthLink) {
       adminReview.headerAuthLink.href = currentAccountType === "admin"
         ? "./admin.html"
-        : (window.KANGNAM_ACCOUNT_ACCESS?.getLoginUrl({ stay: true }) || "./login.html?stay=1");
-      adminReview.headerAuthLink.lastChild.textContent = currentAccountType === "admin" ? "관리자 메뉴" : "학생 계정";
+        : "./profile.html";
+      adminReview.headerAuthLink.lastChild.textContent = currentAccountType === "admin" ? "관리자 메뉴" : "내 정보";
     }
   }
 

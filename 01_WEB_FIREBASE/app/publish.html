@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" href="./assets/icons/32x32.png?v=20260724-official-symbol-cutout-v3" sizes="32x32" />
     <link rel="apple-touch-icon" href="./assets/icons/128x128.png?v=20260724-official-symbol-cutout-v3" />
     <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=20260724-brand-align-v4" />
+    <link rel="stylesheet" href="./styles.css?v=20260724-admin-workspace" />
     <script type="module" src="./firebase-config.js?v=20260722-url-reset"></script>
     <script src="./firestore-store.js?v=20260724-spark-guard" defer></script>
     <script src="./account-access.js?v=20260724-unified-login" defer></script>
@@ -52,21 +52,6 @@
           <span class="review-status" id="review-status">보기만 가능</span>
         </div>
 
-        <section class="auth-panel">
-          <div>
-            <p class="section-label">권한 상태</p>
-            <h3>로그인한 관리자는 수정 및 공개 가능</h3>
-            <p class="auth-copy">통합 로그인에서 등록된 관리자 계정으로 확인되면 공고 링크 등록, 초안 수정, 공개 승인을 사용할 수 있습니다.</p>
-          </div>
-          <div class="auth-actions">
-            <a class="button primary" href="./login.html">학교 계정으로 로그인</a>
-          </div>
-          <div class="auth-state" id="admin-auth-state">
-            <strong>로그아웃 상태</strong>
-            <span>학생 보기 권한입니다.</span>
-          </div>
-        </section>
-
         <div class="review-flow" aria-label="관리자 공개 절차">
           <div><span>01</span><strong>입력 방식 선택</strong></div>
           <div><span>02</span><strong>공고 선택 또는 URL 입력</strong></div>
@@ -74,7 +59,7 @@
           <div><span>04</span><strong>공개 또는 취소</strong></div>
         </div>
 
-        <div class="admin-grid publish-grid" data-requires-admin>
+        <div class="admin-grid publish-grid admin-workspace-grid" data-requires-admin>
           <form class="admin-panel ingest-panel" id="admin-ingest-form">
             <div class="panel-title-row">
               <div>

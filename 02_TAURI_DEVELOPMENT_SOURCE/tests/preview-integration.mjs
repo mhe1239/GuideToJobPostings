@@ -591,6 +591,14 @@ assert.equal((adminHtml.match(/class="admin-menu-card(?:\s|")/g) || []).length, 
 assert.match(adminHtml, /관리자 관리 열기[\s\S]*공고 생성 열기[\s\S]*공고 관리 열기[\s\S]*로그아웃하기/, "각 작업 카드가 누르는 버튼임을 알 수 있는 실행 문구가 표시되어야 합니다.");
 assert.match(membersHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "관리자 관리 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.match(publishHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "AI 공고 공개 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
+for (const [pageName, pageHtml] of [
+  ["관리자 관리", membersHtml],
+  ["AI 공고 생성 및 공개", publishHtml],
+  ["공개 공고 관리", manageHtml],
+]) {
+  assert.doesNotMatch(pageHtml, /class="auth-panel"|학교 계정으로 로그인|권한 상태|로그인 상태/, `${pageName} 화면에는 중복 로그인 상태 패널을 표시하지 않아야 합니다.`);
+  assert.match(pageHtml, /class="admin-grid[^"]*admin-workspace-grid/, `${pageName} 화면은 넓어진 관리자 작업 공간을 사용해야 합니다.`);
+}
 assert.equal(publishDocument.querySelectorAll("input[name='notice-input-mode']").length, 2, "관리자는 URL 입력과 학교 공고 선택 중 입력 방식을 고를 수 있어야 합니다.");
 assert.equal(publishDocument.querySelector("#notice-list-panel").hidden, true, "기본 입력 방식은 URL 직접 입력이어야 합니다.");
 publishDocument.querySelector("#admin-ingest-form").dispatchEvent(new publishWindow.Event("submit", { bubbles: true, cancelable: true }));

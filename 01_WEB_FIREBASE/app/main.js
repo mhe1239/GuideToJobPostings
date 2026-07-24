@@ -796,7 +796,7 @@ const adminReview = {
 const ROLE_LABELS = Object.freeze({
   owner: "관리자 관리 가능",
   editor: "수정 및 공개 가능",
-  viewer: "보기만 가능",
+  viewer: "학생 계정",
 });
 
 const ROLE_RANK = Object.freeze({
@@ -807,6 +807,7 @@ const ROLE_RANK = Object.freeze({
 
 let currentUser = null;
 let currentRole = "viewer";
+let currentAccountType = "guest";
 let managedMembers = loadManagedMembers();
 
 const CODEX_DRAFT = Object.freeze({
@@ -936,21 +937,25 @@ function renderAuthState() {
 
   if (!currentUser) {
     title.textContent = "로그아웃 상태";
-    subtitle.textContent = "학생 보기 권한으로 공개된 공고와 FAQ만 볼 수 있습니다.";
+    subtitle.textContent = "로그인하지 않아도 공개된 공고와 FAQ를 볼 수 있습니다.";
     if (adminReview.headerAuthLink) {
-      adminReview.headerAuthLink.href = "./login.html";
-      adminReview.headerAuthLink.lastChild.textContent = "관리자 로그인";
+      adminReview.headerAuthLink.href = window.KANGNAM_ACCOUNT_ACCESS?.getLoginUrl() || "./login.html";
+      adminReview.headerAuthLink.lastChild.textContent = "로그인";
     }
   } else {
-    title.textContent = `${currentUser.email} · ${ROLE_LABELS[currentRole]}`;
+    title.textContent = currentAccountType === "admin"
+      ? `관리자 계정 · ${ROLE_LABELS[currentRole]}`
+      : "학생 계정으로 로그인됨";
     subtitle.textContent = currentRole === "owner"
       ? "관리자 관리, 초안 수정, 학생 공개를 모두 사용할 수 있습니다."
       : currentRole === "editor"
         ? "초안 수정과 학생 공개를 사용할 수 있습니다."
-        : "학생 보기 권한입니다. 관리자 작업은 잠겨 있습니다.";
+        : "공개된 공고와 FAQ를 학생 권한으로 이용합니다.";
     if (adminReview.headerAuthLink) {
-      adminReview.headerAuthLink.href = "./admin.html";
-      adminReview.headerAuthLink.lastChild.textContent = "관리자 메뉴";
+      adminReview.headerAuthLink.href = currentAccountType === "admin"
+        ? "./admin.html"
+        : (window.KANGNAM_ACCOUNT_ACCESS?.getLoginUrl({ stay: true }) || "./login.html?stay=1");
+      adminReview.headerAuthLink.lastChild.textContent = currentAccountType === "admin" ? "관리자 메뉴" : "학생 계정";
     }
   }
 
@@ -1009,9 +1014,22 @@ function initAuth() {
     return;
   }
 
-  firebase.onAuthStateChanged(firebase.auth, (user) => {
+  let authUpdateId = 0;
+  firebase.onAuthStateChanged(firebase.auth, async (user) => {
+    const updateId = ++authUpdateId;
     currentUser = user;
-    currentRole = user ? resolveRole(user.email) : "viewer";
+    if (!user) {
+      currentRole = "viewer";
+      currentAccountType = "guest";
+      updateRoleAccess();
+      return;
+    }
+
+    const account = await (window.KANGNAM_ACCOUNT_ACCESS?.resolveAccount(user)
+      || Promise.resolve({ type: "student", role: "viewer", isAdmin: false }));
+    if (updateId !== authUpdateId) return;
+    currentRole = account.isAdmin ? account.role : "viewer";
+    currentAccountType = account.isAdmin ? "admin" : "student";
     updateRoleAccess();
   });
 }

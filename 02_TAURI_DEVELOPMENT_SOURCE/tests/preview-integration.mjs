@@ -830,8 +830,10 @@ assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.admin-menu-card\s*\{[\
 assert.match(styles, /\.publish-action-bar\s*\{[^}]*position:\s*fixed[^}]*bottom:\s*18px/s, "AI 공고 공개 빠른 작업바는 스크롤 중에도 하단에 고정되어야 합니다.");
 assert.match(styles, /\.publish-action-summary strong\s*\{[^}]*text-overflow:\s*ellipsis/s, "빠른 작업바의 긴 공고 제목은 화면 밖으로 밀리지 않아야 합니다.");
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.publish-action-buttons\s*\{[\s\S]*grid-template-columns:\s*1fr 1fr/s, "모바일 빠른 작업바 버튼은 두 열로 정돈되어야 합니다.");
-assert.match(styles, /\.publish-completion-toast\s*\{[^}]*background:\s*var\(--status-success-700\)[^}]*transform-origin:\s*left center[^}]*animation:\s*publish-toast-grow/s, "완료 안내는 왼쪽에서 커지는 초록색 박스로 표시되어야 합니다.");
-assert.match(styles, /@keyframes publish-toast-grow[\s\S]*scaleX\(0\.72\)[\s\S]*scaleX\(1\)/, "완료 안내 박스는 가로로 커지는 애니메이션을 사용해야 합니다.");
+assert.match(styles, /\.publish-completion-toast\s*\{[^}]*bottom:\s*24px[^}]*left:\s*50%[^}]*background:\s*var\(--status-success-700\)[^}]*transform-origin:\s*left center[^}]*animation:\s*publish-toast-grow/s, "완료 안내는 하단 중앙의 초록색 박스로 표시되어야 합니다.");
+assert.match(styles, /\.has-publish-action-bar \.publish-completion-toast\s*\{[^}]*bottom:\s*112px/s, "공고 공개 화면 완료 안내는 하단 작업바 위에 표시되어야 합니다.");
+assert.match(styles, /@keyframes publish-toast-grow[\s\S]*translateX\(calc\(-50% - 18px\)\) scaleX\(0\.72\)[\s\S]*translateX\(-50%\) scaleX\(1\)/, "완료 안내 박스는 왼쪽에서 시작해 하단 중앙으로 커지는 애니메이션을 사용해야 합니다.");
+assert.doesNotMatch(adminScript, /window\.alert|alert\(/, "관리자 스크립트는 클릭이 필요한 alert 창을 사용하지 않아야 합니다.");
 assert.match(styles, /\.full-notice-text\s*\{[^}]*overflow-wrap:\s*anywhere/s, "긴 전체 공고 텍스트는 화면 밖으로 넘치지 않아야 합니다.");
 assert.match(styles, /\.source-image-link img,[\s\S]*\.full-notice-image-wrap img\s*\{[^}]*max-width:\s*100%/s, "원문 이미지는 모바일 폭을 넘지 않아야 합니다.");
 assert.match(styles, /\.notice-card-status\[data-status="마감 임박"\]\s*\{[^}]*status-danger-700/s, "마감 임박 공고는 기존 위험 강조 디자인을 사용해야 합니다.");

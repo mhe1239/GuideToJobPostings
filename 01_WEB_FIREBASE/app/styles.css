@@ -3198,8 +3198,8 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 
 .publish-completion-toast {
   position: fixed;
-  top: 92px;
-  left: 18px;
+  bottom: 24px;
+  left: 50%;
   z-index: 60;
   max-width: min(420px, calc(100vw - 36px));
   padding: 14px 18px;
@@ -3216,6 +3216,10 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   animation: publish-toast-grow 260ms ease-out both;
 }
 
+.has-publish-action-bar .publish-completion-toast {
+  bottom: 112px;
+}
+
 .publish-completion-toast.is-hiding {
   animation: publish-toast-hide 200ms ease-in both;
 }
@@ -3223,24 +3227,24 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
 @keyframes publish-toast-grow {
   from {
     opacity: 0;
-    transform: translateX(-14px) scaleX(0.72);
+    transform: translateX(calc(-50% - 18px)) scaleX(0.72);
   }
 
   to {
     opacity: 1;
-    transform: translateX(0) scaleX(1);
+    transform: translateX(-50%) scaleX(1);
   }
 }
 
 @keyframes publish-toast-hide {
   from {
     opacity: 1;
-    transform: translateX(0) scaleX(1);
+    transform: translateX(-50%) scaleX(1);
   }
 
   to {
     opacity: 0;
-    transform: translateX(-10px) scaleX(0.92);
+    transform: translateX(calc(-50% - 10px)) scaleX(0.92);
   }
 }
 
@@ -4355,10 +4359,13 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   }
 
   .publish-completion-toast {
-    top: 78px;
-    left: 12px;
+    bottom: 18px;
     max-width: calc(100vw - 24px);
     padding: 13px 15px;
+  }
+
+  .has-publish-action-bar .publish-completion-toast {
+    bottom: 232px;
   }
 
   .notice-list-section,

@@ -813,7 +813,7 @@ async function handleMemberDelete(email) {
   const member = getRenderableMembers().find((item) => item.email === normalizedEmail);
   if (!member || member.isCurrentUser) return;
   if (member.role === "owner" && countOwners() <= 1) {
-    window.alert("관리자 관리 권한을 가진 계정은 최소 1개 이상 필요합니다.");
+    showPublishCompletionToast("관리자 관리 권한을 가진 계정은 최소 1개 이상 필요합니다.");
     return;
   }
 

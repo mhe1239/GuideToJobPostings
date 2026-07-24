@@ -8,10 +8,12 @@
     login: "\uB85C\uADF8\uC778",
     account: "\uB0B4 \uACC4\uC815",
     signedIn: "\uB85C\uADF8\uC778\uB428",
+    loginAccount: "\uB85C\uADF8\uC778 \uACC4\uC815",
     adminMenu: "\uAD00\uB9AC\uC790 \uBA54\uB274",
-    noticeList: "\uACF5\uACE0 \uBAA9\uB85D",
     profile: "\uB0B4 \uC815\uBCF4",
     logout: "\uB85C\uADF8\uC544\uC6C3",
+    adminRole: "\uAD00\uB9AC\uC790",
+    studentRole: "\uD559\uC0DD",
   });
 
   let authInitialized = false;
@@ -77,12 +79,57 @@
     return menu;
   }
 
-  function createMenuLink(href, text) {
+  function createIcon(name) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.classList.add("account-menu-icon");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("stroke-width", "1.9");
+
+    const paths = {
+      admin: ["M12 3l7 3v5c0 4.4-2.9 8.4-7 10-4.1-1.6-7-5.6-7-10V6l7-3z", "M9.5 12l1.8 1.8 3.7-4"],
+      profile: ["M20 21a8 8 0 0 0-16 0", "M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"],
+      logout: ["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 17l5-5-5-5", "M21 12H9"],
+    }[name] || [];
+
+    paths.forEach((pathData) => {
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", pathData);
+      svg.append(path);
+    });
+    return svg;
+  }
+
+  function createAccountMenuItem(element, iconName, text) {
+    element.classList.add("account-menu-item");
+    element.append(createIcon(iconName), document.createTextNode(text));
+    element.setAttribute("role", "menuitem");
+    return element;
+  }
+
+  function createMenuLink(href, text, iconName) {
     const link = document.createElement("a");
     link.href = href;
-    link.textContent = text;
-    link.setAttribute("role", "menuitem");
-    return link;
+    return createAccountMenuItem(link, iconName, text);
+  }
+
+  function createAccountSummary(user, account) {
+    const summary = document.createElement("div");
+    const eyebrow = document.createElement("span");
+    const email = document.createElement("strong");
+    const badge = document.createElement("small");
+
+    summary.className = "account-menu-summary";
+    eyebrow.textContent = LABELS.loginAccount;
+    email.textContent = user.email || LABELS.signedIn;
+    badge.className = "account-menu-role-badge";
+    badge.textContent = account?.isAdmin ? LABELS.adminRole : LABELS.studentRole;
+    summary.append(eyebrow, email, badge);
+    return summary;
   }
 
   function renderAccountMenu(user, account) {
@@ -103,17 +150,14 @@
     authLink.href = isAdmin ? "./admin.html" : "./profile.html";
     setAuthLinkText(LABELS.account);
 
-    const email = document.createElement("p");
-    email.className = "account-menu-email";
-    email.textContent = user.email || LABELS.signedIn;
+    const summary = createAccountSummary(user, account);
 
     const menuItems = isAdmin
       ? [
-          createMenuLink("./admin.html", LABELS.adminMenu),
+          createMenuLink("./admin.html", LABELS.adminMenu, "admin"),
         ]
       : [
-          createMenuLink("./profile.html", LABELS.profile),
-          createMenuLink("./index.html", LABELS.noticeList),
+          createMenuLink("./profile.html", LABELS.profile, "profile"),
         ];
 
     const divider = document.createElement("div");
@@ -122,8 +166,8 @@
 
     const logoutButton = document.createElement("button");
     logoutButton.type = "button";
-    logoutButton.textContent = LABELS.logout;
-    logoutButton.setAttribute("role", "menuitem");
+    logoutButton.className = "account-menu-logout";
+    createAccountMenuItem(logoutButton, "logout", LABELS.logout);
     logoutButton.addEventListener("click", async () => {
       const firebase = global.KANGNAM_FIREBASE;
       if (firebase) await firebase.signOut();
@@ -131,7 +175,7 @@
       global.location.assign("./index.html");
     });
 
-    menu.replaceChildren(email, ...menuItems, divider, logoutButton);
+    menu.replaceChildren(summary, ...menuItems, divider, logoutButton);
   }
 
   function waitForFirebase() {

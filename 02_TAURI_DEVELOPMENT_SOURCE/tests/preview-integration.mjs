@@ -461,6 +461,9 @@ assert.equal(accountMenuDocument.querySelector("#header-auth-link").getAttribute
 click(accountMenu.window, "#header-auth-link");
 assert.equal(accountMenuDocument.querySelector("#header-auth-link").getAttribute("aria-expanded"), "true", "계정 메뉴 토글은 열린 상태를 접근성 속성으로 알려야 합니다.");
 assert.equal(accountMenuDocument.querySelector("#header-account-menu").hidden, false, "계정 메뉴가 펼쳐져야 합니다.");
+assert.match(accountMenuDocument.querySelector(".account-menu-summary").textContent, /로그인 계정/, "계정 메뉴 상단에는 로그인 계정 정보 영역이 있어야 합니다.");
+assert.match(accountMenuDocument.querySelector(".account-menu-role-badge").textContent, /관리자/, "관리자 계정 메뉴에는 권한 뱃지가 표시되어야 합니다.");
+assert.ok(accountMenuDocument.querySelectorAll(".account-menu-icon").length >= 2, "계정 메뉴 항목에는 시각적 아이콘이 있어야 합니다.");
 assert.match(accountMenuDocument.querySelector("#header-account-menu").textContent, /관리자 메뉴/, "관리자 권한 계정에는 관리자 메뉴 항목이 보여야 합니다.");
 assert.doesNotMatch(accountMenuDocument.querySelector("#header-account-menu").textContent, /학생 페이지/, "관리자 권한 계정 토글에는 중복되는 학생 페이지 항목을 표시하지 않아야 합니다.");
 assert.match(accountMenuDocument.querySelector("#header-account-menu").textContent, /로그아웃/, "계정 메뉴에는 로그아웃 항목이 있어야 합니다.");
@@ -505,6 +508,7 @@ assert.equal(personalizedListDocument.querySelector("#personalized-reset-button"
 assert.match(personalizedListDocument.querySelector("#header-auth-link").textContent, /내 계정/, "로그인한 학생의 상단 메뉴는 계정 토글로 표시되어야 합니다.");
 click(personalizedListWindow, "#header-auth-link");
 assert.match(personalizedListDocument.querySelector("#header-account-menu").textContent, /내 정보/, "로그인한 학생의 계정 메뉴에는 내 정보 경로가 있어야 합니다.");
+assert.doesNotMatch(personalizedListDocument.querySelector("#header-account-menu").textContent, /공고 목록/, "로그인한 학생의 계정 메뉴에는 로고와 중복되는 공고 목록 항목을 표시하지 않아야 합니다.");
 assert.equal(personalizedListDocument.querySelector("#personalization-toggle").hidden, false, "저장된 내 정보가 있으면 맞춤 공고 보기 토글을 표시해야 합니다.");
 assert.equal(personalizedListDocument.querySelector("#personalization-toggle").getAttribute("aria-checked"), "true", "맞춤 공고 보기는 기본으로 켜져 있어야 합니다.");
 assert.deepEqual(
@@ -840,6 +844,11 @@ assert.match(styles, /\.notice-card-status\[data-status="마감 임박"\]\s*\{[^
 assert.match(styles, /\.notice-list-item\[data-status="마감"\]\s*\{[^}]*opacity:\s*0\.86[^}]*filter:\s*grayscale/s, "마감된 공고 카드는 읽을 수 있는 수준으로 흐리게 구분해야 합니다.");
 assert.match(styles, /\.login-route-guide\s*\{[^}]*grid-template-columns:\s*1fr 1fr/s, "통합 로그인 화면은 학생·관리자 이동 안내를 나란히 보여야 합니다.");
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.login-route-guide\s*\{[\s\S]*grid-template-columns:\s*1fr/s, "모바일에서는 학생·관리자 이동 안내가 한 열로 정렬되어야 합니다.");
+assert.match(styles, /\.account-menu-popover\s*\{[^}]*width:\s*min\(304px,[^}]*border-radius:\s*12px[^}]*box-shadow:\s*0 22px 54px/s, "계정 드롭다운은 넓은 카드형 레이어와 부드러운 그림자를 사용해야 합니다.");
+assert.match(styles, /\.account-menu-summary\s*\{[^}]*background:\s*var\(--primary-50\)[^}]*border:\s*1px solid var\(--primary-100\)/s, "계정 드롭다운 상단 정보 영역은 연한 블루 톤으로 구분해야 합니다.");
+assert.match(styles, /\.account-menu-role-badge\s*\{[^}]*border-radius:\s*999px/s, "계정 권한은 작은 뱃지 형태로 표시해야 합니다.");
+assert.match(styles, /\.account-menu-icon\s*\{[^}]*width:\s*18px/s, "계정 메뉴 항목은 아이콘을 함께 표시해야 합니다.");
+assert.match(styles, /\.account-menu-logout:hover,[\s\S]*\.account-menu-logout:focus-visible\s*\{[^}]*background:\s*var\(--danger-100\)/s, "로그아웃 항목은 위험 동작 hover 배경으로 구분해야 합니다.");
 assert.match(styles, /\.personalization-toggle\s*\{[^}]*min-height:\s*44px/s, "맞춤 공고 토글은 모바일에서도 누르기 쉬운 최소 높이를 가져야 합니다.");
 assert.ok(font.byteLength > 1_000_000, "배포 가능한 공통 한글 글꼴 파일이 포함되어야 합니다.");
 assert.match(fontLicense, /SIL OPEN FONT LICENSE Version 1\.1/, "글꼴 재배포 라이선스를 함께 제공해야 합니다.");

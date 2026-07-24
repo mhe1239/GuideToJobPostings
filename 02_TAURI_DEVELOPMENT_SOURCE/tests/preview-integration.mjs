@@ -228,6 +228,34 @@ function bootMockNoticeWithoutSourceUrl() {
   return window;
 }
 
+function bootNoticeWithStaleStoredSource() {
+  const window = new Window({ url: "http://127.0.0.1:4173/notice.html?notice=neulpum-2026" });
+  const page = html
+    .replace(/<script src="\.\/answer-service\.js[^"]*" defer><\/script>/, "")
+    .replace(/<script src="\.\/main\.js[^"]*" defer><\/script>/, "");
+  window.document.write(page);
+  window.document.close();
+  window.HTMLElement.prototype.scrollIntoView = () => {};
+  window.localStorage.setItem("kangnamFirestoreAuthoritativeV2", "true");
+  window.localStorage.setItem("kangnamPublishedNotices", JSON.stringify([
+    {
+      id: "neulpum-2026",
+      title: "입학처 공식 홍보대사 늘품 12기 2학기 수습 임원 모집",
+      category: "비교과 프로그램",
+      department: "입학전형관리팀",
+      date: "2026.07.20",
+      status: "마감 임박",
+      sourceUrl: "",
+      summary: "캐시에 남아 있던 이전 형식의 공고입니다.",
+      facts: { period: "7월 20일 ~ 8월 2일" },
+      faqs: [],
+    },
+  ]));
+  window.eval(answerServiceScript);
+  window.eval(script);
+  return window;
+}
+
 function bootPublish() {
   const window = new Window({ url: "http://127.0.0.1:4173/publish.html" });
   const page = publishHtml
@@ -369,6 +397,8 @@ const accountMenu = await bootListAsAccount({ email: "owner@kangnam.ac.kr" }, "o
 const accountMenuDocument = accountMenu.window.document;
 const mockWindow = bootMockNoticeWithoutSourceUrl();
 const mockDocument = mockWindow.document;
+const staleSourceWindow = bootNoticeWithStaleStoredSource();
+const staleSourceDocument = staleSourceWindow.document;
 const publishWindow = bootPublish();
 const publishDocument = publishWindow.document;
 const signedOutAdminWindow = await bootAdminGuard(adminHtml, null);
@@ -657,6 +687,9 @@ assert.equal(document.querySelector("#data-method").textContent, "실제 공고 
 assert.equal(document.querySelector("#review-status-text").textContent, "검수 완료", "상세 화면에 관리자 검수 여부가 표시되어야 합니다.");
 assert.equal(document.querySelector("#reviewed-at").textContent, "2026.07.23", "상세 화면에 검수일이 표시되어야 합니다.");
 assert.equal(document.querySelector("#source-original-link").href, officialNoticeUrl, "상세 화면 원문 보기 링크가 공식 공고 원문을 가리켜야 합니다.");
+assert.equal(staleSourceDocument.querySelector("#source-original-link").hidden, false, "같은 공고의 이전 저장 데이터에 원문 URL이 없어도 기본 원문 링크를 복구해야 합니다.");
+assert.equal(staleSourceDocument.querySelector("#source-original-link").href, officialNoticeUrl, "이전 저장 데이터는 기본 공고의 공식 원문 링크로 보강되어야 합니다.");
+assert.equal(staleSourceDocument.querySelector("#full-notice-source-link").href, officialNoticeUrl, "전체 공고 영역도 보강된 공식 원문 링크를 유지해야 합니다.");
 assert.equal(mockDocument.querySelector("#mock-source-note").hidden, false, "가상 샘플 공고에는 가상 데이터 안내 문구가 표시되어야 합니다.");
 assert.match(mockDocument.querySelector("#mock-source-note").textContent, /프로토타입 검증을 위한 가상 샘플/, "가상 샘플 안내 문구가 정확해야 합니다.");
 assert.equal(mockDocument.querySelector("#source-original-link").hidden, true, "원문 URL이 없으면 상세 화면 원문 보기 링크를 숨겨야 합니다.");

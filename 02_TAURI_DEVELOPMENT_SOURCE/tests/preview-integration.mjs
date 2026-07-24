@@ -87,6 +87,21 @@ function bootListWithStorage(publishedNotices, deletedIds = []) {
   return window;
 }
 
+function bootNoticeWithStorage(noticeId, publishedNotices, deletedIds = []) {
+  const window = new Window({ url: `http://127.0.0.1:4173/notice.html?notice=${encodeURIComponent(noticeId)}` });
+  const page = html
+    .replace(/<script src="\.\/answer-service\.js[^"]*" defer><\/script>/, "")
+    .replace(/<script src="\.\/main\.js[^"]*" defer><\/script>/, "");
+  window.document.write(page);
+  window.document.close();
+  window.HTMLElement.prototype.scrollIntoView = () => {};
+  window.localStorage.setItem("kangnamPublishedNotices", JSON.stringify(publishedNotices));
+  window.localStorage.setItem("kangnamDeletedNoticeIds", JSON.stringify(deletedIds));
+  window.eval(answerServiceScript);
+  window.eval(script);
+  return window;
+}
+
 function bootLoginMarkup() {
   const window = new Window({ url: "http://127.0.0.1:4173/login.html" });
   const page = loginHtml.replace(/<script[^>]*><\/script>/g, "");
@@ -730,6 +745,14 @@ assert.equal(publishDocument.querySelector("#draft-chip").textContent, "공개",
 const approvedNotices = JSON.parse(publishWindow.localStorage.getItem("kangnamPublishedNotices"));
 const approvedListWindow = bootListWithStorage(approvedNotices, JSON.parse(publishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
 assert.match(approvedListWindow.document.querySelector("#notice-list").textContent, /관리자가 수정한 비교과 프로그램 공고/, "수정한 제목으로 공개 승인된 공고가 학생 목록에 표시되어야 합니다.");
+const approvedSchoolNotice = approvedNotices.find((notice) => notice.title === "관리자가 수정한 비교과 프로그램 공고");
+assert.ok(approvedSchoolNotice, "학교 공고 선택으로 공개 승인한 공고가 저장되어야 합니다.");
+assert.match(approvedSchoolNotice.sourceUrl, /^https:\/\/web\.kangnam\.ac\.kr\/menu\/board\/info\//, "학교 공고 선택 초안은 공식 공고 상세 URL을 출처로 저장해야 합니다.");
+assert.doesNotMatch(approvedSchoolNotice.sourceUrl, /\/mock\/|\/common\//, "학교 공고 선택 초안의 출처 URL에는 예시 또는 공통 파일 URL을 저장하지 않아야 합니다.");
+const approvedDetailWindow = bootNoticeWithStorage(approvedSchoolNotice.id, approvedNotices, JSON.parse(publishWindow.localStorage.getItem("kangnamDeletedNoticeIds")));
+click(approvedDetailWindow, "#full-notice-toggle");
+assert.equal(approvedDetailWindow.document.querySelector("#full-notice-source-link").hidden, false, "공개된 상세 화면 전체 공고 영역에는 원문 링크가 보여야 합니다.");
+assert.equal(approvedDetailWindow.document.querySelector("#full-notice-source-link").href, approvedSchoolNotice.sourceUrl, "전체 공고 영역 원문 링크는 공개 승인 때 저장한 공식 출처 URL을 가리켜야 합니다.");
 assert.equal(publishDocument.querySelector("#published-bulk-toolbar").hidden, false, "검수 공고 상태 목록에는 일괄 선택 도구가 표시되어야 합니다.");
 click(publishWindow, "#published-select-all");
 assert.match(publishDocument.querySelector("#published-bulk-summary").textContent, /6개 선택됨/, "검수 공고를 전체 선택하면 화면에 보이는 전체 선택 개수가 표시되어야 합니다.");

@@ -22,6 +22,16 @@ test("security regression checks", async (t) => {
     assert.match(worker, /This origin is not allowed/);
   });
 
+  await t.test("notice answer worker reads official text and images only", () => {
+    assert.match(worker, /fetchNoticeContext\(sourceUrl\)/);
+    assert.match(worker, /fetchTextOrEmpty\(sourceUrl,\s*"text\/html/);
+    assert.match(worker, /extractImageUrls\(html,\s*sourceUrl\)/);
+    assert.match(worker, /data-src/);
+    assert.match(worker, /srcset/);
+    assert.match(worker, /response\.url && !isAllowedKangnamImageUrl\(response\.url\)/);
+    assert.match(worker, /The original notice redirected to an untrusted URL/);
+  });
+
   await t.test("browser config does not expose administrator email lists", () => {
     assert.doesNotMatch(configGenerator, /FIREBASE_OWNER_EMAILS|FIREBASE_EDITOR_EMAILS/);
     assert.match(configGenerator, /owners:\s*\[\]/);

@@ -1,6 +1,7 @@
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta";
 const READER_ENDPOINT = "https://r.jina.ai/";
 const ALLOWED_NOTICE_HOST = "web.kangnam.ac.kr";
+const DEFAULT_GEMINI_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
 const MAX_QUESTION_CHARS = 200;
 const MAX_NOTICE_TEXT_CHARS = 12000;
 const MAX_IMAGE_COUNT = 4;
@@ -444,18 +445,36 @@ function isAllowedKangnamImageUrl(url) {
   }
 }
 
+function isAllowedKangnamUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname === ALLOWED_NOTICE_HOST;
+  } catch {
+    return false;
+  }
+}
+
 function extractImageUrls(html, baseUrl) {
   const urls = [];
   const patterns = [
     /<img[^>]+src=["']([^"']+)["']/gi,
+    /<img[^>]+data-src=["']([^"']+)["']/gi,
+    /<source[^>]+srcset=["']([^"']+)["']/gi,
+    /<img[^>]+srcset=["']([^"']+)["']/gi,
     /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi,
     /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/gi,
   ];
 
   patterns.forEach((pattern) => {
     for (const match of String(html || "").matchAll(pattern)) {
-      const url = toAbsoluteUrl(match[1], baseUrl);
-      if (url) urls.push(url);
+      const candidates = String(match[1] || "")
+        .split(",")
+        .map((candidate) => candidate.trim().split(/\s+/)[0])
+        .filter(Boolean);
+      candidates.forEach((candidate) => {
+        const url = toAbsoluteUrl(candidate, baseUrl);
+        if (url) urls.push(url);
+      });
     }
   });
 
@@ -479,7 +498,7 @@ function getProvidedImageUrls(body, sourceUrl) {
 
 async function fetchText(url, accept = "text/html,text/plain;q=0.9") {
   const response = await fetch(url, {
-    redirect: "manual",
+    redirect: "follow",
     headers: {
       "Accept": accept,
       "User-Agent": "KangnamNoticeGuide/1.0",
@@ -488,6 +507,9 @@ async function fetchText(url, accept = "text/html,text/plain;q=0.9") {
 
   if (!response.ok) {
     throw new Error(`Unable to read the original notice. HTTP ${response.status}`);
+  }
+  if (isAllowedKangnamUrl(url) && !isAllowedKangnamUrl(response.url)) {
+    throw new Error("The original notice redirected to an untrusted URL.");
   }
 
   return response.text();
@@ -503,14 +525,22 @@ async function fetchTextOrEmpty(url, accept) {
 }
 
 async function fetchNoticeContext(sourceUrl) {
-  const readerText = await fetchTextOrEmpty(`${READER_ENDPOINT}${sourceUrl}`, "text/plain");
-  const text = readerText.slice(0, MAX_NOTICE_TEXT_CHARS);
+  const [readerText, html] = await Promise.all([
+    fetchTextOrEmpty(`${READER_ENDPOINT}${sourceUrl}`, "text/plain"),
+    fetchTextOrEmpty(sourceUrl, "text/html,application/xhtml+xml;q=0.9,text/plain;q=0.8"),
+  ]);
+  const htmlText = stripHtml(html);
+  const text = [readerText, htmlText]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join("\n\n")
+    .slice(0, MAX_NOTICE_TEXT_CHARS);
 
   return {
-    html: "",
+    html,
     text: text || "No readable notice text was extracted. Use the saved notice information and attached images first.",
     hasOriginalContent: Boolean(text),
-    imageUrls: [],
+    imageUrls: extractImageUrls(html, sourceUrl),
   };
 }
 
@@ -526,7 +556,7 @@ function arrayBufferToBase64(buffer) {
 async function fetchImagePart(url) {
   try {
     const response = await fetch(url, {
-      redirect: "manual",
+      redirect: "follow",
       headers: {
         "Accept": "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8",
         "User-Agent": "KangnamNoticeGuide/1.0",
@@ -534,6 +564,7 @@ async function fetchImagePart(url) {
     });
 
     if (!response.ok) return null;
+    if (response.url && !isAllowedKangnamImageUrl(response.url)) return null;
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.startsWith("image/")) return null;
     const buffer = await response.arrayBuffer();
@@ -584,30 +615,41 @@ async function callGemini(env, parts) {
     throw new Error("GEMINI_API_KEY secret is not configured.");
   }
 
-  const model = env.GEMINI_MODEL || "gemini-2.0-flash";
-  const response = await fetch(`${GEMINI_ENDPOINT}/models/${model}:generateContent`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": env.GEMINI_API_KEY,
-    },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts }],
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 700,
-      },
-    }),
-  });
+  const models = [...new Set([
+    ...String(env.GEMINI_MODEL || "").split(",").map((model) => model.trim()).filter(Boolean),
+    ...DEFAULT_GEMINI_MODELS,
+  ])];
+  let lastError = null;
 
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload?.error?.message || `Gemini answer generation failed: HTTP ${response.status}`);
+  for (const model of models) {
+    const response = await fetch(`${GEMINI_ENDPOINT}/models/${model}:generateContent`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": env.GEMINI_API_KEY,
+      },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 700,
+        },
+      }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      lastError = new Error(payload?.error?.message || `Gemini answer generation failed: HTTP ${response.status}`);
+      if ([400, 404].includes(response.status) && model !== models.at(-1)) continue;
+      throw lastError;
+    }
+
+    const answer = extractGeminiText(payload);
+    if (answer) return answer;
+    lastError = new Error("Gemini returned an empty answer.");
   }
 
-  const answer = extractGeminiText(payload);
-  if (!answer) throw new Error("Gemini returned an empty answer.");
-  return answer;
+  throw lastError || new Error("Gemini answer generation failed.");
 }
 
 async function handleAskNotice(request, env) {

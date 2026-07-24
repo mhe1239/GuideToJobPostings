@@ -17,13 +17,12 @@ function readManagedMembers() {
   }
 }
 
-function writeManagedMembers(members) {
-  window.localStorage.setItem(ADMIN_ROLE_STORAGE_KEY, JSON.stringify(members));
-}
-
 function resolveAdminRole(user) {
   const email = normalizeAdminEmail(user?.email);
   if (!email) return "viewer";
+  const localPreview = window.location.protocol === "file:"
+    || ["127.0.0.1", "localhost", "tauri.localhost"].includes(window.location.hostname);
+  if (!localPreview) return "viewer";
 
   const members = readManagedMembers()
     .map((member) => ({ ...member, email: normalizeAdminEmail(member.email) }))
@@ -32,12 +31,6 @@ function resolveAdminRole(user) {
   const bootstrapEmail = normalizeAdminEmail(window.localStorage.getItem(ADMIN_BOOTSTRAP_KEY));
   if (bootstrapEmail && bootstrapEmail === email) return "owner";
   if (matched && ADMIN_ROLE_RANK[matched.role] !== undefined) return matched.role;
-
-  if (!bootstrapEmail && members.length === 0) {
-    window.localStorage.setItem(ADMIN_BOOTSTRAP_KEY, email);
-    writeManagedMembers([{ email, role: "owner", source: "초기 관리자" }]);
-    return "owner";
-  }
 
   return "viewer";
 }
@@ -62,6 +55,13 @@ function redirectToStudentHome() {
   }, 900);
 }
 
+function redirectToLogin() {
+  window.setTimeout(() => {
+    const loginUrl = window.KANGNAM_ACCOUNT_ACCESS?.getLoginUrl() || "./login.html";
+    window.location.assign(loginUrl);
+  }, 900);
+}
+
 function waitForFirebase() {
   if (window.KANGNAM_FIREBASE) return Promise.resolve(window.KANGNAM_FIREBASE);
 
@@ -79,7 +79,7 @@ async function checkAdminAccess() {
   if (!firebase?.onAuthStateChanged) {
     document.body.dataset.adminGuard = "denied";
     setGuardMessage("관리자만 접근 가능한 페이지입니다.");
-    redirectToStudentHome();
+    redirectToLogin();
     return { allowed: false, user: null, role: "viewer", reason: "signed-out" };
   }
 
@@ -88,7 +88,7 @@ async function checkAdminAccess() {
       if (!user) {
         document.body.dataset.adminGuard = "denied";
         setGuardMessage("관리자만 접근 가능한 페이지입니다.");
-        redirectToStudentHome();
+        redirectToLogin();
         resolve({ allowed: false, user: null, role: "viewer", reason: "signed-out" });
         return;
       }
@@ -96,10 +96,16 @@ async function checkAdminAccess() {
       const store = window.KANGNAM_NOTICE_STORE;
       let role = "viewer";
       try {
-        const firestore = await store?.ready;
-        role = firestore?.db
-          ? (await store.getAdminRole(user.email) || "viewer")
-          : resolveAdminRole(user);
+        const accountAccess = window.KANGNAM_ACCOUNT_ACCESS;
+        if (accountAccess?.resolveAccount) {
+          const account = await accountAccess.resolveAccount(user);
+          role = account.isAdmin ? account.role : "viewer";
+        } else {
+          const firestore = await store?.ready;
+          role = firestore?.db
+            ? (await store.getAdminRole(user.email) || "viewer")
+            : resolveAdminRole(user);
+        }
       } catch (error) {
         document.body.dataset.adminGuard = "denied";
         setGuardMessage(store?.getFriendlyError(error) || "관리자 권한을 확인하지 못했습니다.");

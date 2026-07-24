@@ -14,7 +14,8 @@
     <link rel="stylesheet" href="./styles.css?v=20260723-admin-guard" />
     <script type="module" src="./firebase-config.js?v=20260722-url-reset"></script>
     <script src="./firestore-store.js?v=20260724-spark-guard" defer></script>
-    <script src="./admin-guard.js?v=20260723-admin-guard" defer></script>
+    <script src="./account-access.js?v=20260724-unified-login" defer></script>
+    <script src="./admin-guard.js?v=20260724-unified-login" defer></script>
     <script src="./admin.js?v=20260723-admin-guard" defer></script>
   </head>
   <body class="admin-guarded-page" data-admin-guard="pending" data-admin-roles="owner editor">
@@ -59,10 +60,10 @@
           <div>
             <p class="section-label">권한 상태</p>
             <h3>로그인한 관리자는 수정 및 공개 가능</h3>
-            <p class="auth-copy">기본 상태는 학생 보기입니다. Google 로그인 후 공고 링크 등록, 초안 수정, 공개 승인을 사용할 수 있습니다.</p>
+            <p class="auth-copy">통합 로그인에서 등록된 관리자 계정으로 확인되면 공고 링크 등록, 초안 수정, 공개 승인을 사용할 수 있습니다.</p>
           </div>
           <div class="auth-actions">
-            <a class="button primary" href="./login.html">Google 계정으로 로그인</a>
+            <a class="button primary" href="./login.html">학교 계정으로 로그인</a>
           </div>
           <div class="auth-state" id="admin-auth-state">
             <strong>로그아웃 상태</strong>

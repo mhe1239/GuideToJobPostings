@@ -510,10 +510,26 @@ function initListAuth() {
   const firebase = window.KANGNAM_FIREBASE;
   if (!firebase) return;
 
+  let authUpdateId = 0;
   firebase.onAuthStateChanged(firebase.auth, async (user) => {
     if (!listElements.authLink) return;
-    const role = user ? await getHeaderAdminRole(user) : "viewer";
-    renderAccountMenu(listElements.authLink, user, role);
+    const updateId = ++authUpdateId;
+    const accountAccess = window.KANGNAM_ACCOUNT_ACCESS;
+
+    if (!user) {
+      listElements.authLink.href = accountAccess?.getLoginUrl() || "./login.html";
+      listElements.authLink.lastChild.textContent = "로그인";
+      return;
+    }
+
+    const account = await (accountAccess?.resolveAccount(user)
+      || Promise.resolve({ type: "student", isAdmin: false }));
+    if (updateId !== authUpdateId) return;
+
+    listElements.authLink.href = account.isAdmin
+      ? "./admin.html"
+      : (accountAccess?.getLoginUrl({ stay: true }) || "./login.html?stay=1");
+    listElements.authLink.lastChild.textContent = account.isAdmin ? "관리자 메뉴" : "학생 계정";
   });
 }
 

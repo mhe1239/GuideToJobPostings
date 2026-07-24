@@ -986,7 +986,7 @@ function renderAccountMenu(authLink, user, role) {
     closeAccountMenu(authLink);
     authLink.dataset.accountMenu = "disabled";
     authLink.href = "./login.html";
-    authLink.lastChild.textContent = "관리자 로그인";
+    authLink.lastChild.textContent = "계정";
     menu.replaceChildren();
     return;
   }
@@ -994,7 +994,7 @@ function renderAccountMenu(authLink, user, role) {
   const canOpenAdmin = role === "owner" || role === "editor";
   authLink.dataset.accountMenu = "enabled";
   authLink.href = canOpenAdmin ? "./admin.html" : "./index.html";
-  authLink.lastChild.textContent = "내 계정";
+  authLink.lastChild.textContent = "계정";
 
   const email = document.createElement("p");
   email.className = "account-menu-email";

@@ -207,7 +207,7 @@ assert.equal(editorMembersWindow.document.querySelector("#admin-guard-message").
 assert.equal(listDocument.querySelector("#notice"), null, "공고 선택 화면에는 상세 공고 본문이 없어야 합니다.");
 assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 4, "공고 선택 화면에는 여러 공고가 4열 카드로 표시되어야 합니다.");
 assert.match(listDocument.querySelector(".notice-list-item").href, /notice\.html\?notice=/, "공고 선택 시 별도 상세 페이지로 이동해야 합니다.");
-assert.match(listDocument.querySelector("#header-auth-link").textContent, /관리자 로그인/, "학생용 공고 목록에서는 관리자용 로그인임을 명확히 알려야 합니다.");
+assert.match(listDocument.querySelector("#header-auth-link").textContent, /계정/, "학생용 공고 목록의 헤더 계정 버튼은 상태 확인 전후 같은 이름을 유지해야 합니다.");
 let headerSignOutCalled = false;
 listWindow.KANGNAM_FIREBASE = {
   auth: {},
@@ -219,7 +219,7 @@ listWindow.KANGNAM_FIREBASE = {
 };
 listWindow.dispatchEvent(new listWindow.CustomEvent("kangnam-firebase-ready"));
 await new Promise((resolve) => listWindow.setTimeout(resolve, 0));
-assert.match(listDocument.querySelector("#header-auth-link").textContent, /내 계정/, "로그인 상태에서는 헤더가 계정 메뉴 토글로 바뀌어야 합니다.");
+assert.match(listDocument.querySelector("#header-auth-link").textContent, /계정/, "로그인 상태에서도 헤더 계정 버튼 이름은 유지되어야 합니다.");
 click(listWindow, "#header-auth-link");
 assert.equal(listDocument.querySelector("#header-auth-link").getAttribute("aria-expanded"), "true", "계정 메뉴 토글은 열린 상태를 접근성 속성으로 알려야 합니다.");
 assert.equal(listDocument.querySelector("#header-account-menu").hidden, false, "계정 메뉴가 펼쳐져야 합니다.");
@@ -280,7 +280,7 @@ click(listWindow, "[data-filter-type='category'][data-filter-value='취업']");
 assert.match(listDocument.querySelector(".notice-card-eligibility").textContent, /공고 원문에서 확인 필요/, "조건이 없는 공고 카드는 임의 추정 없이 확인 필요 문구를 보여야 합니다.");
 click(listWindow, "#filter-reset-button");
 assert.match(document.querySelector("#notice-title").textContent, /늘품 12기 2학기 수습 임원 모집/, "공식 공고 제목이 표시되어야 합니다.");
-assert.match(document.querySelector("#header-auth-link").textContent, /관리자 로그인/, "학생용 공고 상세에서는 관리자용 로그인임을 명확히 알려야 합니다.");
+assert.match(document.querySelector("#header-auth-link").textContent, /계정/, "학생용 공고 상세의 헤더 계정 버튼은 상태 확인 전후 같은 이름을 유지해야 합니다.");
 assert.equal(document.querySelector("#notice-list"), null, "상세 페이지에는 공고 선택 목록이 없어야 합니다.");
 assert.equal(document.querySelector(".notice-list-back").getAttribute("href"), "./index.html", "상세 공고에서 공고 선택 화면으로 돌아갈 수 있어야 합니다.");
 assert.ok(html.indexOf('class="notice-hero"') < html.indexOf('class="overview-section"'), "공고 제목과 핵심 정보가 프로그램 개요보다 먼저 나와야 합니다.");

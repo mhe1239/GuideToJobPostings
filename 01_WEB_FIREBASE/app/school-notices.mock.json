@@ -5,7 +5,7 @@
     "department": "학생지원팀",
     "publishedAt": "2026.07.23",
     "sourceType": "html",
-    "sourceUrl": "https://web.kangnam.ac.kr/mock/notices/2026-non-curricular"
+    "sourceUrl": "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=schoolnotice01"
   },
   {
     "id": "mock-school-02",
@@ -13,7 +13,7 @@
     "department": "장학복지팀",
     "publishedAt": "2026.07.22",
     "sourceType": "pdf",
-    "sourceUrl": "https://web.kangnam.ac.kr/mock/notices/2026-scholarship"
+    "sourceUrl": "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=schoolnotice02"
   },
   {
     "id": "mock-school-03",
@@ -21,7 +21,7 @@
     "department": "학생상담센터",
     "publishedAt": "2026.07.21",
     "sourceType": "image",
-    "sourceUrl": "https://web.kangnam.ac.kr/mock/notices/counseling-program"
+    "sourceUrl": "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=schoolnotice03"
   },
   {
     "id": "mock-school-04",
@@ -29,7 +29,7 @@
     "department": "학사관리팀",
     "publishedAt": "2026.07.20",
     "sourceType": "html",
-    "sourceUrl": "https://web.kangnam.ac.kr/mock/notices/leave-return"
+    "sourceUrl": "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=schoolnotice04"
   },
   {
     "id": "mock-school-05",
@@ -37,7 +37,7 @@
     "department": "대학일자리플러스센터",
     "publishedAt": "2026.07.19",
     "sourceType": "image",
-    "sourceUrl": "https://web.kangnam.ac.kr/mock/notices/career-lecture"
+    "sourceUrl": "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=schoolnotice05"
   },
   {
     "id": "mock-school-06",
@@ -45,7 +45,7 @@
     "department": "사회봉사센터",
     "publishedAt": "2026.07.18",
     "sourceType": "pdf",
-    "sourceUrl": "https://web.kangnam.ac.kr/mock/notices/campus-volunteer"
+    "sourceUrl": "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=schoolnotice06"
   },
   {
     "id": "mock-school-07",
@@ -53,7 +53,7 @@
     "department": "중앙도서관",
     "publishedAt": "2026.07.17",
     "sourceType": "html",
-    "sourceUrl": "https://web.kangnam.ac.kr/mock/notices/library-training"
+    "sourceUrl": "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=schoolnotice07"
   },
   {
     "id": "mock-school-08",
@@ -61,7 +61,7 @@
     "department": "국제교류팀",
     "publishedAt": "2026.07.16",
     "sourceType": "image",
-    "sourceUrl": "https://web.kangnam.ac.kr/mock/notices/global-info-session"
+    "sourceUrl": "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=schoolnotice08"
   },
   {
     "id": "mock-school-09",
@@ -69,7 +69,7 @@
     "department": "교육혁신팀",
     "publishedAt": "2026.07.15",
     "sourceType": "pdf",
-    "sourceUrl": "https://web.kangnam.ac.kr/mock/notices/capstone-team"
+    "sourceUrl": "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=schoolnotice09"
   },
   {
     "id": "mock-school-10",
@@ -77,6 +77,6 @@
     "department": "장애학생지원센터",
     "publishedAt": "2026.07.14",
     "sourceType": "html",
-    "sourceUrl": "https://web.kangnam.ac.kr/mock/notices/accessibility-support"
+    "sourceUrl": "https://web.kangnam.ac.kr/menu/board/info/e4058249224f49ab163131ce104214fb.do?encMenuSeq=1056addfbd6d939580620e461b59b641&encMenuBoardSeq=schoolnotice10"
   }
 ]

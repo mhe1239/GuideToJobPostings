@@ -65,6 +65,17 @@
               <h2>공개된 공고 목록</h2>
               <span class="draft-chip" id="published-count-chip">0개</span>
             </div>
+            <div class="bulk-selection-toolbar" id="published-bulk-toolbar" aria-live="polite">
+              <label class="bulk-select-all" for="published-select-all">
+                <input id="published-select-all" type="checkbox" />
+                <span>전체 선택</span>
+              </label>
+              <span class="bulk-selection-summary" id="published-bulk-summary">0개 선택됨</span>
+              <div class="bulk-selection-actions">
+                <button class="button secondary" id="clear-published-selection-button" type="button" disabled>선택 해제</button>
+                <button class="button danger" id="bulk-delete-published-button" type="button" disabled>선택 삭제</button>
+              </div>
+            </div>
             <div class="published-list" id="published-list" aria-live="polite"></div>
             <p class="approval-note" id="published-note">수정하거나 삭제할 공고를 선택하세요. 삭제할 때는 한 번 더 확인합니다.</p>
           </section>

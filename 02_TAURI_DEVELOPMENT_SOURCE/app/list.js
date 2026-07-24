@@ -94,6 +94,55 @@ const DEFAULT_NOTICES = Object.freeze([
   },
 ]);
 
+const DEFAULT_NOTICE_BY_ID = new Map(DEFAULT_NOTICES.map((notice) => [notice.id, notice]));
+const NOTICE_FALLBACK_FIELDS = Object.freeze([
+  "sourceTitle",
+  "sourceUrl",
+  "publishedAt",
+  "sourceType",
+  "imageUrls",
+  "sourceImageUrl",
+  "dataMethod",
+  "reviewed",
+  "reviewedAt",
+]);
+
+function isBlankNoticeValue(value) {
+  if (Array.isArray(value)) return value.length === 0;
+  if (value && typeof value === "object") return Object.keys(value).length === 0;
+  return value === undefined || value === null || String(value).trim() === "";
+}
+
+function isOfficialNoticeUrl(value) {
+  try {
+    const parsed = new URL(String(value || "").trim());
+    const path = parsed.pathname.toLowerCase();
+    if (parsed.protocol !== "https:" || parsed.hostname !== "web.kangnam.ac.kr") return false;
+    if (path.includes("/mock/") || path.includes("/common/")) return false;
+    return !/\.(png|jpe?g|webp|gif|svg|ico)$/i.test(path);
+  } catch {
+    return false;
+  }
+}
+
+function shouldUseNoticeFallback(field, value) {
+  if (field === "sourceUrl") return !isOfficialNoticeUrl(value);
+  return isBlankNoticeValue(value);
+}
+
+function applyDefaultNoticeFallback(notice) {
+  const fallback = DEFAULT_NOTICE_BY_ID.get(notice?.id);
+  if (!fallback) return notice;
+
+  const merged = { ...fallback, ...notice };
+  NOTICE_FALLBACK_FIELDS.forEach((field) => {
+    if (shouldUseNoticeFallback(field, merged[field]) && !isBlankNoticeValue(fallback[field])) {
+      merged[field] = fallback[field];
+    }
+  });
+  return merged;
+}
+
 const listElements = {
   authLink: document.querySelector("#header-auth-link"),
   noticeList: document.querySelector("#notice-list"),
@@ -179,6 +228,7 @@ function getNotices() {
   const firestoreIsAuthoritative = window.localStorage.getItem(FIRESTORE_AUTHORITATIVE_KEY) === "true";
   const merged = firestoreIsAuthoritative ? stored : [...stored, ...DEFAULT_NOTICES];
   return merged
+    .map(applyDefaultNoticeFallback)
     .filter((notice, index, list) => list.findIndex((item) => item.id === notice.id) === index)
     .filter((notice) => !deletedIds.has(notice.id))
     .filter((notice) => (notice.approvalStatus || "published") === "published");

@@ -535,14 +535,13 @@ function getProcessedNoticeKeys() {
   const processed = new Set();
   loadPublishedNotices().forEach((notice) => {
     if (notice.id) processed.add(notice.id);
-    if (notice.sourceUrl) processed.add(notice.sourceUrl);
   });
   return processed;
 }
 
 function isProcessedSchoolNotice(notice) {
   const processed = getProcessedNoticeKeys();
-  return processed.has(notice.id) || processed.has(notice.sourceUrl);
+  return processed.has(notice.id);
 }
 
 function setSchoolImportState(state, message) {
@@ -1349,7 +1348,7 @@ async function saveModeratedNotice(approvalStatus) {
     return null;
   }
 
-  const notices = loadPublishedNotices().filter((notice) => notice.id !== moderatedNotice.id && notice.sourceUrl !== moderatedNotice.sourceUrl);
+  const notices = loadPublishedNotices().filter((notice) => notice.id !== moderatedNotice.id);
   notices.unshift(moderatedNotice);
   savePublishedNotices(notices.slice(0, 20));
   const deletedIds = loadDeletedNoticeIds();

@@ -242,7 +242,6 @@ const adminPage = {
   summary: document.querySelector("#draft-summary"),
   faq: document.querySelector("#draft-faq"),
   evidence: document.querySelector("#draft-evidence"),
-  reviewButton: document.querySelector("#review-draft-button"),
   approveButton: document.querySelector("#sticky-approve-draft-button"),
   declineButton: document.querySelector("#sticky-decline-draft-button"),
   note: document.querySelector("#approval-note"),
@@ -618,8 +617,8 @@ function resetDraftSelectionState(message) {
   if (adminPage.summary) adminPage.summary.value = "";
   if (adminPage.faq) adminPage.faq.value = "";
   if (adminPage.evidence) adminPage.evidence.value = "";
-  if (adminPage.reviewButton) adminPage.reviewButton.hidden = true;
   setApprovalStatus("draft");
+  if (adminPage.chip) adminPage.chip.textContent = "미생성";
   if (adminPage.note) adminPage.note.textContent = message;
 }
 
@@ -681,10 +680,6 @@ function renderMembers() {
 function updateApprovalState() {
   const ready = Boolean(adminPage.fields && !adminPage.fields.hidden);
   const allowed = canEditAndPublish();
-  if (adminPage.reviewButton) {
-    adminPage.reviewButton.hidden = !ready;
-    adminPage.reviewButton.disabled = !(allowed && ready);
-  }
   if (adminPage.approveButton) {
     adminPage.approveButton.disabled = !(allowed && ready);
   }
@@ -721,13 +716,14 @@ function updatePublishActionBar() {
 
 let publishCompletionToastTimer = 0;
 
-function showPublishCompletionToast(message) {
+function showPublishCompletionToast(message, tone = "success") {
   const existingToast = document.querySelector(".publish-completion-toast");
   if (existingToast) existingToast.remove();
   window.clearTimeout(publishCompletionToastTimer);
 
   const toast = document.createElement("div");
   toast.className = "publish-completion-toast";
+  toast.dataset.tone = tone;
   toast.setAttribute("role", "status");
   toast.setAttribute("aria-live", "polite");
   toast.textContent = message;
@@ -1363,7 +1359,6 @@ async function handlePublishedDelete() {
   adminPage.evidence.value = "";
   setApprovalStatus("draft");
   setAdminNote("공개된 공고를 삭제했습니다.");
-  if (adminPage.reviewButton) adminPage.reviewButton.hidden = true;
   renderPublishedNotices();
   updateApprovalState();
 }
@@ -1470,14 +1465,14 @@ async function handleDraftDecline() {
   if (!canEditAndPublish()) return;
   const notice = await saveModeratedNotice("declined");
   if (!notice) return;
-  setApprovalStatus("declined");
-  adminPage.note.textContent = "공고가 보류되었습니다.";
-}
-
-function handleDraftReview() {
-  if (!canEditAndPublish() || !adminPage.fields || adminPage.fields.hidden) return;
-  setAdminNote("마지막으로 확인하셨나요? 공고 제목, 일정, 지원 자격과 답변 근거를 확인해 주세요.");
-  adminPage.publishActionBar?.focus();
+  selectedMockNoticeId = "";
+  if (adminPage.urlInput) adminPage.urlInput.value = "";
+  resetDraftSelectionState(noticeInputMode === "list"
+    ? "공고를 선택해 초안을 생성해 주세요."
+    : "공식 공고 URL을 입력해 주세요.");
+  renderMockSchoolNotices();
+  updateApprovalState();
+  showPublishCompletionToast("공고를 보류했습니다.", "danger");
 }
 
 async function handleLogout() {
@@ -1519,7 +1514,6 @@ adminPage.savePublishedButton?.addEventListener("click", handlePublishedSave);
 adminPage.deletePublishedButton?.addEventListener("click", handlePublishedDelete);
 clearLegacyDefaultNoticeUrl();
 renderMockSchoolNotices();
-adminPage.reviewButton?.addEventListener("click", handleDraftReview);
 adminPage.approveButton?.addEventListener("click", handleDraftApproval);
 adminPage.declineButton?.addEventListener("click", handleDraftDecline);
 window.addEventListener("kangnam-firebase-ready", initAuth, { once: true });

@@ -708,8 +708,9 @@ async function handleMemberSubmit(event) {
   const email = normalizeMemberEmail(adminPage.memberEmail.value);
   if (!email) return;
 
+  let result = null;
   try {
-    const result = await window.KANGNAM_NOTICE_STORE?.saveAdmin({
+    result = await window.KANGNAM_NOTICE_STORE?.saveAdmin({
       email,
       role: adminPage.memberRole.value,
     });
@@ -729,7 +730,7 @@ async function handleMemberDelete(email) {
   if (!canManageMembers()) return;
   const normalizedEmail = normalizeMemberEmail(email);
   const member = getRenderableMembers().find((item) => item.email === normalizedEmail);
-  if (!member || member.isCurrentUser || member.isBootstrap) return;
+  if (!member || member.isCurrentUser) return;
   if (member.role === "owner" && countOwners() <= 1) {
     window.alert("관리자 관리 권한을 가진 계정은 최소 1개 이상 필요합니다.");
     return;

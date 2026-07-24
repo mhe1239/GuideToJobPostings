@@ -309,6 +309,12 @@ const bootstrapDeleteButton = [...sharedMembersDocument.querySelectorAll(".membe
   .find((row) => /bootstrap@kangnam\.ac\.kr/.test(row.textContent))
   ?.querySelector(".member-action-button.danger");
 assert.equal(bootstrapDeleteButton?.disabled, false, "마지막 owner가 아니면 초기 관리자도 삭제할 수 있어야 합니다.");
+setValue(sharedMembersWindow, "#member-email", "new-admin@kangnam.ac.kr");
+setValue(sharedMembersWindow, "#member-role", "editor");
+sharedMembersDocument.querySelector("#member-form").dispatchEvent(new sharedMembersWindow.Event("submit", { bubbles: true, cancelable: true }));
+await new Promise((resolve) => sharedMembersWindow.setTimeout(resolve, 0));
+assert.match(sharedMembersDocument.querySelector("#member-list").textContent, /new-admin@kangnam\.ac\.kr/, "관리자 추가 후 새 계정이 관리자 목록에 바로 표시되어야 합니다.");
+assert.match(sharedMembersDocument.querySelector("#member-list").textContent, /수정 및 공개 가능/, "추가한 관리자 역할이 목록에 표시되어야 합니다.");
 
 assert.equal(listDocument.querySelector("#notice"), null, "공고 선택 화면에는 상세 공고 본문이 없어야 합니다.");
 assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 4, "공고 선택 화면에는 여러 공고가 4열 카드로 표시되어야 합니다.");

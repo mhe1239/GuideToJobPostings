@@ -1237,7 +1237,8 @@ button:disabled {
 }
 
 .admin-flow-section {
-  margin-bottom: 20px;
+  margin-top: 22px;
+  margin-bottom: 28px;
 }
 
 .user-flow-heading {
@@ -2089,51 +2090,100 @@ button:disabled {
   line-height: 1.6;
 }
 
+.admin-action-section {
+  padding: 26px;
+  background: var(--primary-50);
+  border: 1px solid var(--primary-100);
+  border-radius: var(--radius-md);
+}
+
+.admin-action-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.admin-action-heading h2 {
+  margin: 0;
+  color: var(--primary-950);
+  font-size: 22px;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+}
+
+.admin-action-heading p:last-child {
+  margin: 7px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.admin-action-guide {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  color: var(--surface);
+  background: var(--primary-800);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .admin-menu-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 18px;
+  gap: 16px;
+  margin-top: 22px;
 }
 
 .admin-menu-card {
+  position: relative;
   min-width: 0;
-  min-height: 180px;
+  min-height: 218px;
   display: grid;
   align-content: start;
-  gap: 10px;
-  padding: 20px;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 12px;
+  width: 100%;
+  padding: 24px;
   color: var(--ink);
   text-align: left;
   text-decoration: none;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 2px solid var(--primary-100);
+  border-radius: 14px;
   box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .admin-menu-card:hover,
 .admin-menu-card:focus-visible {
   border-color: var(--primary-800);
-  box-shadow: 0 0 0 3px rgb(37 99 169 / 8%), var(--shadow-card);
+  box-shadow: 0 0 0 4px rgb(37 99 169 / 10%), 0 14px 30px rgb(17 50 86 / 12%);
+  transform: translateY(-3px);
 }
 
-.admin-menu-card span {
-  width: 34px;
-  height: 34px;
+.admin-menu-card-index {
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  color: var(--primary-800);
-  background: var(--primary-100);
-  border-radius: 8px;
-  font-size: 12px;
+  color: var(--surface);
+  background: var(--primary-800);
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 900;
 }
 
 .admin-menu-card strong {
   color: var(--primary-950);
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.35;
+  word-break: keep-all;
 }
 
 .admin-menu-card small {
@@ -2142,10 +2192,42 @@ button:disabled {
   line-height: 1.55;
 }
 
+.admin-menu-card-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 14px;
+  color: var(--primary-800);
+  border-top: 1px solid var(--primary-100);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.admin-menu-card-action b {
+  font-size: 18px;
+  line-height: 1;
+}
+
 .logout-menu-card {
   appearance: none;
   font: inherit;
-  cursor: pointer;
+}
+
+.logout-menu-card .admin-menu-card-index {
+  color: var(--status-danger-700);
+  background: var(--danger-100);
+}
+
+.logout-menu-card .admin-menu-card-action {
+  color: var(--status-danger-700);
+  border-top-color: var(--danger-100);
+}
+
+.admin-menu-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+  transform: none;
 }
 
 .review-flow {
@@ -3582,6 +3664,10 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
     grid-template-columns: 1fr;
   }
 
+  .admin-menu-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .assistant-card {
     position: static;
   }
@@ -3881,6 +3967,18 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
     display: block;
   }
 
+  .admin-action-section {
+    padding: 22px 18px;
+  }
+
+  .admin-action-heading {
+    display: grid;
+  }
+
+  .admin-action-guide {
+    justify-self: start;
+  }
+
   .review-status {
     margin-top: 12px;
   }
@@ -3891,6 +3989,10 @@ body.admin-guarded-page[data-admin-guard="allowed"] > .admin-guard-message {
   .admin-menu-grid,
   .admin-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-menu-card {
+    min-height: 202px;
   }
 
   .member-list > div {

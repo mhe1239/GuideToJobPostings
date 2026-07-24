@@ -455,9 +455,13 @@ assert.ok(html.indexOf('class="overview-section"') < html.indexOf('class="conten
 assert.ok(html.indexOf('class="content-grid"') < html.indexOf('class="full-notice-section"'), "FAQ와 질문 영역 다음에 전체 공고 내용이 나와야 합니다.");
 assert.ok(html.indexOf('class="full-notice-section"') < html.indexOf('class="source-section"'), "전체 공고 내용 다음에 출처 및 담당 부서가 나와야 합니다.");
 assert.match(adminHtml, /href="\.\/index\.html"[^>]*>[\s\S]*?공고 목록으로/, "관리자 메뉴에서 공고 목록으로 돌아갈 수 있어야 합니다.");
+assert.doesNotMatch(adminHtml, /class="auth-panel"|학교 계정으로 로그인|로그인 상태/, "관리자 메뉴에서는 불필요한 로그인 상태 패널을 표시하지 않아야 합니다.");
 assert.match(adminHtml, /관리자 사용 흐름/, "관리자 메뉴에는 관리자용 핵심 흐름 안내가 표시되어야 합니다.");
 assert.match(adminHtml, /공고 선택 또는 URL 입력[\s\S]*초안 생성[\s\S]*내용 검수[\s\S]*공개 또는 보류/, "관리자 흐름은 선택 또는 URL 입력부터 공개 또는 보류까지 표시되어야 합니다.");
 assert.match(adminHtml, /관리자 로그인 후 공고 생성, 검수, 공개 관리 메뉴로 이동/, "관리자 화면 진입 경로가 명확해야 합니다.");
+assert.ok(adminHtml.indexOf('class="admin-flow-section') < adminHtml.indexOf('class="admin-action-section'), "관리자 사용 흐름 다음에 실제 작업 메뉴가 표시되어야 합니다.");
+assert.equal((adminHtml.match(/class="admin-menu-card(?:\s|")/g) || []).length, 4, "관리자 관리부터 로그아웃까지 네 개의 작업 버튼이 표시되어야 합니다.");
+assert.match(adminHtml, /관리자 관리 열기[\s\S]*공고 생성 열기[\s\S]*공고 관리 열기[\s\S]*로그아웃하기/, "각 작업 카드가 누르는 버튼임을 알 수 있는 실행 문구가 표시되어야 합니다.");
 assert.match(membersHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "관리자 관리 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.match(publishHtml, /href="\.\/admin\.html"[^>]*>[\s\S]*?관리자 메뉴로/, "AI 공고 공개 화면에서 관리자 메뉴로 돌아갈 수 있어야 합니다.");
 assert.equal(publishDocument.querySelectorAll("input[name='notice-input-mode']").length, 2, "관리자는 URL 입력과 학교 공고 선택 중 입력 방식을 고를 수 있어야 합니다.");
@@ -654,6 +658,9 @@ assert.match(styles, /\.key-facts\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.key-facts\s*\{[\s\S]*grid-template-columns:\s*1fr/s, "모바일에서 핵심 정보는 한 열로 정렬되어야 합니다.");
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.full-notice-details\s*\{[\s\S]*grid-template-columns:\s*1fr/s, "모바일에서 전체 공고 내용도 한 열로 정렬되어야 합니다.");
 assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.user-flow-list,[\s\S]*\.admin-flow-section \.user-flow-list\s*\{[\s\S]*grid-template-columns:\s*1fr/s, "모바일에서 학생과 관리자 흐름은 세로로 정렬되어야 합니다.");
+assert.match(styles, /\.admin-action-section\s*\{[^}]*background:\s*var\(--primary-50\)[^}]*border:\s*1px solid var\(--primary-100\)/s, "관리자 작업 버튼은 사용 흐름과 구분되는 별도 영역에 배치되어야 합니다.");
+assert.match(styles, /\.admin-menu-card\s*\{[^}]*min-height:\s*218px[^}]*border:\s*2px solid var\(--primary-100\)[^}]*cursor:\s*pointer/s, "관리자 작업 카드는 크고 클릭 가능한 버튼 형태여야 합니다.");
+assert.match(styles, /@media \(max-width: 700px\)[\s\S]*\.admin-menu-card\s*\{[\s\S]*min-height:\s*202px/s, "모바일에서도 관리자 작업 버튼이 충분한 크기를 유지해야 합니다.");
 assert.match(styles, /\.full-notice-text\s*\{[^}]*overflow-wrap:\s*anywhere/s, "긴 전체 공고 텍스트는 화면 밖으로 넘치지 않아야 합니다.");
 assert.match(styles, /\.source-image-link img,[\s\S]*\.full-notice-image-wrap img\s*\{[^}]*max-width:\s*100%/s, "원문 이미지는 모바일 폭을 넘지 않아야 합니다.");
 assert.match(styles, /\.notice-card-status\[data-status="마감 임박"\]\s*\{[^}]*status-danger-700/s, "마감 임박 공고는 기존 위험 강조 디자인을 사용해야 합니다.");

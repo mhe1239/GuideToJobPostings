@@ -19,6 +19,7 @@ const headerAccountScript = await readFile(new URL("app/header-account.js", root
 const studentProfileScript = await readFile(new URL("app/student-profile.js", root), "utf8");
 const profileScript = await readFile(new URL("app/profile.js", root), "utf8");
 const loginScript = await readFile(new URL("app/login.js", root), "utf8");
+const noticeSortScript = await readFile(new URL("app/notice-sort.js", root), "utf8");
 const listScript = await readFile(new URL("app/list.js", root), "utf8");
 const adminGuardScript = await readFile(new URL("app/admin-guard.js", root), "utf8");
 const adminScript = await readFile(new URL("app/admin.js", root), "utf8");
@@ -63,6 +64,7 @@ function bootList() {
   const page = listHtml.replace(/<script src="\.\/list\.js[^"]*" defer><\/script>/, "");
   window.document.write(page);
   window.document.close();
+  window.eval(noticeSortScript);
   window.eval(listScript);
   return window;
 }
@@ -89,6 +91,7 @@ async function bootListAsAccount(user, role = "owner") {
   };
   window.eval(accountAccessScript);
   window.eval(headerAccountScript);
+  window.eval(noticeSortScript);
   window.eval(listScript);
   await new Promise((resolve) => window.setTimeout(resolve, 0));
   return { window, get signedOut() { return signedOut; } };
@@ -101,6 +104,7 @@ function bootListWithStorage(publishedNotices, deletedIds = []) {
   window.document.close();
   window.localStorage.setItem("kangnamPublishedNotices", JSON.stringify(publishedNotices));
   window.localStorage.setItem("kangnamDeletedNoticeIds", JSON.stringify(deletedIds));
+  window.eval(noticeSortScript);
   window.eval(listScript);
   return window;
 }
@@ -211,6 +215,7 @@ async function bootListWithStudentProfile() {
     getLoginUrl: () => "./login.html",
   };
   window.eval(headerAccountScript);
+  window.eval(noticeSortScript);
   window.eval(listScript);
   await new Promise((resolve) => window.setTimeout(resolve, 0));
   return window;

@@ -200,6 +200,45 @@ async function bootAdminGuard(pageHtml, user, members = [], url = "http://127.0.
   return window;
 }
 
+async function bootMembersWithSharedAdmins() {
+  const window = new Window({ url: "http://127.0.0.1:4173/members.html" });
+  const page = membersHtml
+    .replace(/<script src="\.\/admin-guard\.js[^"]*" defer><\/script>/, "")
+    .replace(/<script src="\.\/admin\.js[^"]*" defer><\/script>/, "");
+  window.document.write(page);
+  window.document.close();
+  window.localStorage.setItem("kangnamAdminBootstrapEmail", "bootstrap@kangnam.ac.kr");
+  window.localStorage.setItem("kangnamManagedMembers", JSON.stringify([
+    { email: "owner@kangnam.ac.kr", role: "owner" },
+  ]));
+  window.KANGNAM_FIREBASE = {
+    auth: {},
+    onAuthStateChanged: (_auth, callback) => callback({ email: "owner@kangnam.ac.kr" }),
+    signOut: async () => {},
+  };
+  window.KANGNAM_NOTICE_STORE = {
+    ready: Promise.resolve({ db: {} }),
+    getAdminRole: async () => "owner",
+    loadAllNotices: async () => ({ notices: [], source: "cloudflare-d1" }),
+    loadAdmins: async () => ({
+      admins: [
+        { email: "owner@kangnam.ac.kr", role: "owner" },
+        { email: "editor@kangnam.ac.kr", role: "editor" },
+      ],
+      source: "cloudflare-d1",
+    }),
+    saveAdmin: async () => ({ saved: true, source: "cloudflare-d1" }),
+    deleteAdmin: async () => ({ deleted: true, source: "cloudflare-d1" }),
+    getFriendlyError: (error) => error?.message || "공용 저장소 오류",
+  };
+  window.eval(adminGuardScript);
+  const result = await window.KANGNAM_ADMIN_ACCESS.ready;
+  assert.equal(result.allowed, true, "공용 관리자 저장소 테스트 계정은 관리자 관리 화면에 접근할 수 있어야 합니다.");
+  window.eval(adminScript);
+  await new Promise((resolve) => window.setTimeout(resolve, 0));
+  return window;
+}
+
 function setValue(window, selector, value) {
   const element = window.document.querySelector(selector);
   element.value = value;
@@ -249,6 +288,8 @@ const ownerMembersWindow = await bootAdminGuard(membersHtml, { email: "owner@kan
 const editorMembersWindow = await bootAdminGuard(membersHtml, { email: "editor@kangnam.ac.kr" }, [
   { email: "editor@kangnam.ac.kr", role: "editor" },
 ], "http://127.0.0.1:4173/members.html");
+const sharedMembersWindow = await bootMembersWithSharedAdmins();
+const sharedMembersDocument = sharedMembersWindow.document;
 
 assert.equal(signedOutAdminWindow.document.body.dataset.adminGuard, "denied", "로그아웃 상태에서는 관리자 페이지 접근을 차단해야 합니다.");
 assert.equal(signedOutAdminWindow.document.querySelector("#admin-guard-message").textContent, "관리자만 접근 가능한 페이지입니다.", "로그아웃 차단 안내 문구가 정확해야 합니다.");
@@ -262,6 +303,12 @@ assert.equal(editorAdminWindow.document.querySelector('[href="./publish.html"]')
 assert.equal(ownerMembersWindow.document.body.dataset.adminGuard, "allowed", "관리자 관리 권한은 관리자 관리 페이지에 접근할 수 있어야 합니다.");
 assert.equal(editorMembersWindow.document.body.dataset.adminGuard, "denied", "수정 및 공개 가능 권한은 관리자 관리 페이지 직접 접근도 차단되어야 합니다.");
 assert.equal(editorMembersWindow.document.querySelector("#admin-guard-message").textContent, "관리자 권한이 없습니다.", "관리자 관리 직접 접근 차단 안내 문구가 정확해야 합니다.");
+assert.match(sharedMembersDocument.querySelector("#member-list").textContent, /공용 관리자 저장소/, "Cloudflare D1 원본명 대신 사용자용 공용 저장소 이름을 표시해야 합니다.");
+assert.match(sharedMembersDocument.querySelector("#member-list").textContent, /bootstrap@kangnam\.ac\.kr/, "초기 관리자는 공용 관리자 목록과 함께 표시되어야 합니다.");
+const bootstrapDeleteButton = [...sharedMembersDocument.querySelectorAll(".member-list > div")]
+  .find((row) => /bootstrap@kangnam\.ac\.kr/.test(row.textContent))
+  ?.querySelector(".member-action-button.danger");
+assert.equal(bootstrapDeleteButton?.disabled, false, "마지막 owner가 아니면 초기 관리자도 삭제할 수 있어야 합니다.");
 
 assert.equal(listDocument.querySelector("#notice"), null, "공고 선택 화면에는 상세 공고 본문이 없어야 합니다.");
 assert.equal(listDocument.querySelectorAll(".notice-list-item").length, 4, "공고 선택 화면에는 여러 공고가 4열 카드로 표시되어야 합니다.");

@@ -200,6 +200,19 @@ const APPROVAL_STATUS_LABELS = Object.freeze({
   declined: "보류",
 });
 
+const ADMIN_SOURCE_LABELS = Object.freeze({
+  "cloudflare-d1": "공용 관리자 저장소",
+  "Cloudflare D1": "공용 관리자 저장소",
+  "공용 저장소": "공용 관리자 저장소",
+  firestore: "Firebase 관리자 저장소",
+  Firestore: "Firebase 관리자 저장소",
+  local: "브라우저 저장",
+  bootstrap: "초기 관리자",
+  "bootstrap-transfer": "초기 관리자 위임",
+  "Google 로그인": "Google 로그인",
+  "google-login": "Google 로그인",
+});
+
 const adminPage = {
   authBadge: document.querySelector("#admin-auth-badge") || document.querySelector("#review-status"),
   authState: document.querySelector("#admin-auth-state"),
@@ -298,6 +311,14 @@ function setBootstrapAdminEmail(email) {
   }
 }
 
+function clearBootstrapAdminEmail() {
+  window.localStorage.removeItem("kangnamAdminBootstrapEmail");
+}
+
+function getAdminSourceLabel(source) {
+  return ADMIN_SOURCE_LABELS[source] || source || ADMIN_SOURCE_LABELS.local;
+}
+
 function getManagedMember(email) {
   const normalizedEmail = normalizeMemberEmail(email);
   return managedMembers.find((member) => normalizeMemberEmail(member.email) === normalizedEmail);
@@ -315,12 +336,12 @@ function getRenderableMembers() {
       ...member,
       email,
       role: member.role || "viewer",
-      source: member.source || "브라우저 저장",
+      source: member.source || "local",
     });
   });
 
   if (bootstrapEmail && !records.has(bootstrapEmail)) {
-    records.set(bootstrapEmail, { email: bootstrapEmail, role: "owner", source: "초기 관리자" });
+    records.set(bootstrapEmail, { email: bootstrapEmail, role: "owner", source: "bootstrap" });
   }
 
   if (currentUserEmail) {
@@ -328,7 +349,7 @@ function getRenderableMembers() {
     records.set(currentUserEmail, {
       email: currentUserEmail,
       role: existing?.role || currentRole,
-      source: existing?.source || "Google 로그인",
+      source: existing?.source || "google-login",
     });
   }
 
@@ -606,7 +627,7 @@ function renderMembers() {
       const actions = document.createElement("div");
       email.textContent = member.email;
       role.textContent = ROLE_LABELS[member.role] || ROLE_LABELS.viewer;
-      source.textContent = member.isBootstrap ? "초기 관리자" : member.source || "브라우저 저장";
+      source.textContent = member.isBootstrap ? "초기 관리자" : getAdminSourceLabel(member.source);
       details.className = "member-details";
       details.append(email, role, source);
       actions.className = "member-actions";
@@ -628,7 +649,7 @@ function renderMembers() {
         deleteButton.className = "button danger member-action-button";
         deleteButton.type = "button";
         deleteButton.textContent = "삭제";
-        deleteButton.disabled = member.isCurrentUser || deleteWouldRemoveLastOwner || member.isBootstrap;
+        deleteButton.disabled = member.isCurrentUser || deleteWouldRemoveLastOwner;
         deleteButton.setAttribute("aria-label", `${member.email} 관리자 삭제`);
         deleteButton.addEventListener("click", () => handleMemberDelete(member.email));
         actions.append(deleteButton);
@@ -698,7 +719,7 @@ async function handleMemberSubmit(event) {
   }
 
   managedMembers = managedMembers.filter((member) => normalizeMemberEmail(member.email) !== email);
-  managedMembers.push({ email, role: adminPage.memberRole.value, source: result?.source || "공용 저장소" });
+  managedMembers.push({ email, role: adminPage.memberRole.value, source: result?.source || "local" });
   saveManagedMembers();
   adminPage.memberEmail.value = "";
   renderMembers();
@@ -725,6 +746,7 @@ async function handleMemberDelete(email) {
   }
 
   managedMembers = managedMembers.filter((item) => normalizeMemberEmail(item.email) !== normalizedEmail);
+  if (member.isBootstrap) clearBootstrapAdminEmail();
   saveManagedMembers();
   renderMembers();
 }
@@ -746,7 +768,7 @@ async function handleBootstrapTransfer(email) {
   }
 
   managedMembers = managedMembers.filter((member) => normalizeMemberEmail(member.email) !== targetEmail);
-  managedMembers.push({ ...targetMember, email: targetEmail, role: "owner", source: "초기 관리자 위임" });
+  managedMembers.push({ ...targetMember, email: targetEmail, role: "owner", source: "bootstrap-transfer" });
   setBootstrapAdminEmail(targetEmail);
   saveManagedMembers();
   currentRole = getManagedMember(normalizeMemberEmail(currentUser?.email))?.role || "viewer";
@@ -1030,8 +1052,13 @@ async function hydrateFirestoreAdminData() {
       managedMembers = adminResult.admins.map((admin) => ({
         email: admin.email,
         role: admin.role,
-        source: adminResult.source === "cloudflare-d1" ? "Cloudflare D1" : "Firestore",
+        source: adminResult.source,
       }));
+      const bootstrapEmail = getBootstrapAdminEmail();
+      const hasBootstrap = managedMembers.some((member) => normalizeMemberEmail(member.email) === bootstrapEmail);
+      if (bootstrapEmail && !hasBootstrap) {
+        managedMembers.push({ email: bootstrapEmail, role: "owner", source: "bootstrap" });
+      }
       saveManagedMembers();
     }
     renderPublishedNotices();

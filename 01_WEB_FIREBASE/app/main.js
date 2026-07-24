@@ -328,8 +328,24 @@ function renderEligibilityTargets() {
   elements.eligibleGrades.textContent = activeNotice.eligibleGrades || UNKNOWN_ELIGIBILITY;
 }
 
+function getOfficialSourceUrl(notice) {
+  const sourceUrl = String(notice?.sourceUrl || "").trim();
+  if (!sourceUrl) return "";
+
+  try {
+    const parsed = new URL(sourceUrl);
+    const path = parsed.pathname.toLowerCase();
+    if (parsed.protocol !== "https:" || parsed.hostname !== "web.kangnam.ac.kr") return "";
+    if (path.includes("/mock/") || path.includes("/common/")) return "";
+    if (/\.(png|jpe?g|webp|gif|svg|ico)$/i.test(path)) return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
 function hasSourceUrl(notice) {
-  return Boolean(notice.sourceUrl && String(notice.sourceUrl).trim());
+  return Boolean(getOfficialSourceUrl(notice));
 }
 
 function setSourceLink(link, url) {
@@ -486,7 +502,7 @@ function selectNotice(noticeId) {
 }
 
 function renderNotice() {
-  const sourceUrl = hasSourceUrl(activeNotice) ? activeNotice.sourceUrl : "";
+  const sourceUrl = getOfficialSourceUrl(activeNotice);
   const sourceType = activeNotice.sourceType || (sourceUrl ? "html" : "mock");
   const dataMethod = activeNotice.dataMethod || (sourceType === "mock" ? "가상 샘플" : "실제 공고 기반 재구성");
   const reviewed = activeNotice.reviewed === true;
@@ -599,7 +615,7 @@ function showAnswer(question, result) {
   elements.answerTitle.textContent = "답변";
   elements.answerCopy.textContent = result.answer;
   elements.answerSource.textContent = `${activeNotice.sourcePrefix} > ${result.source}`;
-  setSourceLink(elements.answerSourceLink, hasSourceUrl(activeNotice) ? activeNotice.sourceUrl : "");
+  setSourceLink(elements.answerSourceLink, getOfficialSourceUrl(activeNotice));
   elements.answerState.textContent = "답변 찾음";
   elements.evidenceCard.hidden = false;
   focusResultOnSmallScreen();

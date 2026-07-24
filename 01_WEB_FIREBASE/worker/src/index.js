@@ -10,6 +10,8 @@ const ALLOWED_ROLES = new Set(["owner", "editor", "viewer"]);
 const ROLE_RANK = Object.freeze({ viewer: 0, editor: 1, owner: 2 });
 const GOOGLE_CERTS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 const MAX_NOTICE_JSON_CHARS = 24000;
+const SCHOOL_NOTICE_LIST_URL = "https://web.kangnam.ac.kr/menu/e4058249224f49ab163131ce104214fb.do";
+const SCHOOL_NOTICE_SOURCE = "kangnam-school-live";
 
 let cachedFirebaseKeys = null;
 let cachedFirebaseKeysExpiresAt = 0;
@@ -368,6 +370,116 @@ async function handleDeleteNotice(request, env, noticeId) {
   });
 }
 
+function decodeHtmlEntities(value) {
+  return String(value || "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/&middot;/g, "·")
+    .replace(/&lsquo;|&rsquo;/g, "'")
+    .replace(/&ldquo;|&rdquo;/g, "\"")
+    .replace(/&#(\d+);/g, (_match, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_match, code) => String.fromCharCode(parseInt(code, 16)));
+}
+
+function toSchoolNoticeId(boardSeq) {
+  return `school-${String(boardSeq || "").trim().slice(0, 40)}`;
+}
+
+function formatSchoolNoticeDate(value) {
+  const normalized = String(value || "").trim();
+  const match = normalized.match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+  if (!match) return normalized;
+  return `20${match[1]}.${match[2]}.${match[3]}`;
+}
+
+function normalizeSchoolNoticeSourceUrl(menuSeq, boardSeq) {
+  const params = new URLSearchParams({
+    encMenuBoardSeq: String(boardSeq || "").trim(),
+    encMenuSeq: String(menuSeq || "").trim(),
+  });
+  const url = new URL(SCHOOL_NOTICE_LIST_URL);
+  url.pathname = url.pathname.replace(/\/menu\//, "/menu/board/info/");
+  url.search = params.toString();
+  return url.toString();
+}
+
+function parseSchoolNoticeList(html) {
+  const notices = [];
+  const itemPattern = /<a[^>]+class=["'][^"']*\bdetailLink\b[^"']*["'][^>]+data-params='([^']+)'[^>]*title="([^"]+)"[^>]*>[\s\S]*?<\/a>[\s\S]*?<dd[^>]*class=["'][^"']*\bulthu_date\b[^"']*["'][^>]*>([\s\S]*?)<\/dd>/gi;
+  let match = itemPattern.exec(html);
+
+  while (match && notices.length < 10) {
+    try {
+      const params = JSON.parse(decodeHtmlEntities(match[1]));
+      const title = decodeHtmlEntities(match[2]).replace(/\s+/g, " ").trim();
+      const metaHtml = decodeHtmlEntities(match[3]);
+      const metaText = stripHtml(metaHtml);
+      const spans = [...metaHtml.matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)]
+        .map((span) => stripHtml(decodeHtmlEntities(span[1])))
+        .filter(Boolean);
+      const department = (spans[0] || metaText)
+        .replace(/\d{2}\.\d{2}\.\d{2}.*$/, "")
+        .replace(/\s+/g, " ")
+        .trim() || "Kangnam University";
+      const publishedAt = formatSchoolNoticeDate(metaText.match(/\d{2}\.\d{2}\.\d{2}/)?.[0] || "");
+      const menuSeq = String(params.encMenuSeq || "").trim();
+      const boardSeq = String(params.encMenuBoardSeq || "").trim();
+      if (title && menuSeq && boardSeq && /^[a-f0-9]{16,}$/i.test(boardSeq)) {
+        notices.push({
+          id: toSchoolNoticeId(boardSeq),
+          title,
+          department,
+          publishedAt,
+          sourceType: "html",
+          sourceUrl: normalizeSchoolNoticeSourceUrl(menuSeq, boardSeq),
+        });
+      }
+    } catch {
+      // Skip malformed rows and continue parsing the remaining school notices.
+    }
+    match = itemPattern.exec(html);
+  }
+
+  return notices;
+}
+
+async function handleListSchoolNotices(request, env) {
+  await requireAdmin(request, env, "editor");
+  const response = await fetch(SCHOOL_NOTICE_LIST_URL, {
+    headers: {
+      "Accept": "text/html",
+      "User-Agent": "Mozilla/5.0 KangnamNoticeGuide/1.0",
+    },
+  });
+  if (!response.ok) {
+    return jsonResponse(request, env, 502, {
+      status: "error",
+      code: "SCHOOL_NOTICE_FETCH_FAILED",
+      message: "학교 홈페이지 공고 목록을 불러오지 못했습니다.",
+    });
+  }
+
+  const notices = parseSchoolNoticeList(await response.text());
+  if (notices.length === 0) {
+    return jsonResponse(request, env, 502, {
+      status: "error",
+      code: "SCHOOL_NOTICE_PARSE_FAILED",
+      message: "학교 홈페이지 공고 목록을 해석하지 못했습니다.",
+    });
+  }
+
+  return jsonResponse(request, env, 200, {
+    status: "success",
+    notices,
+    source: SCHOOL_NOTICE_SOURCE,
+    fetchedAt: Date.now(),
+  });
+}
+
 async function handleAdminRequest(request, env, url) {
   if (request.method === "GET" && url.pathname === "/api/admin/role") {
     return handleAdminRole(request, env);
@@ -383,6 +495,9 @@ async function handleAdminRequest(request, env, url) {
   }
   if (request.method === "GET" && url.pathname === "/api/admin/notices") {
     return handleListAllNotices(request, env);
+  }
+  if (request.method === "GET" && url.pathname === "/api/admin/school-notices") {
+    return handleListSchoolNotices(request, env);
   }
   if (request.method === "POST" && url.pathname === "/api/admin/notices") {
     return handleSaveNotice(request, env);

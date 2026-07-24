@@ -593,11 +593,21 @@ async function loadSchoolNoticeList({ simulateError = false } = {}) {
 
   try {
     if (simulateError) throw new Error("simulated school notice load failure");
-    const response = await fetch(SCHOOL_NOTICE_MOCK_URL, { headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error(`mock list load failed: ${response.status}`);
-    const notices = await response.json();
+    let result = null;
+    try {
+      result = await window.KANGNAM_NOTICE_STORE?.loadSchoolNotices?.();
+    } catch (error) {
+      console.warn("학교 홈페이지 실시간 공고 목록 가져오기 실패, 로컬 목록으로 대체합니다.", error);
+    }
+    if (!Array.isArray(result?.notices) || result.notices.length === 0) {
+      const response = await fetch(SCHOOL_NOTICE_MOCK_URL, { headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error(`mock list load failed: ${response.status}`);
+      result = { notices: await response.json(), source: "local-mock" };
+    }
+    const { notices, source } = result;
     importedSchoolNotices = notices.slice(0, 10).map(normalizeImportedSchoolNotice);
-    setSchoolImportState("success", "최근 공고 10개를 불러왔습니다. 한 번 클릭하면 선택하고, 두 번 클릭하면 바로 초안을 생성합니다.");
+    const sourceLabel = source === "kangnam-school-live" ? "학교 홈페이지 최신 공고" : "저장된 공고 목록";
+    setSchoolImportState("success", `${sourceLabel} ${importedSchoolNotices.length}개를 불러왔습니다. 한 번 클릭하면 선택하고, 두 번 클릭하면 바로 초안을 생성합니다.`);
   } catch (error) {
     console.error("학교 공고 목록 가져오기 실패", error);
     importedSchoolNotices = [];

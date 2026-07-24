@@ -9,7 +9,6 @@
     account: "\uB0B4 \uACC4\uC815",
     signedIn: "\uB85C\uADF8\uC778\uB428",
     adminMenu: "\uAD00\uB9AC\uC790 \uBA54\uB274",
-    studentPage: "\uD559\uC0DD \uD398\uC774\uC9C0",
     noticeList: "\uACF5\uACE0 \uBAA9\uB85D",
     profile: "\uB0B4 \uC815\uBCF4",
     logout: "\uB85C\uADF8\uC544\uC6C3",
@@ -111,7 +110,6 @@
     const menuItems = isAdmin
       ? [
           createMenuLink("./admin.html", LABELS.adminMenu),
-          createMenuLink("./index.html", LABELS.studentPage),
         ]
       : [
           createMenuLink("./profile.html", LABELS.profile),

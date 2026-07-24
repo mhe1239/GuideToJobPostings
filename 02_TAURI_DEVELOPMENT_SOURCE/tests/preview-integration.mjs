@@ -459,6 +459,7 @@ click(accountMenu.window, "#header-auth-link");
 assert.equal(accountMenuDocument.querySelector("#header-auth-link").getAttribute("aria-expanded"), "true", "계정 메뉴 토글은 열린 상태를 접근성 속성으로 알려야 합니다.");
 assert.equal(accountMenuDocument.querySelector("#header-account-menu").hidden, false, "계정 메뉴가 펼쳐져야 합니다.");
 assert.match(accountMenuDocument.querySelector("#header-account-menu").textContent, /관리자 메뉴/, "관리자 권한 계정에는 관리자 메뉴 항목이 보여야 합니다.");
+assert.doesNotMatch(accountMenuDocument.querySelector("#header-account-menu").textContent, /학생 페이지/, "관리자 권한 계정 토글에는 중복되는 학생 페이지 항목을 표시하지 않아야 합니다.");
 assert.match(accountMenuDocument.querySelector("#header-account-menu").textContent, /로그아웃/, "계정 메뉴에는 로그아웃 항목이 있어야 합니다.");
 accountMenuDocument.querySelector("#header-account-menu button").click();
 assert.equal(accountMenu.signedOut, true, "계정 메뉴의 로그아웃 항목은 로그아웃을 실행해야 합니다.");

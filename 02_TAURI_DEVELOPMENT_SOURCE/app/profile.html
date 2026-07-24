@@ -15,6 +15,7 @@
     <script type="module" src="./firebase-config.js?v=20260722-list-page"></script>
     <script src="./firestore-store.js?v=20260724-spark-guard" defer></script>
     <script src="./account-access.js?v=20260724-student-profile" defer></script>
+    <script src="./header-account.js?v=20260724-account-menu-all-pages" defer></script>
     <script src="./student-profile.js?v=20260724-student-profile" defer></script>
     <script src="./profile.js?v=20260724-student-profile" defer></script>
   </head>
@@ -30,10 +31,13 @@
             <span>공고 길잡이</span>
           </span>
         </a>
-        <a class="auth-nav" href="./profile.html" aria-current="page">
-          <span aria-hidden="true"></span>
-          내 정보
-        </a>
+        <div class="account-menu">
+          <a class="auth-nav" id="header-auth-link" href="./login.html" aria-haspopup="menu" aria-controls="header-account-menu" aria-expanded="false" data-account-menu="disabled">
+            <span aria-hidden="true"></span>
+            로그인
+          </a>
+          <div class="account-menu-popover" id="header-account-menu" role="menu" hidden></div>
+        </div>
       </div>
     </header>
 

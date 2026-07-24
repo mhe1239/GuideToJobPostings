@@ -15,6 +15,7 @@ const styles = await readFile(new URL("app/styles.css", root), "utf8");
 const script = await readFile(new URL("app/main.js", root), "utf8");
 const answerServiceScript = await readFile(new URL("app/answer-service.js", root), "utf8");
 const accountAccessScript = await readFile(new URL("app/account-access.js", root), "utf8");
+const headerAccountScript = await readFile(new URL("app/header-account.js", root), "utf8");
 const studentProfileScript = await readFile(new URL("app/student-profile.js", root), "utf8");
 const profileScript = await readFile(new URL("app/profile.js", root), "utf8");
 const loginScript = await readFile(new URL("app/login.js", root), "utf8");
@@ -69,6 +70,7 @@ async function bootListAsAccount(user, role = "owner") {
     getFriendlyError: () => "권한 확인 실패",
   };
   window.eval(accountAccessScript);
+  window.eval(headerAccountScript);
   window.eval(listScript);
   await new Promise((resolve) => window.setTimeout(resolve, 0));
   return { window, get signedOut() { return signedOut; } };
@@ -175,6 +177,7 @@ async function bootListWithStudentProfile() {
     resolveAccount: async () => ({ type: "student", role: "viewer", isAdmin: false }),
     getLoginUrl: () => "./login.html",
   };
+  window.eval(headerAccountScript);
   window.eval(listScript);
   await new Promise((resolve) => window.setTimeout(resolve, 0));
   return window;

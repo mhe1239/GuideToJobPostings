@@ -97,4 +97,15 @@ test("student profile local storage", async (t) => {
     assert.deepEqual([...switchedOff.interests], ["장학"]);
     assert.equal(profile.isConfigured(switchedOff), true);
   });
+
+  await t.test("treats null profile data as an empty profile", () => {
+    const { profile } = createHarness();
+    const normalized = profile.normalize(null);
+
+    assert.equal(normalized.enrollmentStatus, "");
+    assert.equal(normalized.grade, "");
+    assert.equal(normalized.transferStudent, false);
+    assert.deepEqual(Array.from(normalized.interests), []);
+    assert.equal(profile.isConfigured(null), false);
+  });
 });

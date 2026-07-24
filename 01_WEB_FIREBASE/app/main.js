@@ -1053,7 +1053,6 @@ updateQuestionCount();
 hydratePublishedNotices();
 
 const adminReview = {
-  headerAuthLink: document.querySelector("#header-auth-link"),
   googleLoginButton: document.querySelector("#google-login-button"),
   logoutButton: document.querySelector("#logout-button"),
   authState: document.querySelector("#auth-state"),
@@ -1214,121 +1213,6 @@ function renderMembers() {
   );
 }
 
-function closeAccountMenu(authLink) {
-  const menu = authLink?.parentElement?.querySelector(".account-menu-popover");
-  if (!menu) return;
-  menu.hidden = true;
-  authLink.setAttribute("aria-expanded", "false");
-}
-
-function ensureAccountMenu(authLink) {
-  if (!authLink) return null;
-  let wrapper = authLink.closest(".account-menu");
-  if (!wrapper) {
-    wrapper = document.createElement("div");
-    wrapper.className = "account-menu";
-    authLink.parentNode.insertBefore(wrapper, authLink);
-    wrapper.append(authLink);
-  }
-
-  let menu = wrapper.querySelector(".account-menu-popover");
-  if (!menu) {
-    menu = document.createElement("div");
-    menu.className = "account-menu-popover";
-    menu.id = "header-account-menu";
-    menu.hidden = true;
-    menu.setAttribute("role", "menu");
-    wrapper.append(menu);
-  }
-
-  authLink.setAttribute("aria-haspopup", "menu");
-  authLink.setAttribute("aria-controls", menu.id);
-  if (!authLink.hasAttribute("aria-expanded")) {
-    authLink.setAttribute("aria-expanded", "false");
-  }
-
-  if (authLink.dataset.accountMenuBound !== "true") {
-    authLink.dataset.accountMenuBound = "true";
-    authLink.addEventListener("click", (event) => {
-      if (authLink.dataset.accountMenu !== "enabled") return;
-      event.preventDefault();
-      const expanded = authLink.getAttribute("aria-expanded") === "true";
-      menu.hidden = expanded;
-      authLink.setAttribute("aria-expanded", String(!expanded));
-    });
-
-    document.addEventListener("click", (event) => {
-      if (!wrapper.contains(event.target)) closeAccountMenu(authLink);
-    });
-
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeAccountMenu(authLink);
-    });
-  }
-
-  return menu;
-}
-
-function renderAccountMenu(authLink, user, role) {
-  const menu = ensureAccountMenu(authLink);
-  if (!authLink || !menu) return;
-
-  if (!user) {
-    closeAccountMenu(authLink);
-    authLink.dataset.accountMenu = "disabled";
-    authLink.href = window.KANGNAM_ACCOUNT_ACCESS?.getLoginUrl() || "./login.html";
-    authLink.lastChild.textContent = "로그인";
-    menu.replaceChildren();
-    return;
-  }
-
-  const canOpenAdmin = role === "owner" || role === "editor";
-  authLink.dataset.accountMenu = "enabled";
-  authLink.href = canOpenAdmin ? "./admin.html" : "./profile.html";
-  authLink.lastChild.textContent = "내 계정";
-
-  const email = document.createElement("p");
-  email.className = "account-menu-email";
-  email.textContent = user.email || "로그인됨";
-
-  const items = [];
-  if (canOpenAdmin) {
-    const adminLink = document.createElement("a");
-    adminLink.href = "./admin.html";
-    adminLink.textContent = "관리자 메뉴";
-    adminLink.setAttribute("role", "menuitem");
-    items.push(adminLink);
-  } else {
-    const profileLink = document.createElement("a");
-    profileLink.href = "./profile.html";
-    profileLink.textContent = "내 정보";
-    profileLink.setAttribute("role", "menuitem");
-    items.push(profileLink);
-  }
-
-  const homeLink = document.createElement("a");
-  homeLink.href = "./index.html";
-  homeLink.textContent = "공고 목록";
-  homeLink.setAttribute("role", "menuitem");
-  items.push(homeLink);
-
-  const logoutButton = document.createElement("button");
-  logoutButton.type = "button";
-  logoutButton.textContent = "로그아웃";
-  logoutButton.setAttribute("role", "menuitem");
-  logoutButton.addEventListener("click", async () => {
-    const firebase = window.KANGNAM_FIREBASE;
-    if (firebase) await firebase.signOut();
-    closeAccountMenu(authLink);
-  });
-
-  const divider = document.createElement("div");
-  divider.className = "account-menu-divider";
-  divider.setAttribute("role", "separator");
-
-  menu.replaceChildren(email, ...items, divider, logoutButton);
-}
-
 function renderAuthState() {
   const title = adminReview.authState?.querySelector("strong");
   const subtitle = adminReview.authState?.querySelector("span");
@@ -1338,9 +1222,6 @@ function renderAuthState() {
   if (!currentUser) {
     title.textContent = "로그아웃 상태";
     subtitle.textContent = "로그인하지 않아도 공개된 공고와 FAQ를 볼 수 있습니다.";
-    if (adminReview.headerAuthLink) {
-      renderAccountMenu(adminReview.headerAuthLink, null, "viewer");
-    }
   } else {
     title.textContent = currentAccountType === "admin"
       ? `관리자 계정 · ${ROLE_LABELS[currentRole]}`
@@ -1350,9 +1231,6 @@ function renderAuthState() {
       : currentRole === "editor"
         ? "초안 수정과 학생 공개를 사용할 수 있습니다."
         : "공개된 공고와 FAQ를 학생 권한으로 이용합니다.";
-    if (adminReview.headerAuthLink) {
-      renderAccountMenu(adminReview.headerAuthLink, currentUser, currentRole);
-    }
   }
 
   if (adminReview.logoutButton) adminReview.logoutButton.disabled = !currentUser;

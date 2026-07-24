@@ -15,6 +15,7 @@
     <script type="module" src="./firebase-config.js?v=20260722-url-reset"></script>
     <script src="./firestore-store.js?v=20260724-spark-guard" defer></script>
     <script src="./account-access.js?v=20260724-unified-login" defer></script>
+    <script src="./header-account.js?v=20260724-account-menu-all-pages" defer></script>
     <script src="./admin-guard.js?v=20260724-unified-login" defer></script>
     <script src="./admin.js?v=20260724-admin-add-fix" defer></script>
   </head>
@@ -29,7 +30,16 @@
             <span>관리자 메뉴</span>
           </span>
         </a>
-        <a class="auth-nav" href="./index.html"><span aria-hidden="true"></span>학생 페이지</a>
+        <nav class="admin-nav" aria-label="계정 메뉴">
+          <a class="auth-nav" href="./index.html"><span aria-hidden="true"></span>학생 페이지</a>
+          <div class="account-menu">
+            <a class="auth-nav" id="header-auth-link" href="./login.html" aria-haspopup="menu" aria-controls="header-account-menu" aria-expanded="false" data-account-menu="disabled">
+              <span aria-hidden="true"></span>
+              로그인
+            </a>
+            <div class="account-menu-popover" id="header-account-menu" role="menu" hidden></div>
+          </div>
+        </nav>
       </div>
     </header>
 

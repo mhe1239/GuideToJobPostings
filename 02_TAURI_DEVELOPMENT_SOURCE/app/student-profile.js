@@ -21,23 +21,24 @@
   }
 
   function normalize(profile = {}) {
-    const enrollmentStatus = ENROLLMENT_STATUSES.includes(profile.enrollmentStatus)
-      ? profile.enrollmentStatus
+    const source = profile && typeof profile === "object" ? profile : {};
+    const enrollmentStatus = ENROLLMENT_STATUSES.includes(source.enrollmentStatus)
+      ? source.enrollmentStatus
       : "";
-    const grade = ["1", "2", "3", "4"].includes(String(profile.grade || ""))
-      ? String(profile.grade)
+    const grade = ["1", "2", "3", "4"].includes(String(source.grade || ""))
+      ? String(source.grade)
       : "";
-    const interests = Array.isArray(profile.interests)
-      ? [...new Set(profile.interests.filter((interest) => INTERESTS.includes(interest)))]
+    const interests = Array.isArray(source.interests)
+      ? [...new Set(source.interests.filter((interest) => INTERESTS.includes(interest)))]
       : [];
 
     return {
       enrollmentStatus,
       grade,
-      transferStudent: profile.transferStudent === true,
+      transferStudent: source.transferStudent === true,
       interests,
-      filterEnabled: profile.filterEnabled !== false,
-      savedAt: typeof profile.savedAt === "string" ? profile.savedAt : "",
+      filterEnabled: source.filterEnabled !== false,
+      savedAt: typeof source.savedAt === "string" ? source.savedAt : "",
     };
   }
 

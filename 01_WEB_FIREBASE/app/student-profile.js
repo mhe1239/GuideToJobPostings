@@ -36,6 +36,7 @@
       grade,
       transferStudent: profile.transferStudent === true,
       interests,
+      filterEnabled: profile.filterEnabled !== false,
       savedAt: typeof profile.savedAt === "string" ? profile.savedAt : "",
     };
   }
@@ -68,6 +69,13 @@
     if (key) global.localStorage?.removeItem(key);
   }
 
+  function setFilterEnabled(user, enabled) {
+    return save(user, {
+      ...load(user),
+      filterEnabled: enabled === true,
+    });
+  }
+
   function isConfigured(profile) {
     const normalized = normalize(profile);
     return Boolean(normalized.enrollmentStatus && normalized.interests.length > 0);
@@ -90,6 +98,7 @@
     load,
     save,
     clear,
+    setFilterEnabled,
     isConfigured,
     toSummary,
   });

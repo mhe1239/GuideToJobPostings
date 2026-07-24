@@ -80,4 +80,21 @@ test("student profile local storage", async (t) => {
     assert.equal(profile.isConfigured(profile.load(firstUser)), false);
     assert.equal(profile.isConfigured(profile.load(secondUser)), true);
   });
+
+  await t.test("keeps saved conditions while the personalized filter is switched off", () => {
+    const { profile } = createHarness();
+    const user = { uid: "toggle-user" };
+    profile.save(user, {
+      enrollmentStatus: "재학생",
+      grade: "3",
+      interests: ["장학"],
+    });
+
+    const switchedOff = profile.setFilterEnabled(user, false);
+    assert.equal(switchedOff.filterEnabled, false);
+    assert.equal(switchedOff.enrollmentStatus, "재학생");
+    assert.equal(switchedOff.grade, "3");
+    assert.deepEqual([...switchedOff.interests], ["장학"]);
+    assert.equal(profile.isConfigured(switchedOff), true);
+  });
 });
